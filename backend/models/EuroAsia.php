@@ -366,32 +366,32 @@ class EuroAsia
         ];
 
 
-        return '{
-    "data": {
-        "getPolicyByIdV2": {
-            "id": "7b739c2e-54ff-418e-b6a3-e452c39ac56c",
-            "startAt": "2026-05-05T00:00:00Z",
-            "endAt": "2026-05-25T00:00:00Z",
-            "pdfUrl": "https://erp.eai.uz/portfolio/contracts/policy/7b739c2e-54ff-418e-b6a3-e452c39ac56c/pdf",
-            "status": "ACTIVE",
-            "productName": "OSAGO",
-            "payments": [
-                {
-                    "id": "effd6a41-f152-4284-b4e2-1476fa477860",
-                    "gateway": "PAYME",
-                    "status": "COMPLETED",
-                    "paymentUrl": "https://checkout.paycom.uz/YT0zMjAwMDAwO2NyPVVaUztjPWh0dHBzOi8vZXJwLmVhaS51ei9wb3J0Zm9saW8vY29udHJhY3RzL3BvbGljeS83YjczOWMyZS01NGZmLTQxOGUtYjZhMy1lNDUyYzM5YWM1NmMvcGRmO209NjgyYWNjNmMyYzNkZDhkODBiYTExZWE2O2FjLm9yZGVyX2lkPXBvbGljeTo3YjczOWMyZS01NGZmLTQxOGUtYjZhMy1lNDUyYzM5YWM1NmM=",
-                    "__typename": "PaymentInfoV2"
-                }
-            ],
-            "premium": {
-                "amount": 3.2e+06,
-                "__typename": "Money"
-            },
-            "__typename": "PolicyInfoV2"
-        }
-    }
-}';
+//        return '{
+//    "data": {
+//        "getPolicyByIdV2": {
+//            "id": "7b739c2e-54ff-418e-b6a3-e452c39ac56c",
+//            "startAt": "2026-05-05T00:00:00Z",
+//            "endAt": "2026-05-25T00:00:00Z",
+//            "pdfUrl": "https://erp.eai.uz/portfolio/contracts/policy/7b739c2e-54ff-418e-b6a3-e452c39ac56c/pdf",
+//            "status": "ACTIVE",
+//            "productName": "OSAGO",
+//            "payments": [
+//                {
+//                    "id": "effd6a41-f152-4284-b4e2-1476fa477860",
+//                    "gateway": "PAYME",
+//                    "status": "COMPLETED",
+//                    "paymentUrl": "https://checkout.paycom.uz/YT0zMjAwMDAwO2NyPVVaUztjPWh0dHBzOi8vZXJwLmVhaS51ei9wb3J0Zm9saW8vY29udHJhY3RzL3BvbGljeS83YjczOWMyZS01NGZmLTQxOGUtYjZhMy1lNDUyYzM5YWM1NmMvcGRmO209NjgyYWNjNmMyYzNkZDhkODBiYTExZWE2O2FjLm9yZGVyX2lkPXBvbGljeTo3YjczOWMyZS01NGZmLTQxOGUtYjZhMy1lNDUyYzM5YWM1NmM=",
+//                    "__typename": "PaymentInfoV2"
+//                }
+//            ],
+//            "premium": {
+//                "amount": 3.2e+06,
+//                "__typename": "Money"
+//            },
+//            "__typename": "PolicyInfoV2"
+//        }
+//    }
+//}';
 //
 //        return '{
 //    "data": {
