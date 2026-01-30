@@ -73,7 +73,8 @@ return [
         'class' => 'mdm\admin\components\AccessControl',
         'allowActions' => [
             'site/*',
-            'police/check', 'sarmin/*'
+            'police/check',
+            //'sarmin/*'
         ]
     ],
 ];
