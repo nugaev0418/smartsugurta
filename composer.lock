@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8f6c19a7b531655e240993e3c0e75de0",
+    "content-hash": "66d05102e1462ff434a5f2cdc892650a",
     "packages": [
         {
             "name": "bower-asset/inputmask",
@@ -349,6 +349,69 @@
                 "source": "https://github.com/ezyang/htmlpurifier/tree/v4.19.0"
             },
             "time": "2025-10-17T16:34:55+00:00"
+        },
+        {
+            "name": "mdmsoft/yii2-admin",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mdmsoft/yii2-admin.git",
+                "reference": "014923cfe159fcd646c03ff5d7f1f8be07836d05"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mdmsoft/yii2-admin/zipball/014923cfe159fcd646c03ff5d7f1f8be07836d05",
+                "reference": "014923cfe159fcd646c03ff5d7f1f8be07836d05",
+                "shasum": ""
+            },
+            "require": {
+                "yiisoft/yii2": "~2.0.7"
+            },
+            "require-dev": {
+                "yiisoft/yii2-codeception": "~2.0"
+            },
+            "suggest": {
+                "yiisoft/yii2-bootstrap": "Used when using layout 'left-menu', 'right-menu' or 'top-menu'"
+            },
+            "default-branch": true,
+            "type": "yii2-extension",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.x-dev",
+                    "dev-1.0.master": "1.0.x-dev"
+                },
+                "asset-installer-paths": {
+                    "npm-asset-library": "vendor/npm",
+                    "bower-asset-library": "vendor/bower"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "mdm\\admin\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Misbahul Munir",
+                    "email": "misbahuldmunir@gmail.com"
+                }
+            ],
+            "description": "RBAC Auth manager for Yii2 ",
+            "keywords": [
+                "admin",
+                "auth",
+                "rbac",
+                "yii"
+            ],
+            "support": {
+                "issues": "https://github.com/mdmsoft/yii2-admin/issues",
+                "source": "https://github.com/mdmsoft/yii2-admin"
+            },
+            "time": "2022-10-27T03:35:06+00:00"
         },
         {
             "name": "psr/container",
@@ -5831,7 +5894,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "mdmsoft/yii2-admin": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

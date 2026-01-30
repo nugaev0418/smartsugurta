@@ -23,6 +23,9 @@ return [
           ],
     ],
     'components' => [
+        'authManager' => [
+            'class' => 'yii\rbac\DbManager', // or use
+        ],
         'mutex' => \yii\mutex\MysqlMutex::class,
         'paynetQueue' => [
             'class' => \yii\queue\db\Queue::class,

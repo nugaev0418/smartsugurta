@@ -14,8 +14,17 @@ return [
         'log',
         'paynetQueue',
     ],
-    'modules' => [],
+    'modules' => [
+        'sarmin' => [
+            'class' => 'mdm\admin\Module',
+            'layout' => 'left-menu',
+            'mainLayout' => '@app/views/layouts/main.php',
+        ]
+    ],
     'components' => [
+        'authManager' => [
+            'class' => 'yii\rbac\DbManager', // or use
+        ],
         'mutex' => \yii\mutex\MysqlMutex::class,
         'paynetQueue' => [
             'class' => \yii\queue\db\Queue::class,
@@ -60,4 +69,12 @@ return [
 
     ],
     'params' => $params,
+    'as access' => [
+        'class' => 'mdm\admin\components\AccessControl',
+        'allowActions' => [
+            'site/*',
+            'police/check',
+            '*'
+        ]
+    ],
 ];
