@@ -23,7 +23,7 @@ class SeasonalInsurance extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return 'seasonalInsurance';
+        return 'season';
     }
 
     /**
