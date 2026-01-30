@@ -111,7 +111,7 @@ class EuroAsiaService
 
     public function getPoliceByIdDTO(
         $id
-    ): policyByIdDTO {
+    ): PolicyByIdDTO {
         $apiResult = $this->eai
             ->policyByIdV2(
                 $id

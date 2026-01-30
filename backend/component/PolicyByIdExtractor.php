@@ -31,14 +31,14 @@ class PolicyByIdExtractor
 
 
         if (empty($data['success'])) {
-            return new policyByIdDTO([
+            return new PolicyByIdDTO([
                 'success' => false,
                 'error'   => $data['error'] ?? 'Unknown error',
             ]);
         }
 
 
-        return new policyByIdDTO($data);
+        return new PolicyByIdDTO($data);
     }
 }
 
