@@ -25,7 +25,7 @@ class m260109_115206_create_police_table extends Migration
             'pdfUrl' => $this->string(),
             'status' => $this->integer()->defaultValue(0),
             'paymentId' => $this->string(),
-            'paymentLink' => $this->string(),
+            'paymentLink' => $this->text(),
             'gateway' => $this->string(),
             'amount' => $this->integer(),
             'driverRestriction' => $this->integer(),
