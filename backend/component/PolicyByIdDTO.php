@@ -1,7 +1,7 @@
 <?php
 
 namespace backend\component;
-class policyByIdDTO
+class PolicyByIdDTO
 {
     public bool $success = false;
     public ?string $pdfUrl = null;
