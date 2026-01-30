@@ -74,7 +74,6 @@ return [
         'allowActions' => [
             'site/*',
             'police/check',
-            '*'
         ]
     ],
 ];
