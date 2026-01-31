@@ -74,6 +74,7 @@ return [
         'allowActions' => [
             'site/*',
             'police/check',
+            'bot/start'
             //'sarmin/*'
         ]
     ],

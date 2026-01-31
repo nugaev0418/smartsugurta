@@ -23,17 +23,6 @@ use function PHPUnit\Framework\isNull;
 
 class BotController extends Controller
 {
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'allowActions' => [
-                    'bot/start'
-                ]
-            ]
-        ];
-    }
 
     public $enableCsrfValidation = false;
     public $chat_id;
