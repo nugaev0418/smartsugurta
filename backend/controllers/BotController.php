@@ -14,6 +14,7 @@ use common\models\SeasonalInsurance;
 use common\models\Text;
 use common\models\User;
 use DateTime;
+use mdm\admin\components\AccessControl;
 use Yii;
 use yii\base\ErrorException;
 use yii\helpers\Url;
@@ -22,6 +23,18 @@ use function PHPUnit\Framework\isNull;
 
 class BotController extends Controller
 {
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'allowActions' => [
+                    'bot/start'
+                ]
+            ]
+        ];
+    }
+
     public $enableCsrfValidation = false;
     public $chat_id;
     public $text;
