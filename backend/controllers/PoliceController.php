@@ -206,7 +206,7 @@ class PoliceController extends Controller
 
     public function addBonuse($user, $amount)
     {
-        $bonus = $amount * 0.05;
+        $bonus = $amount * 0.07;
         $user->balance += $bonus;
 
 
