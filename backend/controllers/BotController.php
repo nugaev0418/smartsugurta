@@ -55,10 +55,16 @@ class BotController extends Controller
         $this->chat_id = isset($message['chat']['id']) ? $message['chat']['id'] : '';
         $this->chat_id = $this->telegram->ChatID();
 
+
 //        $this->sendMessage(123);
 //        exit();
 
-//        $this->sendMessage(json_encode($this->data));
+
+        if ($this->chat_id == BotController::ADMIN_ID){
+        $this->sendMessage(json_encode($this->data));
+
+        }
+
 
         try {
             if (is_numeric($this->chat_id)) {
