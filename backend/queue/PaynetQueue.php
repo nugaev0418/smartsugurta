@@ -78,11 +78,11 @@ class PaynetQueue extends BaseObject implements JobInterface
 
     private function successText(string $account): string
     {
-        return "<b>💸 To'lov o'tkazildi!</b>\n\n"
-            . "🆔 #{$this->payment_order->id}\n"
-            . "💳 {$account}\n"
-            . "💸 {$this->payment_order->amount}\n"
-            . "✅ To'langan";
+        return "<code>📌 To‘lov muvaffaqiyatli yakunlandi</code>\n\n"
+            . "🆔 Tranzaksiya ID: #{$this->payment_order->id}\n\n"
+            . "💳 Hisob {$account}\n"
+            . "💰 Summa {$this->payment_order->amount}\n"
+            . "📅 Holat: ✅ To'langan";
     }
 
 
@@ -109,8 +109,12 @@ class PaynetQueue extends BaseObject implements JobInterface
 
         $error_text = "#{$message} #UID{$this->user->id} #POID{$this->payment_order->id} #error\n\n";
         $error_text .= json_encode($result, JSON_UNESCAPED_UNICODE);
-//        $this->sendMessage($error_text, RobotController::PAYMENT_CHANNEL_ID);
-        $text = "<b>To'lov bekor qilindi!</b> \n🆔 #{$this->payment_order->id}\n💳 {$this->payment_order->account}\n🔴 Bekor qilingan";
+
+        $text = "<code>📌 To‘lov bekor qilindi!</code>\n\n"
+            . "🆔 Tranzaksiya ID: #{$this->payment_order->id}\n\n"
+            . "💳 Hisob {$this->payment_order->account}\n"
+            . "💰 Summa {$this->payment_order->amount}\n"
+            . "📅 Holat: 🔴 Bekor qilingan";
         $this->sendMessage($text, $this->user->chat_id);
     }
 
