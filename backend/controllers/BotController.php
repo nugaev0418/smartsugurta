@@ -60,10 +60,6 @@ class BotController extends Controller
 //        exit();
 
 
-        if ($this->chat_id == BotController::ADMIN_ID){
-        $this->sendMessage(json_encode($this->data));
-
-        }
 
 
         try {
