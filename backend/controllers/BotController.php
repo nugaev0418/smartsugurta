@@ -108,7 +108,7 @@ class BotController extends Controller
                             $this->handleLisenceNumberPage();
                             break;
                         case Pages::TEXPASS_SERIA:
-                            $this->handleTexPassSeriaPage();
+                            $this->handleTexPassPage();
                             break;
                         case Pages::TEXPASS_NUMBER:
                             $this->handleTexPassNumberPage();
@@ -646,6 +646,47 @@ class BotController extends Controller
         $this->showTexPassSeriaPage();
 
     }
+
+    public function handleTexPassPage()
+    {
+        if (empty($this->text)) {
+            $this->showTexPassSeriaPage();
+            return;
+        }
+
+        $value = strtoupper(trim($this->text));
+        $value = str_replace(' ', '', $value);
+
+        if (!preg_match('/^([A-Z]{3})(\d{7})$/', $value, $matches)) {
+            $this->showTexPassSeriaPage();
+            return;
+        }
+
+        $this->texPassSeria  = $matches[1];
+        $this->texPassNumber = $matches[2];
+
+        $service = new EuroAsiaService();
+
+        $dto = $service->getVehicleOwnerDTO(
+            $this->texPassSeria,
+            $this->texPassNumber,
+            $this->lisenceNumber
+        );
+
+        if (!$dto->success) {
+            $this->showMainPage($this->getMText('Not found transport'));
+            return;
+        }
+
+        $this->vehicleData = $dto;
+
+        if ($dto->ownerType === 'PERSON') {
+            $this->showOwnerPassPage();
+        } else {
+            $this->showDriverRestrictionPage();
+        }
+    }
+
 
     public function handleTexPassNumberPage()
     {
