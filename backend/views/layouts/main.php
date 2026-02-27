@@ -38,6 +38,7 @@ AppAsset::register($this);
         ['label' => 'Home', 'url' => ['/site/index']],
         ['label' => 'Vehicle', 'url' => ['/vehicle/index']],
         ['label' => 'User', 'url' => ['/botuser/index']],
+        ['label' => 'History', 'url' => ['/history/index']],
         ['label' => 'Driver', 'url' => ['/driver/index']],
         ['label' => 'Owner', 'url' => ['/owner/index']],
         ['label' => 'Police', 'url' => ['/police/index']],
