@@ -172,6 +172,9 @@ class PoliceController extends Controller
                         $this->sendDocument($filePath, $text);
 
                         $this->addBonuse($user, $police->amount);
+
+                        //send to channel
+                        $this->sendDocument($filePath, $text, BotController::ORDER_CHANNEL);
                     }else{
                         $this->sendMessage("Nimadir xato Operator bilan bog'laning");
                     }
@@ -192,9 +195,12 @@ class PoliceController extends Controller
         }
     }
 
-    public function sendDocument($file, $text)
+    public function sendDocument($file, $text, $chat_id = null)
     {
         try {
+            if (!is_null($chat_id)) {
+                $this->chat_id = $chat_id;
+            }
             $telegram = Yii::$app->telegram;
             $content = ['chat_id' => $this->chat_id, 'parse_mode' => 'html', 'caption' => $text, 'document' => $file /*'disable_web_page_preview' => true*/];
             $telegram->sendDocument($content);

@@ -99,10 +99,6 @@ class EuroAsiaService
 
 
 
-//        \Yii::error($data);
-//        \Yii::error($apiResult);
-
-
         $response = json_decode($apiResult, true);
 
 

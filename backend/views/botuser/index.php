@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
             //'is_admin',
             //'is_banned',
             //'step',
-            //'created_at',
+            'created_at',
             //'updated_at',
             [
                 'class' => ActionColumn::className(),
