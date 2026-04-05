@@ -96,6 +96,9 @@ class BotController extends Controller
                 case $this->getMText("Wallet"):
                     $this->showWalletPage();
                     break;
+                case $this->getMText("support page message"):
+                    $this->showSupportPage();
+                    break;
                 default:
                     switch ($this->page) {
                         case Pages::LANG:
@@ -183,6 +186,7 @@ class BotController extends Controller
 //                ],
                 [
                     $this->telegram->buildKeyboardButton($this->getMText('Language selection')),
+                    $this->telegram->buildKeyboardButton($this->getMText('Support')),
                 ],
             ];
             $this->sendMessageWithKeyborad($text, $option);
@@ -580,6 +584,13 @@ class BotController extends Controller
         }
 
 
+    }
+
+    public function showSupportPage(){
+
+        $text = $this->getMText('support page message');
+
+        $this->sendMessage($text);
     }
 
     // ******** SHOW PAGES **** //
