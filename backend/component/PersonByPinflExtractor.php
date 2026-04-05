@@ -22,12 +22,18 @@ class PersonByPinflExtractor
 
                 $result['success']   = true;
 
-                if (is_null($result['passport'])) {
-                    $result['seria'] = $result['idCard']['seria'];
-                    $result['number'] = $result['idCard']['number'];
-                }else{
-                    $result['seria'] = $result['passport']['seria'];
-                    $result['number'] = $result['passport']['number'];
+                if (!empty($result['passport'])) {
+                    $result['seria']  = $result['passport']['seria'] ?? null;
+                    $result['number'] = $result['passport']['number'] ?? null;
+
+                } elseif (!empty($result['idCard'])) {
+                    $result['seria']  = $result['idCard']['seria'] ?? null;
+                    $result['number'] = $result['idCard']['number'] ?? null;
+
+                } else {
+                    // 🔴 ikkalasi ham yo‘q
+                    $result['seria']  = null;
+                    $result['number'] = null;
                 }
 
                 unset($result['passport'], $result['idCard']);

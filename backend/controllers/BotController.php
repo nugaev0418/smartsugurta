@@ -698,7 +698,6 @@ class BotController extends Controller
         }
     }
 
-
     public function handleTexPassNumberPage()
     {
         if (!is_null($this->text) && is_numeric($this->text) && strlen($this->text) == 7) {
