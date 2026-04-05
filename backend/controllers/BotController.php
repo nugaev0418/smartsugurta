@@ -96,7 +96,7 @@ class BotController extends Controller
                 case $this->getMText("Wallet"):
                     $this->showWalletPage();
                     break;
-                case $this->getMText("support page message"):
+                case $this->getMText("Support"):
                     $this->showSupportPage();
                     break;
                 default:
