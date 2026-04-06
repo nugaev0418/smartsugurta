@@ -788,6 +788,7 @@ class BotController extends Controller
             switch ($this->getKeywordText($this->text)) {
                 case "Limited":
                     $this->drivers = '';
+                    $this->sendMessage($this->getMText("owner required message"));
                     $this->showDriverPage();
                     break;
                 case "Not limited":
