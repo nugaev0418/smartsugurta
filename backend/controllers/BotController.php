@@ -1034,8 +1034,11 @@ class BotController extends Controller
 
     public function handleWithdrawAccountPage()
     {
-        $phone_pattern = '/^(?:\+998|998)?(90|91|93|94|95|97|98|99|33|88)\d{7}$/';
-        $card_pattern = '/^(8600|9860)\d{12}$/';
+        $phone_pattern = '/^(?:\+998|998)?(90|91|93|94|95|97|98|99|33|88|70|77|87)\d{7}$/';
+        $card_pattern = '/^(4062|4067|4073|4097|4198|4294|5440|5555|5614|6262|8600|9860)\d{12}$/';
+
+
+
 
         $pattern = $this->withdrawType == Payment::TO_PHONE ? $phone_pattern : $card_pattern;
 
