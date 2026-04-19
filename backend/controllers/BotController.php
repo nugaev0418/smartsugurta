@@ -42,6 +42,14 @@ class BotController extends Controller
 
     public function actionStart()
     {
+        http_response_code(200);
+        echo 'OK';
+
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+
         $this->telegram = Yii::$app->telegram;
 
 //        dd($this->setWebhook());
