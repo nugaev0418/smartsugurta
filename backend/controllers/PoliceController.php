@@ -157,6 +157,8 @@ class PoliceController extends Controller
             $eai = new EuroAsiaService();
             $dto = $eai->getPoliceByIdDTO($police->policeId);
 
+            echo $police->id . PHP_EOL;
+
 
             if ($dto->success) {
                 $police->status = $dto->status == 'ACTIVE' ? 1 : 0;
