@@ -66,8 +66,8 @@ class BotController extends Controller
 
 
 
-//        $this->sendMessage("Tuzatish ishlari amalga ochirilmoqda iltimos, birozdan keyin ishlatib ko'ring.");
-//        exit();
+        $this->sendMessage("Tuzatish ishlari amalga ochirilmoqda iltimos, birozdan keyin ishlatib ko'ring.");
+        exit();
 
 
 
