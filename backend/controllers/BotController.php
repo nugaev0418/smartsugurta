@@ -64,8 +64,10 @@ class BotController extends Controller
         $this->chat_id = $this->telegram->ChatID();
 
 
-//        $this->sendMessage(123);
-//        exit();
+
+
+        $this->sendMessage("Tuzatish ishlari amalga ochirilmoqda iltimos, birozdan keyin ishlatib ko'ring.");
+        exit();
 
 
 
