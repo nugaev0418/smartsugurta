@@ -146,7 +146,12 @@ class PoliceController extends Controller
     {
         $this->telegram = Yii::$app->telegram;
 
-        $polices = Police::find()->where(['status' => 0])->all();
+        $tenDaysAgo = date('Y-m-d H:i:s', strtotime('-10 days'));
+
+        $polices = Police::find()
+            ->where(['status' => 0])
+            ->andWhere(['>=', 'created_at', $tenDaysAgo])
+            ->all();
 
         foreach ($polices as $police) {
             $eai = new EuroAsiaService();
@@ -162,7 +167,22 @@ class PoliceController extends Controller
 
                 $police->save();
 
-                if ($police->status){
+                $updated = Police::updateAll(
+                    [
+                        'status' => 1,
+                        'pdfUrl' => $dto->pdfUrl,
+                        'paymentId' => $dto->paymentId,
+                        'payment_status' => $dto->paymentStatus == 'COMPLETED' ? 1 : 0,
+                        'amount' => $dto->amount / 100,
+                    ],
+                    [
+                        'and',
+                        ['id' => $police->id],
+                        ['status' => 0]
+                    ]
+                );
+
+                if ($updated){
                     $user = Botuser::find()->where(['id'=>$police->user_id])->one();
                     $this->chat_id = $user->chat_id;
 
