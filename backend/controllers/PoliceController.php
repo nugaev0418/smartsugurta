@@ -153,19 +153,24 @@ class PoliceController extends Controller
             ->andWhere(['>=', 'created_at', $tenDaysAgo])
             ->all();
 
+
+
+
         foreach ($polices as $police) {
+
+            echo $police->id . PHP_EOL;
             $eai = new EuroAsiaService();
             $dto = $eai->getPoliceByIdDTO($police->policeId);
 
 
             if ($dto->success) {
-                $police->status = $dto->status == 'ACTIVE' ? 1 : 0;
-                $police->pdfUrl = $dto->pdfUrl;
-                $police->paymentId = $dto->paymentId;
-                $police->payment_status = $dto->paymentStatus == 'COMPLETED' ? 1 : 0;
-                $police->amount = $dto->amount / 100;
-
-                $police->save();
+//                $police->status = $dto->status == 'ACTIVE' ? 1 : 0;
+//                $police->pdfUrl = $dto->pdfUrl;
+//                $police->paymentId = $dto->paymentId;
+//                $police->payment_status = $dto->paymentStatus == 'COMPLETED' ? 1 : 0;
+//                $police->amount = $dto->amount / 100;
+//
+//                $police->save();
 
                 if ($police->status){
                     $user = Botuser::find()->where(['id'=>$police->user_id])->one();
@@ -176,7 +181,7 @@ class PoliceController extends Controller
                         $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurta</b>";
                         $this->sendDocument($filePath, $text);
 
-                        $this->addBonuse($user, $police->amount);
+//                        $this->addBonuse($user, $police->amount);
 
                         //send to channel
                         $this->sendDocument($filePath, $text, BotController::ORDER_CHANNEL);
