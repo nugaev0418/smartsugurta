@@ -157,8 +157,6 @@ class PoliceController extends Controller
             $eai = new EuroAsiaService();
             $dto = $eai->getPoliceByIdDTO($police->policeId);
 
-            echo $police->id . PHP_EOL;
-
 
             if ($dto->success) {
                 $police->status = $dto->status == 'ACTIVE' ? 1 : 0;
@@ -169,22 +167,7 @@ class PoliceController extends Controller
 
                 $police->save();
 
-                $updated = Police::updateAll(
-                    [
-                        'status' => 1,
-                        'pdfUrl' => $dto->pdfUrl,
-                        'paymentId' => $dto->paymentId,
-                        'payment_status' => $dto->paymentStatus == 'COMPLETED' ? 1 : 0,
-                        'amount' => $dto->amount / 100,
-                    ],
-                    [
-                        'and',
-                        ['id' => $police->id],
-                        ['status' => 0]
-                    ]
-                );
-
-                if ($updated){
+                if ($police->status){
                     $user = Botuser::find()->where(['id'=>$police->user_id])->one();
                     $this->chat_id = $user->chat_id;
 
