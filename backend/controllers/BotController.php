@@ -34,6 +34,7 @@ class BotController extends Controller
     public $username;
 
     const PAYMENT_CHANNEL       = '-1003501874314',
+         PAYMENT_CHANNEL_ADMIN  = '-1001571664655',
           ADMIN_ID              = '3673579',
           ORDER_CHANNEL         = '-1003782162980';
 

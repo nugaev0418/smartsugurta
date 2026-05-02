@@ -110,6 +110,8 @@ class PaynetQueue extends BaseObject implements JobInterface
         $error_text = "#{$message} #UID{$this->user->id} #POID{$this->payment_order->id} #error\n\n";
         $error_text .= json_encode($result, JSON_UNESCAPED_UNICODE);
 
+        $this->sendMessage($error_text, BotController::PAYMENT_CHANNEL_ADMIN);
+
         $text = "<code>📌 To‘lov bekor qilindi!</code>\n\n"
             . "🆔 Tranzaksiya ID: #{$this->payment_order->id}\n\n"
             . "💳 Hisob {$this->payment_order->account}\n"
