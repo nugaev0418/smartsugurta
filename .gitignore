@@ -45,3 +45,6 @@ phpunit.phar
 backend/web/policeFiles/*
 
 backend/config/params-local.php
+
+backend/gross/gross_cookie.txt
+backend/gross/captcha.jpg
