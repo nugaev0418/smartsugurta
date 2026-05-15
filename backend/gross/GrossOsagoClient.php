@@ -1,6 +1,8 @@
 <?php
 
 namespace backend\gross;
+use DOMDocument;
+
 class GrossOsagoClient
 {
     private string $baseUrl = 'https://osago.gross.uz';
@@ -162,7 +164,7 @@ class GrossOsagoClient
     }
 
 
-    ////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
 // VEHICLE INFO API
 ////////////////////////////////////////////////////////
     public function getVehicle(
@@ -517,9 +519,9 @@ class GrossOsagoClient
 ////////////////////////////////////////////////////////
     public function extractPaymentLink(string $html): ?string
     {
-        $dom = new DOMDocument();
+        $dom = new \DOMDocument();
         @$dom->loadHTML($html, LIBXML_NOERROR);
-        $xpath = new DOMXPath($dom);
+        $xpath = new \DOMXPath($dom);
 
         $base = '//div[contains(@class,"epolis")]'
               . '//div[contains(@class,"container")]'

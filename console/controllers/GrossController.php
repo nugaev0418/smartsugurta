@@ -10,8 +10,8 @@ class GrossController extends \yii\console\Controller
     public function actionAdd()
     {
 
-           $result = Yii::$app->grossQueue->push(new GrossOsagoJob([
-                'policyData' => [
+           $result = Yii::$app->grossQueue->push(new GrossOsagoJob(
+                [
 
                     // Transport
                     'vehicle' => [
@@ -45,8 +45,8 @@ class GrossController extends \yii\console\Controller
                         ],
                     ],
 
-                ],
-            ]));
+                ]
+            ));
 
 
            var_dump($result);

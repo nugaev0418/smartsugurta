@@ -49,6 +49,7 @@ class GrossOsago
         if (!$vehicle) throw new RuntimeException("Vehicle ma'lumoti olinmadi");
         $vehicleResult = $vehicle['result'];
 
+
         $isOrg = (bool) $policyData['owner']['is_org'];
 
         if ($isOrg) {
@@ -75,6 +76,9 @@ class GrossOsago
 
         $kbm = $isOrg ? 1.0 : $this->resolveKbm($ownerPinfl, $sessionDir);
 
+
+        /*
+
         $contractData = $this->buildContract($policyData, $vehicleResult, $ownerSection, $drivers, $phone, $kbm);
         $contractResp = $this->call('contract',
             fn() => $this->http->createContract($contractData),
@@ -85,6 +89,13 @@ class GrossOsago
         $uuid     = $contractResp['uuid']       ?? ($contractResp['data']['uuid'] ?? null);
         $anketaId = (string) ($contractResp['anketa_id'] ?? '');
         $premium  = (int) ($contractResp['premium'] ?? 0);
+
+        */
+
+        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
+        $anketaId = '5647130';
+        $premium  = '56000';
+
 
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
         file_put_contents($sessionDir . '/payment-click.html', $clickHtml);
@@ -115,33 +126,44 @@ class GrossOsago
         return $dir;
     }
 
-    private function ensureLoggedIn(): void
+    private function ensureLoggedIn(int $maxAttempts = 3): void
     {
-        $html       = $this->http->dashboard();
-        $cookieFile = __DIR__ . '/gross_cookie.txt';
-        $cookies    = (string) @file_get_contents($cookieFile);
-
-        $loggedIn = stripos($html, 'name="UserName"') === false
-                 && str_contains($cookies, 'lvl1');
-
-        if ($loggedIn) return;
-
-        $html = $this->http->openHome();
-
-        $captchaSrc = $this->http->getCaptchaSrc($html);
-        if (!$captchaSrc) throw new RuntimeException("Captcha topilmadi");
-
-        $captchaFile = $this->http->loadCaptcha($captchaSrc);
-        $captchaCode = $this->http->solveCaptchaWithOpenAI($captchaFile, $this->openaiApiKey);
-
-        $this->http->login($this->login, $this->password, $captchaCode);
-
-        $html    = $this->http->dashboard();
-        $cookies = (string) @file_get_contents($cookieFile);
-
-        if (stripos($html, 'name="UserName"') !== false || !str_contains($cookies, 'lvl1')) {
-            throw new RuntimeException("Login muvaffaqiyatsiz (captcha yoki parol xato)");
+        // PHPSESSID cookie faylda bo'lsa — cURL avtomatik yuboradi,
+        // full.php da bo'lgani kabi sessiya server tomonida faol deb hisoblanadi
+        if ($this->hasSessionCookie()) {
+            return;
         }
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $html = $this->http->openHome();
+
+            $captchaSrc = $this->http->getCaptchaSrc($html);
+            if (!$captchaSrc) throw new RuntimeException("Captcha topilmadi");
+
+            $captchaFile = $this->http->loadCaptcha($captchaSrc);
+            $captchaCode = $this->http->solveCaptchaWithOpenAI($captchaFile, $this->openaiApiKey);
+
+            $loginResponse = $this->http->login($this->login, $this->password, $captchaCode);
+
+            if (stripos($loginResponse, 'name="UserName"') === false) {
+                return;
+            }
+
+            if ($attempt < $maxAttempts) {
+                sleep(2);
+            }
+        }
+
+        throw new RuntimeException("Login muvaffaqiyatsiz ({$maxAttempts} ta urinishdan so'ng)");
+    }
+
+    private function hasSessionCookie(): bool
+    {
+        $cookieFile = __DIR__ . '/gross_cookie.txt';
+        if (!file_exists($cookieFile)) {
+            return false;
+        }
+        return str_contains((string) file_get_contents($cookieFile), 'PHPSESSID');
     }
 
     // ================================================================

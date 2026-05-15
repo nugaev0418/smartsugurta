@@ -32,9 +32,10 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 : Yii::getAlias('@runtime/gross'),
         ]);
 
-        var_dump($service);
-
         $result = $service->run($this->policyData);
+
+
+        var_dump($result);
 
         Yii::info(sprintf(
             'OSAGO created | anketa: %s | premium: %s so\'m | click: %s | payme: %s',
