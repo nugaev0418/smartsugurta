@@ -10,7 +10,11 @@ $params = array_merge(
 return [
     'id' => 'app-console',
     'basePath' => dirname(__DIR__),
-    'bootstrap' => ['log', 'paynetQueue'],
+    'bootstrap' => [
+        'log',
+        'paynetQueue',
+        'grossQueue',
+    ],
     'controllerNamespace' => 'console\controllers',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -30,6 +34,10 @@ return [
         'paynetQueue' => [
             'class' => \yii\queue\db\Queue::class,
             'channel' => 'paynet',
+        ],
+        'grossQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'gross',
         ],
         'log' => [
             'targets' => [

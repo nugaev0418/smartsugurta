@@ -43,3 +43,5 @@ phpunit.phar
 /backend/web/robots.txt
 
 backend/web/policeFiles/*
+
+backend/config/params-local.php

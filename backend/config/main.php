@@ -13,6 +13,7 @@ return [
     'bootstrap' => [
         'log',
         'paynetQueue',
+        'grossQueue',
     ],
     'modules' => [
         'sarmin' => [
@@ -29,6 +30,11 @@ return [
         'paynetQueue' => [
             'class' => \yii\queue\db\Queue::class,
             'channel' => 'paynet',
+            'mutexTimeout' => 60
+        ],
+        'grossQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'gross',
             'mutexTimeout' => 60
         ],
         'telegram' => [
