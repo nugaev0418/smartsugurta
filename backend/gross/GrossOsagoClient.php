@@ -131,6 +131,9 @@ class GrossOsagoClient
             'submit'     => 'Войти'
         ]);
 
+
+        var_dump($data);
+
         return $this->request(
             $this->baseUrl . '/index.php?ln=0',
             'POST',
