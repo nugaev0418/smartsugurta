@@ -1,0 +1,66 @@
+<html lang="2">
+<head>
+<title>ОСАГО </title>
+<link rel=stylesheet type=text/css  media="all" href='default.css'>
+<link rel="Stylesheet" href="StyleSheet.css" type="text/css" />
+<link rel=stylesheet type=text/css  media="print" href='print.css'>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+</head>
+<body><table width="1260" border="0" cellpadding="0" cellspacing="0"><tr><td height="25" bgcolor="#26376c"><span class="style1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;php 7.4</span></td><td width="130" align="center" bgcolor="#000000" class="style1"><a href="/main.php?ln=2"><font color="#FF6666">узб</font></a> / <a href="/main.php?ln=1">рус</a> / </td></tr><tr><td height="50" valign="middle" align="left" >
+<div class="top-bar">
+<span class="style21"><img src="img/logo_new.png" width="182px" border="0"></span>
+<style>
+  .username{
+   margin-right: 20px;
+/*   padding: 34px 0px;*/
+  }
+  .top-bar{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+  }
+</style>
+
+  <div class="username">
+    ИП МАМАТОВ УЛУГБЕК РАХМОНОВИЧ 12  ( 12M1705U )    </div>
+</div>
+</td><td><a href="main.php?ln=1"><img src="img/home.gif" border="0"></a>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<a href="index.php?ln=1&logout=1"><span class="style18">Чи&#1179иш</span></a></td></tr></table>
+<script language='javascript'>
+if (!JSwasLoaded)
+{
+	document.write("<HR SIZE='12' NOSHADE><P><H3><font color='#FF00FF'> Ошибка! Не найден JavaScript файл данной страницы.<BR>Страница работать не будет...</font></H3><P><HR SIZE='12' NOSHADE>");
+}
+
+function DoChange(val){
+this.formchange.IDnews.value=val;
+myWindow=window.open('dochange.php','Win1','menubar=no, resizable=no, depended=yes, height=300, width=450, titlebar=no, location=no, toolbar=no, scrollbars=no');
+myWindow.focus();
+formchange.target = 'Win1';
+formchange.submit();
+}
+
+function DoAdd(){
+myWindow=window.open('doaddnews.php','Win1','menubar=no, resizable=no, depended=yes, height=300, width=450, titlebar=no, location=no, toolbar=no, scrollbars=no');
+myWindow.focus();
+}
+
+</script>
+<table width="990"><tr><td align="left" bgcolor="#26376c" valign="top"><table align="center" width="180"><tr><td align="left" bgcolor="#26376c" valign="top"><span class="styleI"><hr color="#FFFFFF"></span><!--    <div>
+        <img src="img/bb.gif">
+        <span class="style10" >
+            <a href="zayavlenie_online_without_pinfl_strict.php?ln=2">
+                Ариза-анкета(без пинфл)            </a>
+        </span>
+        <br><br>
+    </div> -->
+
+&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10" style="background-color:forestgreen"><a href="/osago/index.php?ln=2">E-POLIS Ариза-анкета</a></span><br><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10" style="background-color:#00adc3; "><a href="epolis_zayavlenie_3.php?ln=2" style="color: black; padding: 3px">E-POLIS чет эл ТВ учун</a></span><br><br>
+
+&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="dogovor.php?ln=2">Шартномалар</a></span><br><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="jurnal.php?ln=2" target="_blank">Журнал</a></span><br><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="poisk2.php?ln=2">Излаш (Берилган сана)</a></span><br><br><div>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="#" onClick="JavaScript: window.open('calc_new.php?ln=2','Калькулятор','menubar=no, resizable=yes, depended=yes, height=600, width=650, titlebar=no, location=no, toolbar=no, scrollbars=no');">Янги Калькулятор</a></span></div><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="rep_menu.php?ln=2">Хисобот</a></span><br><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="blanks.php?ln=2">Бланклар</a></span><br><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="main.php?ln=2">Янгиликлар</a></span><br><br>&nbsp;&nbsp;<img src="img/bb.gif">&nbsp;&nbsp;<span class="style10"><a href="faq.php?ln=2">Савол / Жавоб</a></span><br><br><span class="styleI"><hr color="#FFFFFF"></span><span style="display: none">
+
+<p align="center"><span class="styleI">1 USD = 11975,36 сўм</span></p>
+</span><br></td></tr></table></td><td valign=top width="800"><table width='100%' border='0'></p></td></tr></table><form name="formchange" method="post" action="dochange.php" target="_blank"><input type="hidden" name="IDnews" value=""></form><table class=ta width="990" height="25" border="0" cellpadding="0" cellspacing="0" bgcolor="#cd6502"><tr><td class="style1" align="center"><a href="about.php?ln=0">КАРОР</a></td><td class="style1" align="center"><a href="rules.php?ln=0">КОИДАЛАР</a></td><td class="style1" align="center"><a href="zayav.doc">АРИЗА-АНКЕТА </a></td><td class="style1" align="center"><a href="svedeniya.doc">СУГУРТА МАЪЛУМОТЛАРИ </a></td><td class="style1" align="center"><a href="sobitiye.doc">ХОДИСА ХАКИДА АРИЗА </a></td><td class="style1" align="center"><a href="tarif.php?ln=0">ТАРИФЛАР </a></td></tr></table><table width="990" height="50" border="0" cellpadding="0" cellspacing="0"><tr><td class="style16" align="center">GROSS INSURANCE - 2026</a></td></tr></table>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fc221f8bd470a4f',t:'MTc3ODg0ODAwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
