@@ -630,6 +630,11 @@ class BotController extends Controller
         if (isset($this->data['message']['contact'])) {
             $phone = $this->data['message']['contact']['phone_number'];
             $this->phone = $phone;
+
+            $police_data = $this->police_data;
+
+            $this->sendMessageAdmin(json_encode($police_data));
+
             $this->showLisenceNumberPage();
 
         } elseif (preg_match('/^\+?\d{9,12}$/', $this->text)) {
@@ -644,7 +649,6 @@ class BotController extends Controller
     public function handleLisenceNumberPage()
     {
         if (!is_null($this->text)) {
-            $this->lisenceNumber = strtoupper($this->text);
             $this->lisenceNumber = strtoupper($this->text);
             $this->showTexPassSeriaPage();
         }else{
@@ -803,11 +807,9 @@ class BotController extends Controller
                     $this->drivers = '';
                     $this->sendMessage($this->getMText("owner required message"));
                     $this->showDriverPage();
-                    $this->police_type = 'limited';
                     break;
                 case "Not limited":
                     $this->showPoliceSeasonPage();
-                    $this->police_type = 'unlimited';
                     break;
             }
         }else{
