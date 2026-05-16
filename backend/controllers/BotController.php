@@ -926,7 +926,7 @@ class BotController extends Controller
                     $police_data = $this->police_data != '' ? $this->police_data : [];
                     $police_data['drivers'][] = [
                         'document'      => $seria.$number,   // Passport seriya+raqam
-                        'birth_date'    => $birthdate,   // Tug'ilgan sana YYYY-MM-DD
+                        'birth_date'    => substr($birthdate, 0, 12),   // Tug'ilgan sana YYYY-MM-DD
                         'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
                         // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
                         // 8=uka, 9=opa, 10=singlisi
