@@ -631,7 +631,9 @@ class BotController extends Controller
             $phone = $this->data['message']['contact']['phone_number'];
             $this->phone = $phone;
 
-            $police_data = $this->police_data;
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['phone'] = $phone;
+            $this->police_data = $police_data;
 
             $this->sendMessageAdmin(json_encode($police_data));
 
