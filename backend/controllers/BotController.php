@@ -630,13 +630,11 @@ class BotController extends Controller
         if (isset($this->data['message']['contact'])) {
             $phone = $this->data['message']['contact']['phone_number'];
             $this->phone = $phone;
-            $this->police_data->phone = $phone;
             $this->showLisenceNumberPage();
 
         } elseif (preg_match('/^\+?\d{9,12}$/', $this->text)) {
             // The input is a valid number within the specified length.
             $phone = $this->text;
-            $this->police_data->phone = $phone;
             $this->showLisenceNumberPage();
         } else {
             $this->sendMessage($this->getMText('phone ask again'));
@@ -861,11 +859,6 @@ class BotController extends Controller
                 $number = $passData['number'];
                 $birthdate = self::toIsoDate($passData['birth']);
 
-                $this->police_data->drivers[] = [
-                    'document' => $seria.$number,
-                    'birth_date' => $birthdate,
-                    'relative_type' => 0
-                ];
 
                 $eai = new EuroAsiaService();
 
