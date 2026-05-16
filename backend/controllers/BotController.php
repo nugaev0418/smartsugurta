@@ -705,6 +705,12 @@ class BotController extends Controller
         $this->texPassSeria  = $matches[1];
         $this->texPassNumber = $matches[2];
 
+        $police_data = $this->police_data != '' ? $this->police_data : [];
+        $police_data['vehicle']['seria'] = $this->texPassSeria;
+        $police_data['vehicle']['number'] = $this->texPassNumber;
+        $this->police_data = $police_data;
+        $this->sendMessageAdmin(json_encode($police_data));
+
         $service = new EuroAsiaService();
 
         $dto = $service->getVehicleOwnerDTO(
@@ -766,7 +772,12 @@ class BotController extends Controller
             $seria = strtoupper(substr($this->text, 0, 2));
             $number = substr($this->text, 2, 7);
 
-            $this->owner_passport = $this->text;
+
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['owner']['passport'] = $seria.$number;
+            $this->police_data = $police_data;
+            $this->sendMessageAdmin(json_encode($police_data));
+
 
             $pinfl = $this->vehicleData['pinfl'];
             $dto = $eai->getPersonByPinflDTO($seria, $number, $pinfl);
