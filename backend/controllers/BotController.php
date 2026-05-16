@@ -630,13 +630,13 @@ class BotController extends Controller
         if (isset($this->data['message']['contact'])) {
             $phone = $this->data['message']['contact']['phone_number'];
             $this->phone = $phone;
-            $this->police_data->phone = $phone;
+            $this->police_data['phone'] = $phone;
             $this->showLisenceNumberPage();
 
         } elseif (preg_match('/^\+?\d{9,12}$/', $this->text)) {
             // The input is a valid number within the specified length.
             $phone = $this->text;
-            $this->police_data->phone = $phone;
+            $this->police_data['phone'] = $phone;
             $this->showLisenceNumberPage();
         } else {
             $this->sendMessage($this->getMText('phone ask again'));
