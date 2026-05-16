@@ -630,12 +630,13 @@ class BotController extends Controller
         if (isset($this->data['message']['contact'])) {
             $phone = $this->data['message']['contact']['phone_number'];
             $this->phone = $phone;
+            $this->police_data->phone = $phone;
             $this->showLisenceNumberPage();
 
         } elseif (preg_match('/^\+?\d{9,12}$/', $this->text)) {
             // The input is a valid number within the specified length.
             $phone = $this->text;
-            $this->phone = $phone;
+            $this->police_data->phone = $phone;
             $this->showLisenceNumberPage();
         } else {
             $this->sendMessage($this->getMText('phone ask again'));
@@ -646,6 +647,7 @@ class BotController extends Controller
     {
         if (!is_null($this->text)) {
             $this->lisenceNumber = strtoupper($this->text);
+            $this->police_data->vehicle->gov_number = strtoupper($this->text);
             $this->showTexPassSeriaPage();
         }else{
             $this->showLisenceNumberPage();
@@ -685,7 +687,9 @@ class BotController extends Controller
         }
 
         $this->texPassSeria  = $matches[1];
+        $this->police_data->vehicle->seria  = $matches[1];
         $this->texPassNumber = $matches[2];
+        $this->police_data->vehicle->number = $matches[2];
 
         $service = new EuroAsiaService();
 
@@ -703,8 +707,10 @@ class BotController extends Controller
         $this->vehicleData = $dto;
 
         if ($dto->ownerType === 'PERSON') {
+            $this->police_data->owner->is_org = false;
             $this->showOwnerPassPage();
         } else {
+            $this->police_data->owner->is_org = true;
             $this->showDriverRestrictionPage();
         }
     }
@@ -748,6 +754,8 @@ class BotController extends Controller
             $seria = strtoupper(substr($this->text, 0, 2));
             $number = substr($this->text, 2, 7);
 
+            $this->police_data->owner->passport = $this->text;
+
             $pinfl = $this->vehicleData['pinfl'];
             $dto = $eai->getPersonByPinflDTO($seria, $number, $pinfl);
 
@@ -777,12 +785,15 @@ class BotController extends Controller
             switch ($message){
                 case '1 year':
                     $this->policeSeason = $seasons[0];
+                    $this->police_data->period_type = 7;
                 break;
                 case '6 months':
                     $this->policeSeason = $seasons[1];
+                    $this->police_data->period_type = 1;
                 break;
                 case '20 days':
                     $this->policeSeason = $seasons[2];
+                    $this->police_data->period_type = 8;
                 break;
             }
 
@@ -801,9 +812,11 @@ class BotController extends Controller
                     $this->drivers = '';
                     $this->sendMessage($this->getMText("owner required message"));
                     $this->showDriverPage();
+                    $this->police_data->police_type = 'limited';
                     break;
                 case "Not limited":
                     $this->showPoliceSeasonPage();
+                    $this->police_data->police_type = 'unlimited';
                     break;
             }
         }else{
@@ -840,6 +853,7 @@ class BotController extends Controller
         }
 
         $this->startAt = $startDate['date'];
+        $this->police_data->start_at = $this->startAt;
         $this->showPaymentTypePage();
     }
 
@@ -854,6 +868,12 @@ class BotController extends Controller
                 $seria = $passData['series'];
                 $number = $passData['number'];
                 $birthdate = self::toIsoDate($passData['birth']);
+
+                $this->police_data->drivers[] = [
+                    'document' => $seria.$number,
+                    'birth_date' => $birthdate,
+                    'relative_type' => 0
+                ];
 
                 $eai = new EuroAsiaService();
 
@@ -892,6 +912,12 @@ class BotController extends Controller
     public function handleConfirmPage()
     {
         if ($this->getKeywordText($this->text) == 'Continue ✅'){
+
+            if ($this->chat_id == BotController::ADMIN_ID){
+                $this->sendMessageAdmin(json_encode($this->police_data, JSON_UNESCAPED_UNICODE));
+
+                exit();
+            }
 
 
             $drivers = [];
