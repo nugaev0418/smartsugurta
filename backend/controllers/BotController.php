@@ -659,6 +659,12 @@ class BotController extends Controller
         if (!is_null($this->text)) {
             $this->lisenceNumber = strtoupper($this->text);
             $this->showTexPassSeriaPage();
+
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['vehicle']['gov_number'] = $this->lisenceNumber;
+            $this->police_data = $police_data;
+            $this->sendMessageAdmin(json_encode($police_data));
+
         }else{
             $this->showLisenceNumberPage();
         }
