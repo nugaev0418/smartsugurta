@@ -808,14 +808,22 @@ class BotController extends Controller
             switch ($message){
                 case '1 year':
                     $this->policeSeason = $seasons[0];
+                    $mavsum = 7;
                 break;
                 case '6 months':
                     $this->policeSeason = $seasons[1];
+                    $mavsum = 1;
                 break;
                 case '20 days':
                     $this->policeSeason = $seasons[2];
+                    $mavsum = 8;
                 break;
             }
+
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['period_type'] = $mavsum;
+            $this->police_data = $police_data;
+            $this->sendMessageAdmin(json_encode($police_data));
 
             $this->showStartAtPage();
         }else{
@@ -832,11 +840,20 @@ class BotController extends Controller
                     $this->drivers = '';
                     $this->sendMessage($this->getMText("owner required message"));
                     $this->showDriverPage();
+                    $type_limit = 'limited';
                     break;
                 case "Not limited":
                     $this->showPoliceSeasonPage();
+                    $type_limit = 'unlimited';
                     break;
             }
+
+
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['policy_type'] = $type_limit;
+            $this->police_data = $police_data;
+            $this->sendMessageAdmin(json_encode($police_data));
+
         }else{
             $this->showDriverRestrictionPage();
         }
@@ -871,6 +888,12 @@ class BotController extends Controller
         }
 
         $this->startAt = $startDate['date'];
+
+        $police_data = $this->police_data != '' ? $this->police_data : [];
+        $police_data['startAt'] = $this->startAt;
+        $this->police_data = $police_data;
+        $this->sendMessageAdmin(json_encode($police_data));
+
         $this->showPaymentTypePage();
     }
 
@@ -897,6 +920,21 @@ class BotController extends Controller
                     $drivers = $this->drivers != '' ? $this->drivers : [];
                     $drivers[] = $dto;
                     $this->drivers = $drivers;
+
+
+
+                    $police_data = $this->police_data != '' ? $this->police_data : [];
+                    $police_data['drivers'][] = [
+                        'document'      => $seria.$number,   // Passport seriya+raqam
+                        'birth_date'    => $birthdate,   // Tug'ilgan sana YYYY-MM-DD
+                        'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
+                        // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
+                        // 8=uka, 9=opa, 10=singlisi
+                    ];
+                    $this->police_data = $police_data;
+                    $this->sendMessageAdmin(json_encode($police_data));
+
+
 
                     $count = count($drivers);
 
