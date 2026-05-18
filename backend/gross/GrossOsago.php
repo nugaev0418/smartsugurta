@@ -77,9 +77,12 @@ class GrossOsago
         $kbm = $isOrg ? 1.0 : $this->resolveKbm($ownerPinfl, $sessionDir);
 
 
-        /*
-
         $contractData = $this->buildContract($policyData, $vehicleResult, $ownerSection, $drivers, $phone, $kbm);
+
+
+        print_r($contractData); die();
+
+
         $contractResp = $this->call('contract',
             fn() => $this->http->createContract($contractData),
             $sessionDir
@@ -90,11 +93,11 @@ class GrossOsago
         $anketaId = (string) ($contractResp['anketa_id'] ?? '');
         $premium  = (int) ($contractResp['premium'] ?? 0);
 
-        */
 
-        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
-        $anketaId = '5647130';
-        $premium  = '56000';
+
+//        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
+//        $anketaId = '5647130';
+//        $premium  = '56000';
 
 
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
@@ -342,11 +345,11 @@ class GrossOsago
         $number     = strtoupper($policyData['vehicle']['number']);
         $prefix     = substr($vehicleResult['govNumber'], 0, 2);
 
-        $today   = date('Y-m-d');
+        $startDate   = $policyData['start_date'];
         $endDate = match ($periodType) {
-            1       => date('Y-m-d', strtotime('+6 months -1 day')),
-            8       => date('Y-m-d', strtotime('+20 days -1 day')),
-            default => date('Y-m-d', strtotime('+1 year -1 day')),
+            1 => date('Y-m-d', strtotime($startDate . ' +6 months -1 day')),
+            8 => date('Y-m-d', strtotime($startDate . ' +20 days -1 day')),
+            default => date('Y-m-d', strtotime($startDate . ' +1 year -1 day')),
         };
 
         $applicant = array_merge($ownerSection, ['phone' => $phone]);
@@ -381,7 +384,7 @@ class GrossOsago
             "drivers"   => $drivers,
             "period"    => [
                 "period_type" => $periodType,
-                "start_date"  => $today,
+                "start_date"  => $startDate,
                 "end_date"    => $endDate,
             ],
             "is_discountable"                     => false,

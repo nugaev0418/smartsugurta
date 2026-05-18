@@ -27,6 +27,7 @@ class GrossController extends \yii\console\Controller
         // Polisa
         'policy_type' => 'limited',       // 'limited' (cheklangan) | 'unlimited' (cheklanmagan)
         'period_type' => 8,               // 1 = 6 oy  |  7 = 1 yil  |  8 = 20 kun
+        'start_date' => '2026-05-20',
 
         // Kontakt telefon +998 qo'shmaysan 7 ta raqam kiritilishi kerak.
         'phone' => '979100553',
