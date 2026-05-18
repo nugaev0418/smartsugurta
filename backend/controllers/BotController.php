@@ -727,8 +727,20 @@ class BotController extends Controller
         $this->vehicleData = $dto;
 
         if ($dto->ownerType === 'PERSON') {
+
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['owner']['is_org'] = false;
+            $this->police_data = $police_data;
+            $this->sendMessageAdmin(json_encode($police_data));
+
             $this->showOwnerPassPage();
         } else {
+
+            $police_data = $this->police_data != '' ? $this->police_data : [];
+            $police_data['owner']['is_org'] = true;
+            $this->police_data = $police_data;
+            $this->sendMessageAdmin(json_encode($police_data));
+
             $this->showDriverRestrictionPage();
         }
     }
@@ -890,7 +902,7 @@ class BotController extends Controller
         $this->startAt = $startDate['date'];
 
         $police_data = $this->police_data != '' ? $this->police_data : [];
-        $police_data['startAt'] = $this->startAt;
+        $police_data['start_date'] = $this->startAt;
         $this->police_data = $police_data;
         $this->sendMessageAdmin(json_encode($police_data));
 
@@ -926,7 +938,7 @@ class BotController extends Controller
                     $police_data = $this->police_data != '' ? $this->police_data : [];
                     $police_data['drivers'][] = [
                         'document'      => $seria.$number,   // Passport seriya+raqam
-                        'birth_date'    => substr($birthdate, 0, 12),   // Tug'ilgan sana YYYY-MM-DD
+                        'birth_date'    => substr($birthdate, 0, 10),   // Tug'ilgan sana YYYY-MM-DD
                         'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
                         // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
                         // 8=uka, 9=opa, 10=singlisi
