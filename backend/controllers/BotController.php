@@ -5,6 +5,7 @@ namespace backend\controllers;
 use backend\component\EuroAsiaService;
 use backend\models\EuroAsia;
 use backend\models\Pages;
+use backend\queue\GrossOsagoJob;
 use backend\queue\PaynetQueue;
 use common\models\Botuser;
 use common\models\History;
@@ -976,119 +977,135 @@ class BotController extends Controller
         if ($this->getKeywordText($this->text) == 'Continue ✅'){
 
 
-            $drivers = [];
-            if ($this->drivers != ''){
-                foreach ($this->drivers as $driver) {
-                    $drivers[] = [
-                        "passportBirthdate" => $driver['birthDate'],
-                        "passportNumber" => $driver['number'],
-                        "passportSeria" => $driver['seria'],
-                        "relativeId" => ""
+// GROSS SUGURTAGA YUBORISH
+            if ($this->chat_id == BotController::ADMIN_ID){
+
+                $police_data = $this->police_data;
+                $result = Yii::$app->grossQueue->push(new GrossOsagoJob(
+                    $police_data
+                ));
+
+                $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
+                $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
+
+                $this->sendMessage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilb beramiz!");
+
+            }else{
+// EAI SUGURTAGA YUBORISH
+                $drivers = [];
+                if ($this->drivers != ''){
+                    foreach ($this->drivers as $driver) {
+                        $drivers[] = [
+                            "passportBirthdate" => $driver['birthDate'],
+                            "passportNumber" => $driver['number'],
+                            "passportSeria" => $driver['seria'],
+                            "relativeId" => ""
+                        ];
+                    }
+                }
+
+
+
+                $vehicle = [
+                    'licenseNumber' => $this->lisenceNumber,
+                    'techPassportNumber' => $this->texPassNumber,
+                    'techPassportSeria' => $this->texPassSeria
+                ];
+
+
+
+
+                if ($this->vehicleData['ownerType'] == 'PERSON'){
+                    $owner = [
+                        'isInsurant' => false,
+                        'type' => 'PERSON',
+                        'person' => [
+                            'passportNumber' => $this->ownerData['number'],
+                            'passportSeria' => $this->ownerData['seria']
+                        ]
+                    ];
+
+                    $insurant = [
+                        'type' => 'PERSON',
+                        'phoneNumber' => $this->phone,
+                        'person' => [
+                            'passportNumber' => $this->ownerData['number'],
+                            'passportSeria' => $this->ownerData['seria'],
+                            'passportBirthdate' => $this->ownerData['birthDate']
+                        ],
+                        'districtId' =>  $this->ownerData['districtId']
+                    ];
+                }else{
+
+
+                    $owner = [
+                        'isInsurant' => true,
+                        'type' => 'ORGANIZATION',
+                        'organization' => [
+                            'inn' => $this->vehicleData['inn'],
+                        ]
+                    ];
+
+                    $insurant = [
+                        'type' => 'ORGANIZATION',
+                        'phoneNumber' => $this->phone,
+                        'organization' => [
+                            'inn' => $this->vehicleData['inn'],
+                        ],
                     ];
                 }
-            }
-
-
-
-            $vehicle = [
-                'licenseNumber' => $this->lisenceNumber,
-                'techPassportNumber' => $this->texPassNumber,
-                'techPassportSeria' => $this->texPassSeria
-            ];
 
 
 
 
-            if ($this->vehicleData['ownerType'] == 'PERSON'){
-                $owner = [
-                    'isInsurant' => false,
-                    'type' => 'PERSON',
-                    'person' => [
-                        'passportNumber' => $this->ownerData['number'],
-                        'passportSeria' => $this->ownerData['seria']
-                    ]
+
+
+                $seasonalInsuranceId = $this->policeSeason['id'];
+                $billingGateway = $this->paymentType;
+                $startAt = self::toIsoDate($this->startAt);
+                $driverRestriction = $this->driverRestriction == 'Limited' ? true : false;
+
+
+                $data = [
+                    'vehicle' => $vehicle,
+                    'owner' => $owner,
+                    'insurant' => $insurant,
+                    'drivers' => $drivers,
+                    'billingGateway' => $billingGateway,
+                    'driverRestriction' => $driverRestriction,
+                    'seasonalInsuranceId' => $seasonalInsuranceId,
+                    'startAt' => $startAt,
                 ];
 
-                $insurant = [
-                    'type' => 'PERSON',
-                    'phoneNumber' => $this->phone,
-                    'person' => [
-                        'passportNumber' => $this->ownerData['number'],
-                        'passportSeria' => $this->ownerData['seria'],
-                        'passportBirthdate' => $this->ownerData['birthDate']
-                    ],
-                    'districtId' =>  $this->ownerData['districtId']
-                ];
-            }else{
+
+                $eai = new EuroAsiaService();
+                $dto = $eai->createOsagoDTO($data);
 
 
-                $owner = [
-                    'isInsurant' => true,
-                    'type' => 'ORGANIZATION',
-                    'organization' => [
-                        'inn' => $this->vehicleData['inn'],
-                    ]
-                ];
+                if ($dto->success){
 
-                $insurant = [
-                    'type' => 'ORGANIZATION',
-                    'phoneNumber' => $this->phone,
-                    'organization' => [
-                        'inn' => $this->vehicleData['inn'],
-                    ],
-                ];
-            }
+                    $botuser = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
+                    $season = SeasonalInsurance::find()->where(['seasonId' => $seasonalInsuranceId])->one();
 
 
+                    $police = new Police();
+                    $police->policeId = $dto->policyId;
+                    $police->user_id = $botuser->id;
+                    $police->startAt = date('Y-m-d', strtotime($this->startAt));
+                    $police->paymentLink = $dto->paymentLink;
+                    $police->paymentId = $dto->paymentId;
+                    $police->gateway = $billingGateway;
+                    $police->amount = 64000;
+                    $police->driverRestriction = $driverRestriction;
+                    $police->season_id = $season->id;
+                    $police->save(false);
 
 
-
-
-            $seasonalInsuranceId = $this->policeSeason['id'];
-            $billingGateway = $this->paymentType;
-            $startAt = self::toIsoDate($this->startAt);
-            $driverRestriction = $this->driverRestriction == 'Limited' ? true : false;
-
-
-            $data = [
-                'vehicle' => $vehicle,
-                'owner' => $owner,
-                'insurant' => $insurant,
-                'drivers' => $drivers,
-                'billingGateway' => $billingGateway,
-                'driverRestriction' => $driverRestriction,
-                'seasonalInsuranceId' => $seasonalInsuranceId,
-                'startAt' => $startAt,
-            ];
-
-
-            $eai = new EuroAsiaService();
-            $dto = $eai->createOsagoDTO($data);
-
-
-            if ($dto->success){
-
-                $botuser = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
-                $season = SeasonalInsurance::find()->where(['seasonId' => $seasonalInsuranceId])->one();
-
-
-                $police = new Police();
-                $police->policeId = $dto->policyId;
-                $police->user_id = $botuser->id;
-                $police->startAt = date('Y-m-d', strtotime($this->startAt));
-                $police->paymentLink = $dto->paymentLink;
-                $police->paymentId = $dto->paymentId;
-                $police->gateway = $billingGateway;
-                $police->amount = 64000;
-                $police->driverRestriction = $driverRestriction;
-                $police->season_id = $season->id;
-                $police->save(false);
-
-
-                $text = sprintf($this->getMText('Your insurance is ready'), $police->id, $dto->paymentLink);
-                $this->showMainPage($text);
-            }else{
-                $this->sendMessage('Nimadir xato boldi');
+                    $text = sprintf($this->getMText('Your insurance is ready'), $police->id, $dto->paymentLink);
+                    $this->showMainPage($text);
+                }else{
+                    $this->sendMessage('Nimadir xato boldi');
+                }
             }
 
         }
