@@ -40,6 +40,14 @@ class Police extends \yii\db\ActiveRecord
         PROVIDER_EAI = 1,
         PROVIDER_GROSS = 2;
 
+    public static function getProviderList(): array
+    {
+        return [
+            self::PROVIDER_EAI   => 'EAI',
+            self::PROVIDER_GROSS => 'GROSS',
+        ];
+    }
+
 
     /**
      * {@inheritdoc}

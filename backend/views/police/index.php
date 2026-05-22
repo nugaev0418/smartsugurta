@@ -33,6 +33,11 @@ $this->params['breadcrumbs'][] = $this->title;
             'id',
             'user_id',
             'provider_id',
+                [
+                        'attribute' => 'provider_id',
+                        'value'     => fn($model) => Police::getProviderList()[$model->provider_id] ?? 'Unknown',
+                        'filter'    => Police::getProviderList(),   // renders a <select> in the filter row
+                ],
             'policeId',
             'anketa_id',
             'startAt',
