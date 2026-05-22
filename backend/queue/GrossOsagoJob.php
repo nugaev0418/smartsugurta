@@ -198,6 +198,8 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                     $dto->paymentLink
                 );
 
+                $this->sendMessage($this->chatId, $text);
+
                 return;
 
             } catch (\Throwable $e) {
