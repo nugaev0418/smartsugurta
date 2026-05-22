@@ -1072,7 +1072,7 @@ class BotController extends Controller
 
                 $police_data = [
                     'policyDataGross' => $this->police_data,
-                    'police=yDataEAI' => $eaiData,
+                    'policyDataEAI' => $eaiData,
                     'chat_id' => $this->chat_id,
                 ];
 
