@@ -149,7 +149,7 @@ class PoliceController extends Controller
         $tenDaysAgo = date('Y-m-d H:i:s', strtotime('-10 days'));
 
         $polices = Police::find()
-            ->where(['status' => 0])
+            ->where(['status' => 0, 'provider_id' => Police::PROVIDER_EAI])
             ->andWhere(['>=', 'created_at', $tenDaysAgo])
             ->all();
 

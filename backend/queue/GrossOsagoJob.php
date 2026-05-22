@@ -31,14 +31,13 @@ class GrossOsagoJob extends BaseObject implements JobInterface
     {
         Yii::info("GrossOsagoJob (pid: " . getmypid() . ") - Started", 'gross');
 
-//        if ($this->tryGross()) {
-//            return;
-//        }
+        if ($this->tryGross()) {
+            return;
+        }
 
         $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz. EuroAsia orqali urinilmoqda...");
 
 
-//        die();
         $this->tryEuroAsia();
     }
 
@@ -103,7 +102,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
 
 
                 $text = sprintf(
-                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> <a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>"
+                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> \n<a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>"
                     ,
                     $police->id,
                     $result['payme_url'],
@@ -192,7 +191,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 );
 
                 $text = sprintf(
-                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> <a href='%s'>👉 To'lov / Оплата</a>"
+                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> \n<a href='%s'>👉 To'lov / Оплата</a>"
                     ,
                     $police->id,
                     $dto->paymentLink
