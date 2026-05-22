@@ -1076,7 +1076,6 @@ class BotController extends Controller
                     'chat_id' => $this->chat_id,
                 ];
 
-                $police_data_gross = $this->police_data;
                 $result = Yii::$app->grossQueue->push(new GrossOsagoJob(
                     $data
                 ));
