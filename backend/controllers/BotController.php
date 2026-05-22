@@ -1071,8 +1071,8 @@ class BotController extends Controller
 
 
                 $police_data = [
-                    'policeDataGross' => $this->police_data,
-                    'policeDataEAI' => $eaiData,
+                    'policyDataGross' => $this->police_data,
+                    'police=yDataEAI' => $eaiData,
                     'chat_id' => $this->chat_id,
                 ];
 
@@ -1080,7 +1080,7 @@ class BotController extends Controller
                     $police_data
                 ));
 
-                $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
+//                $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
                 $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
 
                 $this->showMainPage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilib beramiz!");
