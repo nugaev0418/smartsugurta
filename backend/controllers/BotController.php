@@ -980,12 +980,108 @@ class BotController extends Controller
 // GROSS SUGURTAGA YUBORISH
             if ($this->chat_id == BotController::ADMIN_ID){
 
-                $police_data = $this->police_data;
+
+
+
+
+                /***** CREATE EAI DATA ****/
+
+                $drivers = [];
+                if ($this->drivers != ''){
+                    foreach ($this->drivers as $driver) {
+                        $drivers[] = [
+                            "passportBirthdate" => $driver['birthDate'],
+                            "passportNumber" => $driver['number'],
+                            "passportSeria" => $driver['seria'],
+                            "relativeId" => ""
+                        ];
+                    }
+                }
+
+
+
+                $vehicle = [
+                    'licenseNumber' => $this->lisenceNumber,
+                    'techPassportNumber' => $this->texPassNumber,
+                    'techPassportSeria' => $this->texPassSeria
+                ];
+
+
+
+
+                if ($this->vehicleData['ownerType'] == 'PERSON'){
+                    $owner = [
+                        'isInsurant' => false,
+                        'type' => 'PERSON',
+                        'person' => [
+                            'passportNumber' => $this->ownerData['number'],
+                            'passportSeria' => $this->ownerData['seria']
+                        ]
+                    ];
+
+                    $insurant = [
+                        'type' => 'PERSON',
+                        'phoneNumber' => $this->phone,
+                        'person' => [
+                            'passportNumber' => $this->ownerData['number'],
+                            'passportSeria' => $this->ownerData['seria'],
+                            'passportBirthdate' => $this->ownerData['birthDate']
+                        ],
+                        'districtId' =>  $this->ownerData['districtId']
+                    ];
+                }else{
+
+
+                    $owner = [
+                        'isInsurant' => true,
+                        'type' => 'ORGANIZATION',
+                        'organization' => [
+                            'inn' => $this->vehicleData['inn'],
+                        ]
+                    ];
+
+                    $insurant = [
+                        'type' => 'ORGANIZATION',
+                        'phoneNumber' => $this->phone,
+                        'organization' => [
+                            'inn' => $this->vehicleData['inn'],
+                        ],
+                    ];
+                }
+
+
+                $seasonalInsuranceId = $this->policeSeason['id'];
+                $billingGateway = $this->paymentType;
+                $startAt = self::toIsoDate($this->startAt);
+                $driverRestriction = $this->driverRestriction == 'Limited' ? true : false;
+
+
+                $eaiData = [
+                    'vehicle' => $vehicle,
+                    'owner' => $owner,
+                    'insurant' => $insurant,
+                    'drivers' => $drivers,
+                    'billingGateway' => $billingGateway,
+                    'driverRestriction' => $driverRestriction,
+                    'seasonalInsuranceId' => $seasonalInsuranceId,
+                    'startAt' => $startAt,
+                ];
+
+                /***** END CREATE EAI DATA ****/
+
+
+                $data = [
+                    'policeDataGross' => $this->police_data,
+                    'policeDataEAI' => $eaiData,
+                    'chat_id' => $this->chat_id,
+                ];
+
+                $police_data_gross = $this->police_data;
                 $result = Yii::$app->grossQueue->push(new GrossOsagoJob(
-                    $police_data
+                    $data
                 ));
 
-                $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
+                $this->sendMessageAdmin(json_encode($police_data_gross, JSON_PRETTY_PRINT));
                 $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
 
                 $this->showMainPage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilib beramiz!");
