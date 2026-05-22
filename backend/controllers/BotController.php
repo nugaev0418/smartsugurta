@@ -984,7 +984,9 @@ class BotController extends Controller
 // GROSS SUGURTAGA YUBORISH
             $prefix = substr($this->licenseNumber, 0, 2);
 
-            if ($prefix === '10' || $prefix === '01') {
+            if ($prefix != '10' && $prefix != '01') {
+
+                $this->sendMessageAdmin('Toshkent Avtomobili emas');
 
                 /***** CREATE EAI DATA ****/
 
@@ -1089,6 +1091,8 @@ class BotController extends Controller
 
             }else{
 // EAI SUGURTAGA YUBORISH
+
+                $this->sendMessageAdmin('Toshkent Avtomobili');
                 $drivers = [];
                 if ($this->drivers != ''){
                     foreach ($this->drivers as $driver) {
