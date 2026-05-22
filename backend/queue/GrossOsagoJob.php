@@ -102,6 +102,17 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 $police->save(false);
 
 
+                $text = sprintf(
+                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> <a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>"
+                    ,
+                    $police->id,
+                    $result['payme_url'],
+                    $result['click_url']
+                );
+
+                $this->sendMessage($this->chatId, $text);
+
+
                 return true;
 
             } catch (\Throwable $e) {
@@ -178,6 +189,13 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                     "✅ EuroAsia muvaffaqiyatli (urinish {$attempt}/{$this->maxAttempts}):\n"
                     . "policeId: {$dto->policyId}\n"
                     . "paymentLink: {$dto->paymentLink}"
+                );
+
+                $text = sprintf(
+                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> <a href='%s'>👉 To'lov / Оплата</a>"
+                    ,
+                    $police->id,
+                    $dto->paymentLink
                 );
 
                 return;
