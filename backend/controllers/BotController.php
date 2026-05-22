@@ -982,11 +982,9 @@ class BotController extends Controller
 
 
 // GROSS SUGURTAGA YUBORISH
-            if ($this->chat_id == BotController::ADMIN_ID){
+            $prefix = substr($this->licenseNumber, 0, 2);
 
-
-
-
+            if ($prefix === '10' || $prefix === '01') {
 
                 /***** CREATE EAI DATA ****/
 
