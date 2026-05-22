@@ -903,7 +903,11 @@ class BotController extends Controller
         $this->startAt = $startDate['date'];
 
         $police_data = $this->police_data != '' ? $this->police_data : [];
-        $police_data['start_date'] = $this->startAt;
+        $police_data['start_date'] = DateTime::createFromFormat(
+            'd.m.Y',
+            $this->startAt
+        )->format('Y-m-d');
+
         $this->police_data = $police_data;
         $this->sendMessageAdmin(json_encode($police_data));
 

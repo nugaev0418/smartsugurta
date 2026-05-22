@@ -80,7 +80,7 @@ class GrossOsago
         $contractData = $this->buildContract($policyData, $vehicleResult, $ownerSection, $drivers, $phone, $kbm);
 
 
-//        print_r($contractData);
+        print_r($contractData);
 
 
         $contractResp = $this->call('contract',
