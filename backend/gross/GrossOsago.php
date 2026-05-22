@@ -83,21 +83,21 @@ class GrossOsago
         print_r($contractData);
 
 
-//        $contractResp = $this->call('contract',
-//            fn() => $this->http->createContract($contractData),
-//            $sessionDir
-//        );
-//        if (!$contractResp) throw new RuntimeException("Shartnoma yaratilmadi");
-//
-//        $uuid     = $contractResp['uuid']       ?? ($contractResp['data']['uuid'] ?? null);
-//        $anketaId = (string) ($contractResp['anketa_id'] ?? '');
-//        $premium  = (int) ($contractResp['premium'] ?? 0);
+        $contractResp = $this->call('contract',
+            fn() => $this->http->createContract($contractData),
+            $sessionDir
+        );
+        if (!$contractResp) throw new RuntimeException("Shartnoma yaratilmadi");
+
+        $uuid     = $contractResp['uuid']       ?? ($contractResp['data']['uuid'] ?? null);
+        $anketaId = (string) ($contractResp['anketa_id'] ?? '');
+        $premium  = (int) ($contractResp['premium'] ?? 0);
 
 
 
-        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
-        $anketaId = '5647130';
-        $premium  = '56000';
+//        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
+//        $anketaId = '5647130';
+//        $premium  = '56000';
 
 
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
