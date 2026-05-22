@@ -178,7 +178,7 @@ class PoliceController extends Controller
 
                     if (EuroAsia::download($police->policeId)){
                         $filePath = new CURLFile(Yii::getAlias('policeFiles/' . $police->policeId . '.pdf'));
-                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurta</b>";
+                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurtabot</b>";
                         $this->sendDocument($filePath, $text);
 
                         $this->addBonuse($user, $police->amount);
@@ -226,7 +226,7 @@ class PoliceController extends Controller
 
                     if (self::grossDownload($police->policeId)){
                         $filePath = new CURLFile(Yii::getAlias('policeFiles/' . $police->policeId . '.pdf'));
-                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurta</b>";
+                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurtabot</b>";
                         $this->sendDocument($filePath, $text);
 
                         $this->addBonuse($user, $police->amount);
