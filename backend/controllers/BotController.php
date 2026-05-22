@@ -1070,17 +1070,17 @@ class BotController extends Controller
                 /***** END CREATE EAI DATA ****/
 
 
-                $data = [
+                $police_data = [
                     'policeDataGross' => $this->police_data,
                     'policeDataEAI' => $eaiData,
                     'chat_id' => $this->chat_id,
                 ];
 
                 $result = Yii::$app->grossQueue->push(new GrossOsagoJob(
-                    $data
+                    $police_data
                 ));
 
-                $this->sendMessageAdmin(json_encode($data, JSON_PRETTY_PRINT));
+                $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
                 $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
 
                 $this->showMainPage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilib beramiz!");
