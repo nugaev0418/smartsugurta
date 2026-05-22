@@ -1080,7 +1080,7 @@ class BotController extends Controller
                     $data
                 ));
 
-                $this->sendMessageAdmin(json_encode($police_data_gross, JSON_PRETTY_PRINT));
+                $this->sendMessageAdmin(json_encode($data, JSON_PRETTY_PRINT));
                 $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
 
                 $this->showMainPage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilib beramiz!");
