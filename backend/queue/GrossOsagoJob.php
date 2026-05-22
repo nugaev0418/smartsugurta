@@ -31,14 +31,14 @@ class GrossOsagoJob extends BaseObject implements JobInterface
     {
         Yii::info("GrossOsagoJob (pid: " . getmypid() . ") - Started", 'gross');
 
-        if ($this->tryGross()) {
-            return;
-        }
+//        if ($this->tryGross()) {
+//            return;
+//        }
 
         $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz. EuroAsia orqali urinilmoqda...");
 
 
-        die();
+//        die();
         $this->tryEuroAsia();
     }
 
@@ -231,6 +231,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
         Yii::$app->telegram->sendMessage([
             'chat_id' => $chatId,
             'text'    => $text,
+            'parse_mode' => 'HTML'
         ]);
     }
 
