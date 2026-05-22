@@ -80,24 +80,24 @@ class GrossOsago
         $contractData = $this->buildContract($policyData, $vehicleResult, $ownerSection, $drivers, $phone, $kbm);
 
 
-        print_r($contractData); die();
+        print_r($contractData);
 
 
-        $contractResp = $this->call('contract',
-            fn() => $this->http->createContract($contractData),
-            $sessionDir
-        );
-        if (!$contractResp) throw new RuntimeException("Shartnoma yaratilmadi");
+//        $contractResp = $this->call('contract',
+//            fn() => $this->http->createContract($contractData),
+//            $sessionDir
+//        );
+//        if (!$contractResp) throw new RuntimeException("Shartnoma yaratilmadi");
+//
+//        $uuid     = $contractResp['uuid']       ?? ($contractResp['data']['uuid'] ?? null);
+//        $anketaId = (string) ($contractResp['anketa_id'] ?? '');
+//        $premium  = (int) ($contractResp['premium'] ?? 0);
 
-        $uuid     = $contractResp['uuid']       ?? ($contractResp['data']['uuid'] ?? null);
-        $anketaId = (string) ($contractResp['anketa_id'] ?? '');
-        $premium  = (int) ($contractResp['premium'] ?? 0);
 
 
-
-//        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
-//        $anketaId = '5647130';
-//        $premium  = '56000';
+        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
+        $anketaId = '5647130';
+        $premium  = '56000';
 
 
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
@@ -131,11 +131,11 @@ class GrossOsago
 
     private function ensureLoggedIn(int $maxAttempts = 3): void
     {
-        // PHPSESSID cookie faylda bo'lsa — cURL avtomatik yuboradi,
-        // full.php da bo'lgani kabi sessiya server tomonida faol deb hisoblanadi
-        if ($this->hasSessionCookie()) {
+        if ($this->isSessionAlive()) {
             return;
         }
+
+        $this->clearSessionCookie();
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $html = $this->http->openHome();
@@ -160,13 +160,22 @@ class GrossOsago
         throw new RuntimeException("Login muvaffaqiyatsiz ({$maxAttempts} ta urinishdan so'ng)");
     }
 
-    private function hasSessionCookie(): bool
+    private function isSessionAlive(): bool
     {
-        $cookieFile = __DIR__ . '/gross_cookie.txt';
-        if (!file_exists($cookieFile)) {
+        try {
+            $html = $this->http->dashboard();
+            return stripos($html, 'name="UserName"') === false;
+        } catch (\Throwable) {
             return false;
         }
-        return str_contains((string) file_get_contents($cookieFile), 'PHPSESSID');
+    }
+
+    private function clearSessionCookie(): void
+    {
+        $cookieFile = __DIR__ . '/gross_cookie.txt';
+        if (file_exists($cookieFile)) {
+            unlink($cookieFile);
+        }
     }
 
     // ================================================================
