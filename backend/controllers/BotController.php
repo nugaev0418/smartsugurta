@@ -633,7 +633,7 @@ class BotController extends Controller
             $this->phone = $phone;
 
             $police_data = [];
-            $police_data['phone'] = $phone;
+            $police_data['phone'] = substr($phone, -7);
             $this->police_data = $police_data;
 
             $this->sendMessageAdmin(json_encode($police_data));
@@ -988,7 +988,7 @@ class BotController extends Controller
                 $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
                 $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
 
-                $this->sendMessage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilb beramiz!");
+                $this->showMainPage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilib beramiz!");
 
             }else{
 // EAI SUGURTAGA YUBORISH

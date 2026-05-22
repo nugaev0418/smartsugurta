@@ -42,6 +42,13 @@ class GrossController extends \yii\console\Controller
                 // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
                 // 8=uka, 9=opa, 10=singlisi
             ],
+            [
+                'document'      => 'AD8785312',   // Passport seriya+raqam
+                'birth_date'    => '1991-01-21',   // Tug'ilgan sana YYYY-MM-DD
+                'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
+                // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
+                // 8=uka, 9=opa, 10=singlisi
+            ],
         ],
 
         ];

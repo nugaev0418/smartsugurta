@@ -27,6 +27,10 @@ return [
           ],
     ],
     'components' => [
+        'telegram' => [
+            'class' => '\common\eleirbag\Telegram',
+            'bot_token' => '7947772006:AAEVLefQESHAH633U1SI1LafqTlPNm3Wenw',
+        ],
         'authManager' => [
             'class' => 'yii\rbac\DbManager', // or use
         ],
@@ -43,7 +47,7 @@ return [
             'targets' => [
                 [
                     'class' => \yii\log\FileTarget::class,
-                    'levels' => ['error', 'warning'],
+                    'levels' => ['error', 'warning', 'info'],
                 ],
             ],
         ],
