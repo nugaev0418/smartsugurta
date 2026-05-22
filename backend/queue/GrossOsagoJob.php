@@ -74,6 +74,32 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                     . json_encode($result, JSON_PRETTY_PRINT)
                 );
 
+
+                $botuser = Botuser::find()->where(['chat_id' => $this->chatId])->one();
+                if (!$botuser) {
+                    throw new \RuntimeException("Botuser topilmadi (chat_id: {$this->chatId})");
+                }
+
+                $season = SeasonalInsurance::find()
+                    ->where(['seasonId' => $this->policyDataEAI['seasonalInsuranceId']])
+                    ->one();
+                if (!$season) {
+                    throw new \RuntimeException("SeasonalInsurance topilmadi (seasonId: {$this->policyDataEAI['seasonalInsuranceId']})");
+                }
+
+                $police                    = new Police();
+                $police->policeId          = $result['uuid'];
+                $police->user_id           = $botuser->id;
+                $police->startAt           = date('Y-m-d', strtotime($this->policyDataEAI['startAt']));
+                $police->paymentLink       = "CLICK: {$result['click_url']}\nPayme: {$result['payme_url']}";
+                $police->paymentId         = 0;
+                $police->gateway           = $this->policyDataEAI['billingGateway'];
+                $police->amount            = $result['premium'];
+                $police->driverRestriction = $this->policyDataEAI['driverRestriction'];
+                $police->season_id         = $season->id;
+                $police->save(false);
+
+
                 return true;
 
             } catch (\Throwable $e) {
