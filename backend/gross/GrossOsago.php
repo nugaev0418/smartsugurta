@@ -100,9 +100,9 @@ class GrossOsago
 
 
 
-        $uuid     = 'b50f1184-32dd-40dc-9020-60ed187cb540';
-        $anketaId = '5647130';
-        $premium  = '56000';
+        $uuid     = '060162d5-2432-4137-9783-bc25061c680d';
+        $anketaId = '5574337';
+        $premium  = '320000';
 
 
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);

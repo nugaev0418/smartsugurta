@@ -17,7 +17,7 @@ class PoliceSearch extends Police
     public function rules()
     {
         return [
-            [['id', 'user_id', 'status', 'amount', 'driverRestriction', 'season_id', 'provider_id'], 'integer'],
+            [['id', 'user_id', 'status', 'amount', 'driverRestriction', 'season_id', 'provider_id', 'anketa_id'], 'integer'],
             [['policeId', 'startAt', 'endAt', 'pdfUrl', 'paymentId', 'paymentLink', 'gateway', 'created_at', 'updated_at'], 'safe'],
         ];
     }
@@ -70,6 +70,7 @@ class PoliceSearch extends Police
             'endAt' => $this->endAt,
             'status' => $this->status,
             'provider_id' => $this->provider_id,
+            'anketa_id' => $this->anketa_id,
             'amount' => $this->amount,
             'driverRestriction' => $this->driverRestriction,
             'season_id' => $this->season_id,
