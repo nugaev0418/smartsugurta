@@ -1197,6 +1197,7 @@ class BotController extends Controller
                     $police->amount = 64000;
                     $police->driverRestriction = $driverRestriction;
                     $police->season_id = $season->id;
+                    $police->provider_id = Police::PROVIDER_EAI;
                     $police->save(false);
 
 
