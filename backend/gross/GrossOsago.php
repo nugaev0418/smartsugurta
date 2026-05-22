@@ -80,13 +80,18 @@ class GrossOsago
         $contractData = $this->buildContract($policyData, $vehicleResult, $ownerSection, $drivers, $phone, $kbm);
 
 
-        print_r($contractData);
+//        print_r($contractData);
 
 
         $contractResp = $this->call('contract',
             fn() => $this->http->createContract($contractData),
             $sessionDir
         );
+
+
+        print_r($contractResp);
+
+
         if (!$contractResp) throw new RuntimeException("Shartnoma yaratilmadi");
 
         $uuid     = $contractResp['uuid']       ?? ($contractResp['data']['uuid'] ?? null);

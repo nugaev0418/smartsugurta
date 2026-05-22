@@ -36,6 +36,9 @@ class GrossOsagoJob extends BaseObject implements JobInterface
         }
 
         $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz. EuroAsia orqali urinilmoqda...");
+
+
+        die();
         $this->tryEuroAsia();
     }
 
