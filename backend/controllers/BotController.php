@@ -1087,7 +1087,7 @@ class BotController extends Controller
 //                $this->sendMessageAdmin(json_encode($police_data, JSON_PRETTY_PRINT));
                 $this->sendMessageAdmin(json_encode($result, JSON_PRETTY_PRINT));
 
-                $this->showMainPage("Arizangiz qabul qilindi 3 daqiqa ichida sug'urta qilib beramiz!");
+                $this->showMainPage($this->getMText("Your application has been accepted and we will insure you within 3 minutes!"));
 
             }else{
 // EAI SUGURTAGA YUBORISH
