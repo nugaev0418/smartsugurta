@@ -32,7 +32,6 @@ $this->params['breadcrumbs'][] = $this->title;
 
             'id',
             'user_id',
-            'provider_id',
                 [
                         'attribute' => 'provider_id',
                         'value'     => fn($model) => Police::getProviderList()[$model->provider_id] ?? 'Unknown',
