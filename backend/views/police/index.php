@@ -32,7 +32,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
             'id',
             'user_id',
+            'provider_id',
             'policeId',
+            'anketa_id',
             'startAt',
 //            'endAt',
             //'pdfUrl',

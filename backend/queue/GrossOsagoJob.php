@@ -97,6 +97,8 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 $police->amount            = $result['premium'];
                 $police->driverRestriction = $this->policyDataEAI['driverRestriction'];
                 $police->season_id         = $season->id;
+                $police->anketa_id         = $result['anketa_id'];
+                $police->provider_id       = Police::PROVIDER_GROSS;
                 $police->save(false);
 
 
@@ -168,6 +170,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 $police->amount            = 64000;
                 $police->driverRestriction = $this->policyDataEAI['driverRestriction'];
                 $police->season_id         = $season->id;
+                $police->provider_id       = Police::PROVIDER_EAI;
                 $police->save(false);
 
                 Yii::info("EuroAsia muvaffaqiyatli: policeId={$dto->policyId}", 'gross');

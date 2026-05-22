@@ -21,6 +21,8 @@ use Yii;
  * @property int|null $amount
  * @property int|null $driverRestriction
  * @property int|null $season_id
+ * @property int|null $anketa_id
+ * @property int|null $provider_id
  * @property string|null $created_at
  * @property string|null $updated_at
  *
@@ -32,6 +34,11 @@ use Yii;
  */
 class Police extends \yii\db\ActiveRecord
 {
+
+
+    const
+        PROVIDER_EAI = 1,
+        PROVIDER_GROSS = 2;
 
 
     /**
@@ -48,7 +55,7 @@ class Police extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['user_id', 'policeId', 'startAt', 'endAt', 'pdfUrl', 'paymentId', 'paymentLink', 'gateway', 'amount', 'driverRestriction', 'season_id'], 'default', 'value' => null],
+            [['user_id', 'policeId', 'startAt', 'endAt', 'pdfUrl', 'paymentId', 'paymentLink', 'gateway', 'amount', 'driverRestriction', 'season_id', 'provider_id', 'anketa_id'], 'default', 'value' => null],
             [['status', 'payment_status'], 'default', 'value' => 0],
             [['user_id', 'status', 'payment_status', 'amount', 'driverRestriction', 'season_id'], 'integer'],
             [['startAt', 'endAt', 'created_at', 'updated_at'], 'safe'],
@@ -78,6 +85,8 @@ class Police extends \yii\db\ActiveRecord
             'amount' => Yii::t('app', 'Amount'),
             'driverRestriction' => Yii::t('app', 'Driver Restriction'),
             'season_id' => Yii::t('app', 'Season ID'),
+            'anketa_id' => Yii::t('app', 'Anketa ID'),
+            'provider_id' => Yii::t('app', 'Provider ID'),
             'created_at' => Yii::t('app', 'Created At'),
             'updated_at' => Yii::t('app', 'Updated At'),
         ];
