@@ -193,6 +193,114 @@ class PoliceController extends Controller
         }
     }
 
+    public function actionGross()
+    {
+        $this->telegram = Yii::$app->telegram;
+
+        $tenDaysAgo = date('Y-m-d H:i:s', strtotime('-2 days'));
+
+        $polices = Police::find()
+            ->where(['status' => 0, 'provider_id' => Police::PROVIDER_GROSS])
+            ->andWhere(['>=', 'created_at', $tenDaysAgo])
+            ->all();
+
+
+
+
+        foreach ($polices as $police) {
+
+            echo $police->id . PHP_EOL;
+            $result = $this->grossCheckApi($police->anketa_id);
+
+
+            if ($result) {
+                $police->status = 1;
+                $police->pdfUrl = "https://ersp.e-osgo.uz/site/export-to-pdf?id={$police->policeId}";
+                $police->payment_status = 1;
+
+                $police->save();
+
+                if ($police->status){
+                    $user = Botuser::find()->where(['id'=>$police->user_id])->one();
+                    $this->chat_id = $user->chat_id;
+
+                    if (self::grossDownload($police->policeId)){
+                        $filePath = new CURLFile(Yii::getAlias('policeFiles/' . $police->policeId . '.pdf'));
+                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurta</b>";
+                        $this->sendDocument($filePath, $text);
+
+                        $this->addBonuse($user, $police->amount);
+
+                        //send to channel
+                        $this->sendDocument($filePath, $text, BotController::ORDER_CHANNEL);
+                    }else{
+                        $this->sendMessage("Nimadir xato Operator bilan bog'laning");
+                    }
+                }
+            }
+        }
+    }
+
+    public static function grossDownload($id)
+    {
+        $pdfUrl = "https://ersp.e-osgo.uz/site/export-to-pdf?id={$id}";
+        $savePath = 'policeFiles/' . $id . '.pdf';
+
+        $fp = fopen($savePath, 'w+');
+
+        $ch = curl_init($pdfUrl);
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        $result = curl_exec($ch);
+
+        if ($result === false) {
+            echo "Xatolik: " . curl_error($ch);
+        }
+
+        curl_close($ch);
+        fclose($fp);
+
+        return true;
+    }
+
+
+    public function grossCheckApi($anketa_id)
+    {
+        $url = "https://osago.gross.uz/epolis/check_oplata.php?anketa_id={$anketa_id}";
+
+        $ch = curl_init();
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [],
+            CURLOPT_COOKIE => '',
+            CURLOPT_SSL_VERIFYPEER => false, // agar SSL xatolik bo'lsa
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_TIMEOUT => 30,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+
+        curl_close($ch);
+
+        if ($error) {
+            return false;
+        } else {
+
+            if ($response === 'SUCCESS'){
+                return true;
+            }else{
+                return false;
+            }
+        }
+    }
+
     public function sendMessage($text)
     {
         try {
