@@ -932,13 +932,11 @@ class BotController extends Controller
 
                 $dto = $eai->getPersonByBirthdateDTO($seria, $number, $birthdate);
 
-                if (!$dto->driverLicense){
-                    $this->sendMessage($this->getMText("This driver's driver's license was not found."));
-                    exit();
-                }
 
                 if (!$dto->success){
                     $this->sendMessage($this->getMText('Driver found transport'));
+                }elseif (!$dto->driverLicense){
+                    $this->sendMessage($this->getMText("This driver's driver's license was not found."));
                 }else{
 
                     $drivers[] = $dto;
