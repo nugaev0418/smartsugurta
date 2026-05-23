@@ -22,6 +22,11 @@ class PersonByPinflExtractor
 
                 $result['success']   = true;
 
+                // ✅ districtId null bo'lsa — default qiymat
+                if (empty($result['districtId'])) {
+                    $result['districtId'] = '15ca936b-1045-44e5-b586-a41682a0ee11'; // yoki kerakli default qiymat
+                }
+
                 if (!empty($result['passport'])) {
                     $result['seria']  = $result['passport']['seria'] ?? null;
                     $result['number'] = $result['passport']['number'] ?? null;
