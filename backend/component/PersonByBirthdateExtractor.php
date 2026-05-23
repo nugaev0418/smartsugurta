@@ -23,6 +23,10 @@ class PersonByBirthdateExtractor
 
                 $result['success']   = true;
 
+                if (!is_null($result['driverLicense'])) {
+                    $result['driverLicense'] = true;
+                }
+
                 if (is_null($result['passport'])) {
                     $result['seria'] = $result['idCard']['seria'];
                     $result['number'] = $result['idCard']['number'];
