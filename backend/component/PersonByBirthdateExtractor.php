@@ -17,6 +17,7 @@ class PersonByBirthdateExtractor
                 'passport'               => 'passport',
                 'idCard'                 => 'idCard',
                 'districtId'             => 'district.id',
+                'driverLicense'          => 'driverLicense',
             ],
             function ($result) {
 

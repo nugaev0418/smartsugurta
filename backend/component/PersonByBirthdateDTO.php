@@ -12,6 +12,7 @@ class PersonByBirthdateDTO
     public ?string $seria = null;
     public ?string $number = null;
     public ?string $districtId = null;
+    public ?string $driverLicense = null;
 
     public function __construct(array $data = [])
     {

@@ -921,6 +921,7 @@ class BotController extends Controller
         if (!is_null($this->text) && $this->getKeywordText($this->text) != 'No other drivers'){
 
             $passData = $this->parsePassportData($this->text);
+            $drivers = $this->drivers != '' ? $this->drivers : [];
             if ($passData['success']){
                 $seria = $passData['series'];
                 $number = $passData['number'];
@@ -931,13 +932,17 @@ class BotController extends Controller
 
                 $dto = $eai->getPersonByBirthdateDTO($seria, $number, $birthdate);
 
+                if (!$dto->driverLicense){
+                    $this->sendMessage($this->getMText("This driver's driver's license was not found."));
+                    exit();
+                }
+
                 if (!$dto->success){
                     $this->sendMessage($this->getMText('Driver found transport'));
                 }else{
-                    $drivers = $this->drivers != '' ? $this->drivers : [];
+
                     $drivers[] = $dto;
                     $this->drivers = $drivers;
-
 
 
                     $police_data = $this->police_data != '' ? $this->police_data : [];
@@ -965,7 +970,7 @@ class BotController extends Controller
                     }
                 }
             }else{
-                $this->showDriverPage(true);
+                $this->showDriverPage(count($drivers));
             }
 
 
