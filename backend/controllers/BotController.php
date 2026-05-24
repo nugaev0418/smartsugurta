@@ -1207,7 +1207,6 @@ class BotController extends Controller
 
                 if (empty($this->police_data)){
                     $this->showMainPage();
-                    exit();
                 }
 
                 $police_data = [
