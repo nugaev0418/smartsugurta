@@ -1206,7 +1206,7 @@ class BotController extends Controller
                 /***** END CREATE EAI DATA ****/
 
                 if (empty($this->police_data)){
-                    $this->showMainPage();
+//                    $this->showMainPage();
                 }
 
                 $police_data = [
