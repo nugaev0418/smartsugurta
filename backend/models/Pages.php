@@ -17,6 +17,7 @@ class Pages
         DRIVER_RESTRICTION_TYPE = 'driver_restriction_page',
         DRIVER_PASS_PAGE = 'driver_pass_page',
         DRIVER_PAGE = 'driver_page',
+        RELATIVE_PAGE = 'relative_page',
         POLICE_SEASON_TYPE = 'police_season_page',
         CONFIRM_PAGE = 'confirm_page',
         RELATIVE_ASK = 'relative_ask_page',
