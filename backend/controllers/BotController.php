@@ -1116,7 +1116,9 @@ class BotController extends Controller
 // GROSS SUGURTAGA YUBORISH
             $prefix = substr($this->licenseNumber, 0, 2);
 
-            if ($prefix != '10' && $prefix != '01') {
+            $this->sendMessageAdmin(json_encode($prefix));
+
+            if (!in_array($prefix, ['01', '10'])) {
 
                 $this->sendMessageAdmin('Toshkent Avtomobili emas');
 
