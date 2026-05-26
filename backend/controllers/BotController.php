@@ -1113,9 +1113,6 @@ class BotController extends Controller
         if ($this->getKeywordText($this->text) == 'Continue ✅'){
 
 
-            $this->sendMessageAdmin(json_encode($this->police_data));
-            $this->sendMessageAdmin(gettype($this->police_data));
-
             if (is_null($this->police_data)){
                     $this->showMainPage();
             }
