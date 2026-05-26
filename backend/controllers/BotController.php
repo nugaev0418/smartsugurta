@@ -1113,10 +1113,13 @@ class BotController extends Controller
         if ($this->getKeywordText($this->text) == 'Continue ✅'){
 
 
+            if (empty($this->police_data) || $this->police_data == ''){
+                    $this->showMainPage();
+            }
+
+
 // GROSS SUGURTAGA YUBORISH
             $prefix = substr($this->police_data['vehicle']['gov_number'], 0, 2);
-
-            $this->sendMessageAdmin(json_encode($prefix));
 
             if (!in_array($prefix, ['01', '10'])) {
 
@@ -1207,9 +1210,6 @@ class BotController extends Controller
 
                 /***** END CREATE EAI DATA ****/
 
-                if (empty($this->police_data)){
-//                    $this->showMainPage();
-                }
 
                 $police_data = [
                     'policyDataGross' => $this->police_data,
