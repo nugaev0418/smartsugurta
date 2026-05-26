@@ -1114,7 +1114,7 @@ class BotController extends Controller
 
 
 // GROSS SUGURTAGA YUBORISH
-            $prefix = substr($this->licenseNumber, 0, 2);
+            $prefix = substr($this->police_data['vehicle']['gov_number'], 0, 2);
 
             $this->sendMessageAdmin(json_encode($prefix));
 
