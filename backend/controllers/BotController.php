@@ -1116,7 +1116,7 @@ class BotController extends Controller
             $this->sendMessageAdmin(json_encode($this->police_data));
             $this->sendMessageAdmin(gettype($this->police_data));
 
-            if (empty($this->police_data) || $this->police_data == ''){
+            if (is_null($this->police_data)){
                     $this->showMainPage();
             }
 
