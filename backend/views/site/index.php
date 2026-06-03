@@ -1,53 +1,102 @@
 <?php
 
 /** @var yii\web\View $this */
+/** @var array $stats */
 
-$this->title = 'My Yii Application';
+$this->title = 'Dashboard';
+
+$fmt = fn(int $n) => number_format($n, 0, '.', ' ');
+
+$periods = [
+    'day'   => ['label' => 'Bugun',    'sub' => date('d.m.Y'),                                          'icon' => 'ti-calendar-day',   'color' => 'blue'],
+    'week'  => ['label' => 'Bu hafta', 'sub' => date('d.m') . ' – ' . date('d.m.Y'),                   'icon' => 'ti-calendar-week',  'color' => 'indigo'],
+    'month' => ['label' => 'Bu oy',    'sub' => date('F Y'),                                            'icon' => 'ti-calendar-month', 'color' => 'purple'],
+];
 ?>
-<div class="site-index">
 
-    <div class="jumbotron text-center bg-transparent">
-        <h1 class="display-4">Congratulations!</h1>
+<div class="row row-deck row-cards">
 
-        <p class="lead">You have successfully created your Yii-powered application.</p>
+    <?php foreach ($periods as $key => $period): $s = $stats[$key]; ?>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card">
 
-        <p><a class="btn btn-lg btn-success" href="https://www.yiiframework.com">Get started with Yii</a></p>
-    </div>
-
-    <div class="body-content">
-
-        <div class="row">
-            <div class="col-lg-4">
-                <h2>Heading</h2>
-
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/doc/">Yii Documentation &raquo;</a></p>
+            <div class="card-header">
+                <div class="card-title d-flex align-items-center gap-2">
+                    <span class="avatar avatar-sm bg-<?= $period['color'] ?>-lt text-<?= $period['color'] ?>">
+                        <i class="ti <?= $period['icon'] ?>"></i>
+                    </span>
+                    <div>
+                        <div class="fw-bold"><?= $period['label'] ?></div>
+                        <div class="text-muted small"><?= $period['sub'] ?></div>
+                    </div>
+                </div>
             </div>
-            <div class="col-lg-4">
-                <h2>Heading</h2>
 
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
+            <div class="card-body p-0">
+                <table class="table table-borderless mb-0">
 
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/forum/">Yii Forum &raquo;</a></p>
+                    <!-- Sug'urtalar soni -->
+                    <tr>
+                        <td class="text-muted">
+                            <i class="ti ti-file-invoice me-1 text-<?= $period['color'] ?>"></i>
+                            Sug'urtalar soni
+                        </td>
+                        <td class="text-end">
+                            <span class="fw-bold fs-4"><?= $s['count'] ?></span>
+                            <span class="text-muted small ms-1">ta</span>
+                        </td>
+                    </tr>
+
+                    <!-- To'langan -->
+                    <tr class="border-top">
+                        <td class="text-muted">
+                            <i class="ti ti-circle-check me-1 text-success"></i>
+                            To'langan
+                        </td>
+                        <td class="text-end">
+                            <span class="fw-bold text-success"><?= $fmt($s['paid_amount']) ?></span>
+                            <span class="text-muted small ms-1">so'm</span>
+                        </td>
+                    </tr>
+
+                    <!-- To'lanmagan -->
+                    <tr class="border-top">
+                        <td class="text-muted">
+                            <i class="ti ti-circle-x me-1 text-danger"></i>
+                            To'lanmagan
+                        </td>
+                        <td class="text-end">
+                            <span class="fw-bold text-danger"><?= $fmt($s['unpaid_amount']) ?></span>
+                            <span class="text-muted small ms-1">so'm</span>
+                        </td>
+                    </tr>
+
+                </table>
             </div>
-            <div class="col-lg-4">
-                <h2>Heading</h2>
 
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/extensions/">Yii Extensions &raquo;</a></p>
+            <!-- Progress bar: to'langan ulushi -->
+            <?php
+                $total = $s['paid_amount'] + $s['unpaid_amount'];
+                $pct   = $total > 0 ? round($s['paid_amount'] / $total * 100) : 0;
+            ?>
+            <div class="card-footer p-2">
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>To'lov ulushi</span>
+                    <span><?= $pct ?>%</span>
+                </div>
+                <div class="progress progress-sm">
+                    <div class="progress-bar bg-success"
+                         style="width: <?= $pct ?>%"
+                         role="progressbar"
+                         aria-valuenow="<?= $pct ?>"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                    </div>
+                </div>
             </div>
+
         </div>
-
     </div>
+    <?php endforeach; ?>
+
 </div>
