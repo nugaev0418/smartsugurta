@@ -4,6 +4,22 @@ use yii\helpers\Url;
 
 $infoUrl = Url::to(['/botuser/info']);
 $this->registerJs('window._userInfoUrl = ' . Json::encode($infoUrl) . ';', \yii\web\View::POS_HEAD);
+$this->registerCss('
+#userInfoModal .modal-content { max-height: 90dvh; display: flex; flex-direction: column; }
+#userInfoModal .modal-body    { overflow-y: auto; flex: 1 1 auto; }
+@media (max-width: 575.98px) {
+    #userInfoModal .modal-dialog {
+        margin: auto 0 0 0;
+        max-width: 100%;
+        width: 100%;
+    }
+    #userInfoModal .modal-content,
+    #userInfoModal .modal-dialog {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+}
+');
 
 $this->registerJs(<<<'JS'
 (function () {
@@ -72,7 +88,7 @@ JS, \yii\web\View::POS_END);
 ?>
 
 <div class="modal modal-blur fade" id="userInfoModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -86,7 +102,7 @@ JS, \yii\web\View::POS_END);
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
                     <i class="ti ti-x me-1"></i>Yopish
                 </button>
             </div>
