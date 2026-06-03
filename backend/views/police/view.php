@@ -31,7 +31,14 @@ $this->params['breadcrumbs'][] = $this->title;
         'options'    => ['class' => 'table table-bordered detail-view'],
         'attributes' => [
             'id',
-            'user_id',
+            [
+                'attribute' => 'user_id',
+                'format'    => 'raw',
+                'value'     => $model->user_id
+                    ? Html::a('<i class="ti ti-user me-1"></i>#' . $model->user_id, '#',
+                        ['class' => 'user-info-link', 'data-user-id' => $model->user_id])
+                    : '—',
+            ],
             [
                 'attribute' => 'provider_id',
                 'value'     => Police::getProviderList()[$model->provider_id] ?? 'Unknown',
@@ -99,3 +106,5 @@ $this->params['breadcrumbs'][] = $this->title;
     ]) ?>
 
 </div>
+
+<?= $this->renderFile('@backend/views/shared/_user_modal.php') ?>

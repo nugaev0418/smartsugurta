@@ -3,9 +3,13 @@
 namespace backend\controllers;
 
 use common\models\Botuser;
+use common\models\Payment;
+use common\models\Police;
 use backend\models\BotuserSearch;
+use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 use yii\filters\VerbFilter;
 
 /**
@@ -130,5 +134,35 @@ class BotuserController extends Controller
         }
 
         throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
+    }
+
+    public function actionInfo(int $id): Response
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $user = Botuser::findOne($id);
+        if (!$user) {
+            return $this->asJson(['error' => 'Foydalanuvchi topilmadi']);
+        }
+
+        $policeCount       = (int) Police::find()->where(['user_id' => $id])->count();
+        $paidPoliceCount   = (int) Police::find()->where(['user_id' => $id, 'payment_status' => 1])->count();
+        $paymentCount      = (int) Payment::find()->where(['user_id' => $id])->count();
+        $successPmtCount   = (int) Payment::find()->where(['user_id' => $id, 'status' => Payment::STATUS_SUCCESS])->count();
+        $totalWithdrawn    = (int)(Payment::find()->where(['user_id' => $id, 'status' => Payment::STATUS_SUCCESS])->sum('amount') ?? 0);
+
+        return $this->asJson([
+            'id'                    => $user->id,
+            'name'                  => trim($user->fname . ' ' . $user->lname),
+            'username'              => $user->username,
+            'phone'                 => $user->phone,
+            'balance'               => (int) $user->balance,
+            'police_count'          => $policeCount,
+            'paid_police_count'     => $paidPoliceCount,
+            'payment_count'         => $paymentCount,
+            'success_payment_count' => $successPmtCount,
+            'total_withdrawn'       => $totalWithdrawn,
+            'joined_at'             => $user->created_at,
+        ]);
     }
 }

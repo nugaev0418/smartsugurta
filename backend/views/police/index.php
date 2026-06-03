@@ -32,7 +32,14 @@ $this->params['breadcrumbs'][] = $this->title;
             ['class' => 'yii\grid\SerialColumn'],
 
             'id',
-            'user_id',
+            [
+                'attribute' => 'user_id',
+                'format'    => 'raw',
+                'value'     => fn($model) => $model->user_id
+                    ? Html::a('<i class="ti ti-user me-1"></i>' . $model->user_id, '#',
+                        ['class' => 'user-info-link text-decoration-none', 'data-user-id' => $model->user_id])
+                    : '—',
+            ],
             [
                 'attribute' => 'provider_id',
                 'value'     => fn($model) => Police::getProviderList()[$model->provider_id] ?? 'Unknown',
@@ -116,3 +123,5 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php Pjax::end(); ?>
 
 </div>
+
+<?= $this->renderFile('@backend/views/shared/_user_modal.php') ?>

@@ -14,7 +14,7 @@ class AppAsset extends AssetBundle
         'css/site.css',
     ];
     public $js = [
-        '//cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js',
+        '//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
     ];
     public $jsOptions = ['position' => \yii\web\View::POS_END];
     public $depends = [

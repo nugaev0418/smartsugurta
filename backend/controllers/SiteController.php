@@ -64,13 +64,16 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $stats = [
-            'day'   => $this->policeStats(date('Y-m-d H:i:s', strtotime('-1 day'))),
-            'week'  => $this->policeStats(date('Y-m-d H:i:s', strtotime('-1 week'))),
-            'month' => $this->policeStats(date('Y-m-d H:i:s', strtotime('-1 month'))),
+        $periods = [
+            'day'   => date('Y-m-d H:i:s', strtotime('-1 day')),
+            'week'  => date('Y-m-d H:i:s', strtotime('-1 week')),
+            'month' => date('Y-m-d H:i:s', strtotime('-1 month')),
         ];
 
-        return $this->render('index', compact('stats'));
+        $policeStats  = array_map([$this, 'policeStats'],  $periods);
+        $paymentStats = array_map([$this, 'paymentStats'], $periods);
+
+        return $this->render('index', compact('policeStats', 'paymentStats'));
     }
 
     private function policeStats(string $from): array
@@ -78,6 +81,7 @@ class SiteController extends Controller
         $row = (new Query())
             ->select([
                 'count'         => 'COUNT(*)',
+                'paid_count'    => 'SUM(CASE WHEN payment_status = 1 THEN 1 ELSE 0 END)',
                 'paid_amount'   => 'SUM(CASE WHEN payment_status = 1 THEN amount ELSE 0 END)',
                 'unpaid_amount' => 'SUM(CASE WHEN payment_status = 0 THEN amount ELSE 0 END)',
             ])
@@ -87,8 +91,32 @@ class SiteController extends Controller
 
         return [
             'count'         => (int)($row['count'] ?? 0),
+            'paid_count'    => (int)($row['paid_count'] ?? 0),
             'paid_amount'   => (int)($row['paid_amount'] ?? 0),
             'unpaid_amount' => (int)($row['unpaid_amount'] ?? 0),
+        ];
+    }
+
+    private function paymentStats(string $from): array
+    {
+        $row = (new Query())
+            ->select([
+                'count'          => 'COUNT(*)',
+                'success_count'  => 'SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END)',
+                'success_amount' => 'SUM(CASE WHEN status = 1 THEN amount ELSE 0 END)',
+                'process_amount' => 'SUM(CASE WHEN status = 0 THEN amount ELSE 0 END)',
+                'cancel_count'   => 'SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END)',
+            ])
+            ->from('payment')
+            ->where(['>=', 'created_at', $from])
+            ->one();
+
+        return [
+            'count'          => (int)($row['count'] ?? 0),
+            'success_count'  => (int)($row['success_count'] ?? 0),
+            'success_amount' => (int)($row['success_amount'] ?? 0),
+            'process_amount' => (int)($row['process_amount'] ?? 0),
+            'cancel_count'   => (int)($row['cancel_count'] ?? 0),
         ];
     }
 
