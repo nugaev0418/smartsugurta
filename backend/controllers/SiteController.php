@@ -73,7 +73,10 @@ class SiteController extends Controller
         $policeStats  = array_map([$this, 'policeStats'],  $periods);
         $paymentStats = array_map([$this, 'paymentStats'], $periods);
 
-        return $this->render('index', compact('policeStats', 'paymentStats'));
+        $topUsersMonth   = $this->topPayingUsers(date('Y-m-d H:i:s', strtotime('-1 month')));
+        $topUsersAllTime = $this->topPayingUsers();
+
+        return $this->render('index', compact('policeStats', 'paymentStats', 'topUsersMonth', 'topUsersAllTime'));
     }
 
     private function policeStats(string $from): array
@@ -95,6 +98,33 @@ class SiteController extends Controller
             'paid_amount'   => (int)($row['paid_amount'] ?? 0),
             'unpaid_amount' => (int)($row['unpaid_amount'] ?? 0),
         ];
+    }
+
+    private function topPayingUsers(?string $from = null): array
+    {
+        $query = (new Query())
+            ->select([
+                'user_id'  => 'p.user_id',
+                'count'    => 'COUNT(*)',
+                'total'    => 'SUM(p.amount)',
+                'fname'    => 'b.fname',
+                'lname'    => 'b.lname',
+                'username' => 'b.username',
+                'phone'    => 'b.phone',
+            ])
+            ->from(['p' => 'police'])
+            ->leftJoin(['b' => 'botuser'], 'b.id = p.user_id')
+            ->where(['p.payment_status' => 1]);
+
+        if ($from) {
+            $query->andWhere(['>=', 'p.created_at', $from]);
+        }
+
+        return $query
+            ->groupBy('p.user_id')
+            ->orderBy(['total' => SORT_DESC])
+            ->limit(10)
+            ->all();
     }
 
     private function paymentStats(string $from): array

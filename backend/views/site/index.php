@@ -3,6 +3,8 @@
 /** @var yii\web\View $this */
 /** @var array $policeStats */
 /** @var array $paymentStats */
+/** @var array $topUsersMonth */
+/** @var array $topUsersAllTime */
 
 $this->title = 'Dashboard';
 
@@ -207,3 +209,93 @@ $periods = [
     </div>
     <?php endforeach; ?>
 </div>
+
+<!-- ========== TOP 10 USERS ========== -->
+<div class="row mt-4 mb-2">
+    <div class="col">
+        <h3 class="mb-0">
+            <i class="ti ti-trophy me-2 text-yellow"></i>Eng faol mijozlar (to'langan sug'urtalar bo'yicha)
+        </h3>
+    </div>
+</div>
+
+<?php
+$renderTopTable = function(array $users, string $title, string $color) use ($fmt): void { ?>
+<div class="col-lg-6">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title d-flex align-items-center gap-2">
+                <span class="avatar avatar-sm bg-<?= $color ?>-lt text-<?= $color ?>">
+                    <i class="ti ti-chart-bar"></i>
+                </span>
+                <span class="fw-bold"><?= $title ?></span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <?php if (empty($users)): ?>
+                <div class="text-center text-muted py-4">Ma'lumot yo'q</div>
+            <?php else: ?>
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th class="w-1">#</th>
+                        <th>Mijoz</th>
+                        <th class="text-center">Sug'urtalar</th>
+                        <th class="text-end">Jami summa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($users as $i => $u): ?>
+                    <tr>
+                        <td>
+                            <?php if ($i === 0): ?>
+                                <span class="badge bg-yellow text-yellow-fg">1</span>
+                            <?php elseif ($i === 1): ?>
+                                <span class="badge bg-secondary">2</span>
+                            <?php elseif ($i === 2): ?>
+                                <span class="badge bg-orange-lt text-orange">3</span>
+                            <?php else: ?>
+                                <span class="text-muted"><?= $i + 1 ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="avatar avatar-xs bg-blue-lt text-blue">
+                                    <i class="ti ti-user"></i>
+                                </span>
+                                <div>
+                                    <?php $name = trim($u['fname'] . ' ' . $u['lname']); ?>
+                                    <a href="#" class="user-info-link fw-medium text-decoration-none"
+                                       data-user-id="<?= $u['user_id'] ?>">
+                                        <?= htmlspecialchars($name) ?: 'ID #' . $u['user_id'] ?>
+                                    </a>
+                                    <?php if ($u['username']): ?>
+                                    <div class="text-muted small">@<?= htmlspecialchars($u['username']) ?></div>
+                                    <?php elseif ($u['phone']): ?>
+                                    <div class="text-muted small"><?= htmlspecialchars($u['phone']) ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-blue-lt text-blue"><?= $u['count'] ?> ta</span>
+                        </td>
+                        <td class="text-end fw-bold text-success">
+                            <?= $fmt((int)$u['total']) ?> <span class="text-muted small fw-normal">so'm</span>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+<?php }; ?>
+
+<div class="row row-deck row-cards">
+    <?php $renderTopTable($topUsersMonth,   "So'nggi 1 oyda", 'indigo'); ?>
+    <?php $renderTopTable($topUsersAllTime, 'Bot ishga tushganidan beri', 'purple'); ?>
+</div>
+
+<?= $this->renderFile('@backend/views/shared/_user_modal.php') ?>
