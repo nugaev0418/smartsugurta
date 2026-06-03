@@ -6,6 +6,7 @@ use yii\helpers\Url;
 use yii\grid\ActionColumn;
 use yii\grid\GridView;
 use yii\widgets\Pjax;
+
 /** @var yii\web\View $this */
 /** @var backend\models\HistorySearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
@@ -15,31 +16,33 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="history-index">
 
-    <h1><?= Html::encode($this->title) ?></h1>
-
-    <p>
-        <?= Html::a(Yii::t('app', 'Create History'), ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <?= Html::a('<i class="ti ti-plus me-1"></i>' . Yii::t('app', 'Create History'), ['create'], ['class' => 'btn btn-success']) ?>
+    </div>
 
     <?php Pjax::begin(); ?>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel,
+        'filterModel'  => $searchModel,
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
 
             'id',
-            'chat_id',
+            [
+                'attribute' => 'chat_id',
+                'format'    => 'raw',
+                'value'     => fn($model) => $model->chat_id
+                    ? Html::a('<i class="ti ti-user me-1"></i>' . $model->chat_id, '#',
+                        ['class' => 'user-info-link text-decoration-none', 'data-chat-id' => $model->chat_id])
+                    : '—',
+            ],
             'message:ntext',
             'created_at',
             'updated_at',
             [
-                'class' => ActionColumn::className(),
-                'urlCreator' => function ($action, History $model, $key, $index, $column) {
-                    return Url::toRoute([$action, 'id' => $model->id]);
-                 }
+                'class'      => ActionColumn::class,
+                'urlCreator' => fn($action, History $model) => Url::toRoute([$action, 'id' => $model->id]),
             ],
         ],
     ]); ?>
@@ -47,3 +50,5 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php Pjax::end(); ?>
 
 </div>
+
+<?= $this->renderFile('@backend/views/shared/_user_modal.php') ?>

@@ -49,6 +49,8 @@ $this->registerJs(<<<'JS'
         e.preventDefault();
 
         var userId = link.dataset.userId;
+        var chatId = link.dataset.chatId;
+        var param  = userId ? 'id=' + userId : 'chatId=' + chatId;
         var body   = document.getElementById('userInfoModalBody');
         var modal  = new bootstrap.Modal(document.getElementById('userInfoModal'));
 
@@ -58,7 +60,7 @@ $this->registerJs(<<<'JS'
             + '</div></div>';
         modal.show();
 
-        fetch(window._userInfoUrl + '?id=' + userId)
+        fetch(window._userInfoUrl + '?' + param)
             .then(function (r) { return r.json(); })
             .then(function (data) { body.innerHTML = renderUserInfo(data); })
             .catch(function () {
@@ -70,7 +72,7 @@ JS, \yii\web\View::POS_END);
 ?>
 
 <div class="modal modal-blur fade" id="userInfoModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">

@@ -136,14 +136,19 @@ class BotuserController extends Controller
         throw new NotFoundHttpException(Yii::t('app', 'The requested page does not exist.'));
     }
 
-    public function actionInfo(int $id): Response
+    public function actionInfo(?int $id = null, ?int $chatId = null): Response
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
-        $user = Botuser::findOne($id);
+        $user = $id
+            ? Botuser::findOne($id)
+            : Botuser::findOne(['chat_id' => $chatId]);
+
         if (!$user) {
             return $this->asJson(['error' => 'Foydalanuvchi topilmadi']);
         }
+
+        $id = $user->id;
 
         $policeCount       = (int) Police::find()->where(['user_id' => $id])->count();
         $paidPoliceCount   = (int) Police::find()->where(['user_id' => $id, 'payment_status' => 1])->count();

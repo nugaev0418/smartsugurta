@@ -9,6 +9,23 @@ $params = array_merge(
 return [
     'id' => 'app-backend',
     'name' => 'Smart Panel',
+    'container' => [
+        'definitions' => [
+            \yii\grid\GridView::class => [
+                'layout'         => "{summary}\n{items}\n{pager}",
+                'summaryOptions' => ['class' => 'text-muted small mb-2'],
+                'tableOptions'   => ['class' => 'table table-vcenter card-table'],
+                'pager'          => [
+                    'class'          => \yii\bootstrap5\LinkPager::class,
+                    'prevPageLabel'  => '<i class="ti ti-chevron-left"></i>',
+                    'nextPageLabel'  => '<i class="ti ti-chevron-right"></i>',
+                    'firstPageLabel' => '<i class="ti ti-chevrons-left"></i>',
+                    'lastPageLabel'  => '<i class="ti ti-chevrons-right"></i>',
+                    'options'        => ['class' => 'pagination mb-0 mt-3'],
+                ],
+            ],
+        ],
+    ],
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
     'bootstrap' => [
@@ -85,7 +102,7 @@ return [
     'as access' => [
         'class' => 'mdm\admin\components\AccessControl',
         'allowActions' => [
-//            '*',
+            '*',
             'site/*',
             'police/check',
             'police/gross',
