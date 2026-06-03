@@ -15,12 +15,10 @@ use common\models\SeasonalInsurance;
 use common\models\Text;
 use common\models\User;
 use DateTime;
-use mdm\admin\components\AccessControl;
 use Yii;
 use yii\base\ErrorException;
 use yii\helpers\Url;
 use yii\web\Controller;
-use function PHPUnit\Framework\isNull;
 
 class BotController extends Controller
 {
@@ -98,7 +96,7 @@ class BotController extends Controller
                 case $this->getMText('Main menu'):
                     $this->showMainPage();
                     break;
-                case $this->getMText('Language selection');
+                case $this->getMText('Language selection'):
                     $this->changeLang();
                     break;
                 case $this->getMText("BEGIN OSAGO BUTTON"):
@@ -205,7 +203,6 @@ class BotController extends Controller
                 ],
             ];
             $this->sendMessageWithKeyborad($text, $option);
-            exit();
         }catch (ErrorException $e) {
             Yii::error($e->getMessage());
             throw new ErrorException($e);
@@ -491,7 +488,6 @@ class BotController extends Controller
             if ($dto->success){
                 $jami_summa = $this->formatMoney((float)$dto->premium / 100);
             }else{
-                $this->sendMessage(1);
                 $jami_summa = 'Aniqlanmadi!';
             }
 
@@ -707,22 +703,6 @@ class BotController extends Controller
         }else{
             $this->showLisenceNumberPage();
         }
-
-    }
-
-    public function handleTexPassSeriaPage()
-    {
-        if (!is_null($this->text)) {
-            $value = strtoupper(trim($this->text));
-
-            if (preg_match('/^[A-Z]{3}$/', $value)) {
-                $this->texPassSeria = $value;
-                $this->showTexPassNumberPage();
-                return;
-            }
-        }
-
-        $this->showTexPassSeriaPage();
 
     }
 
@@ -1115,6 +1095,7 @@ class BotController extends Controller
 
             if (is_null($this->police_data)){
                     $this->showMainPage();
+                    return;
             }
 
 
@@ -1333,7 +1314,7 @@ class BotController extends Controller
                     $police->paymentLink = $dto->paymentLink;
                     $police->paymentId = $dto->paymentId;
                     $police->gateway = $billingGateway;
-                    $police->amount = 64000;
+                    $police->amount = 0;
                     $police->driverRestriction = $driverRestriction;
                     $police->season_id = $season->id;
                     $police->provider_id = Police::PROVIDER_EAI;
