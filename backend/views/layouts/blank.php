@@ -10,7 +10,7 @@ AppAsset::register($this);
 ?>
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
-<html lang="<?= Yii::$app->language ?>" class="h-100">
+<html lang="<?= Yii::$app->language ?>">
 <head>
     <meta charset="<?= Yii::$app->charset ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -18,14 +18,23 @@ AppAsset::register($this);
     <title><?= Html::encode($this->title) ?></title>
     <?php $this->head() ?>
 </head>
-<body class="d-flex flex-column h-100">
+<body class="antialiased d-flex flex-column">
 <?php $this->beginBody() ?>
 
-<main role="main">
-    <div class="container">
-        <?= $content ?>
+<div class="page page-center">
+    <div class="container container-tight py-4">
+        <div class="text-center mb-4">
+            <a href="<?= Yii::$app->homeUrl ?>" class="text-decoration-none">
+                <span class="fw-bold fs-2"><?= Html::encode(Yii::$app->name) ?></span>
+            </a>
+        </div>
+        <div class="card card-md">
+            <div class="card-body">
+                <?= $content ?>
+            </div>
+        </div>
     </div>
-</main>
+</div>
 
 <?php $this->endBody() ?>
 </body>

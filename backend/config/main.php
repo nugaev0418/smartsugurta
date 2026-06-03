@@ -8,6 +8,7 @@ $params = array_merge(
 
 return [
     'id' => 'app-backend',
+    'name' => 'Smart Panel',
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
     'bootstrap' => [
@@ -23,6 +24,12 @@ return [
         ]
     ],
     'components' => [
+        'assetManager' => [
+            'bundles' => [
+                'yii\bootstrap5\BootstrapAsset' => ['css' => [], 'js' => []],
+                'yii\bootstrap5\BootstrapPluginAsset' => ['css' => [], 'js' => [], 'depends' => []],
+            ],
+        ],
         'authManager' => [
             'class' => 'yii\rbac\DbManager', // or use
         ],
@@ -78,6 +85,7 @@ return [
     'as access' => [
         'class' => 'mdm\admin\components\AccessControl',
         'allowActions' => [
+            '*',
             'site/*',
             'police/check',
             'police/gross',
