@@ -41,7 +41,7 @@ class PoliceSearch extends Police
      */
     public function search($params, $formName = null)
     {
-        $query = Police::find();
+        $query = Police::find()->with('season');
 
         // add conditions that should always apply here
 

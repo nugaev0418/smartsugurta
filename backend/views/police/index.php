@@ -1,6 +1,8 @@
 <?php
 
 use common\models\Police;
+use common\models\SeasonalInsurance;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\grid\ActionColumn;
@@ -90,6 +92,14 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                     return '<span class="badge bg-teal-lt text-teal"><i class="ti ti-lock-open me-1"></i>Cheklanmagan</span>';
                 },
+            ],
+
+            // Season name
+            [
+                'attribute' => 'season_id',
+                'label'     => 'Mavsum',
+                'value'     => fn($model) => $model->season->name ?? '—',
+                'filter'    => ArrayHelper::map(SeasonalInsurance::find()->all(), 'id', 'name'),
             ],
 
             'created_at',
