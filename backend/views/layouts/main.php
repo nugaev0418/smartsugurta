@@ -108,7 +108,7 @@ $navItems = [
 
         <!-- Top navbar -->
         <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none">
-            <div class="container-xl">
+            <div class="container-fluid">
                 <div class="d-flex flex-fill align-items-center">
                     <?php if (!empty($this->params['breadcrumbs'])): ?>
                     <ol class="breadcrumb mb-0" aria-label="breadcrumbs">
@@ -164,7 +164,7 @@ $navItems = [
 
         <!-- Page body -->
         <div class="page-body">
-            <div class="container-xl">
+            <div class="container-fluid">
 
                 <?php if (!empty($this->params['breadcrumbs']) || isset($this->title)): ?>
                 <div class="page-header d-print-none mb-3">
@@ -183,7 +183,7 @@ $navItems = [
         </div>
 
         <footer class="footer footer-transparent d-print-none">
-            <div class="container-xl">
+            <div class="container-fluid">
                 <div class="row text-center align-items-center flex-row-reverse">
                     <div class="col-lg-auto ms-lg-auto">
                         <span class="text-secondary small">
