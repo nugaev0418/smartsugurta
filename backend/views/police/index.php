@@ -27,6 +27,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel'  => $searchModel,
+        'layout'       => "{summary}\n<div class=\"table-responsive\">{items}</div>\n{pager}",
         'tableOptions' => ['class' => 'table table-vcenter card-table'],
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
