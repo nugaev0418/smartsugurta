@@ -39,7 +39,7 @@ return [
         ],
         'telegram' => [
             'class' => '\common\eleirbag\Telegram',
-            'bot_token' => '7947772006:AAEVLefQESHAH633U1SI1LafqTlPNm3Wenw',
+            'bot_token' => getenv('TELEGRAM_BOT_TOKEN'),
         ],
         'request' => [
             'csrfParam' => '_csrf-backend',
