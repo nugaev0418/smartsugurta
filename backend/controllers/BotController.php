@@ -968,12 +968,13 @@ class BotController extends Controller
 
                 $this->handleDriverPage($owner_data);
 
-                break;
+                return;
             case "No":
                 $this->showDriverPage();
-                break;
+                return;
             default:
                 $this->showOwnerIsDriverPage();
+                return;
         }
 
         if (!is_null($this->text) && $this->getKeywordText($this->text) != 'No other drivers'){
