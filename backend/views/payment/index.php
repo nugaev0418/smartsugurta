@@ -29,6 +29,7 @@ $statusList = [
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel'  => $searchModel,
+        'showFooter'   => true,
         'layout'       => "{summary}\n<div class=\"table-responsive\">{items}</div>\n{pager}",
         'tableOptions' => ['class' => 'table table-vcenter card-table'],
         'columns' => [
@@ -65,10 +66,12 @@ $statusList = [
 
             // Amount
             [
-                'attribute' => 'amount',
-                'label'     => 'Summa',
-                'format'    => 'raw',
-                'value'     => fn($model) => $model->amount
+                'attribute'     => 'amount',
+                'label'         => 'Summa',
+                'format'        => 'raw',
+                'footer'        => '<strong>' . number_format($searchModel->totalAmount, 0, '.', ' ') . " so'm</strong>",
+                'footerOptions' => ['class' => 'text-end'],
+                'value'         => fn($model) => $model->amount
                     ? '<span class="fw-medium">' . number_format($model->amount, 0, '.', ' ') . " so'm</span>"
                     : '—',
             ],
@@ -88,7 +91,12 @@ $statusList = [
                 },
             ],
 
-            'created_at',
+            [
+                'attribute' => 'created_at',
+                'label'     => 'Yaratilgan sana',
+                'filter'    => Html::activeInput('date', $searchModel, 'created_at_from', ['class' => 'form-control form-control-sm mb-1', 'placeholder' => 'Dan'])
+                             . Html::activeInput('date', $searchModel, 'created_at_to',   ['class' => 'form-control form-control-sm', 'placeholder' => 'Gacha']),
+            ],
 
             [
                 'class'      => ActionColumn::class,

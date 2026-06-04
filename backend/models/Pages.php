@@ -15,6 +15,7 @@ class Pages
         PERSON_TYPE = 'person_type_page',
         START_AT = 'start_at_page',
         DRIVER_RESTRICTION_TYPE = 'driver_restriction_page',
+        OWNER_IS_DRIVER = 'owner_is_driver',
         DRIVER_PASS_PAGE = 'driver_pass_page',
         DRIVER_PAGE = 'driver_page',
         RELATIVE_PAGE = 'relative_page',

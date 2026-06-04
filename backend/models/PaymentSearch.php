@@ -11,6 +11,10 @@ use common\models\Payment;
  */
 class PaymentSearch extends Payment
 {
+    public $created_at_from;
+    public $created_at_to;
+    public $totalAmount = 0;
+
     /**
      * {@inheritdoc}
      */
@@ -18,7 +22,7 @@ class PaymentSearch extends Payment
     {
         return [
             [['id', 'user_id', 'type', 'amount', 'status'], 'integer'],
-            [['account', 'created_at', 'payment_id', 'updated_at'], 'safe'],
+            [['account', 'created_at', 'payment_id', 'updated_at', 'created_at_from', 'created_at_to'], 'safe'],
         ];
     }
 
@@ -69,12 +73,15 @@ class PaymentSearch extends Payment
             'type' => $this->type,
             'amount' => $this->amount,
             'status' => $this->status,
-            'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ]);
 
         $query->andFilterWhere(['like', 'account', $this->account])
-            ->andFilterWhere(['like', 'payment_id', $this->payment_id]);
+            ->andFilterWhere(['like', 'payment_id', $this->payment_id])
+            ->andFilterWhere(['>=', 'created_at', $this->created_at_from ? $this->created_at_from . ' 00:00:00' : null])
+            ->andFilterWhere(['<=', 'created_at', $this->created_at_to ? $this->created_at_to . ' 23:59:59' : null]);
+
+        $this->totalAmount = (clone $query)->sum('amount') ?? 0;
 
         return $dataProvider;
     }

@@ -132,6 +132,9 @@ class BotController extends Controller
                         case Pages::DRIVER_RESTRICTION_TYPE:
                             $this->handleDriverRestrictionPage();
                             break;
+                        case Pages::OWNER_IS_DRIVER:
+                            $this->handleOwnerIsDriverPage();
+                            break;
                         case Pages::DRIVER_PAGE:
                             $this->handleDriverPage();
                             break;
@@ -328,6 +331,22 @@ class BotController extends Controller
             ]
         ];
         $this->sendMessageWithKeyborad($this->getMText('Choose driver restriction type'), $option);
+    }
+
+    public function showOwnerIsDriverPage()
+    {
+        $this->page = Pages::OWNER_IS_DRIVER;
+
+        $option = [
+            [
+                $this->telegram->buildKeyboardButton($this->getMText('Yes')),
+                $this->telegram->buildKeyboardButton($this->getMText('No')),
+            ],
+            [
+                $this->telegram->buildKeyboardButton($this->getMText("Cancel")),
+            ]
+        ];
+        $this->sendMessageWithKeyborad($this->getMText('If the car owner also needs to drive, he should be added as a driver! Should the car owner be added too?'), $option);
     }
 
     public function showDriverPage($no_driver_button = false, $message = false){
@@ -870,7 +889,7 @@ class BotController extends Controller
                 case "Limited":
                     $this->drivers = '';
                     $this->sendMessage($this->getMText("owner required message"));
-                    $this->showDriverPage();
+                    $this->showOwnerIsDriverPage();
                     $type_limit = 'limited';
                     break;
                 case "Not limited":
@@ -932,10 +951,91 @@ class BotController extends Controller
         $this->showPaymentTypePage();
     }
 
-
-    public function handleDriverPage()
+    public function handleOwnerIsDriverPage()
     {
 
+        switch ($this->getKeywordText($this->text)) {
+            case "Yes":
+
+                $owner_data = $this->ownerData['seria'] . $this->ownerData['number'] . ' ' . substr($this->ownerData['birthDate'], 0, 10);
+
+                $this->handleDriverPage($owner_data);
+
+                break;
+            case "No":
+                $this->showDriverPage();
+                break;
+            default:
+                $this->showOwnerIsDriverPage();
+        }
+
+        if (!is_null($this->text) && $this->getKeywordText($this->text) != 'No other drivers'){
+
+            $passData = $this->parsePassportData($this->text);
+            $drivers = $this->drivers != '' ? $this->drivers : [];
+            if ($passData['success']){
+                $seria = $passData['series'];
+                $number = $passData['number'];
+                $birthdate = self::toIsoDate($passData['birth']);
+
+
+                $eai = new EuroAsiaService();
+
+                $dto = $eai->getPersonByBirthdateDTO($seria, $number, $birthdate);
+
+
+                if (!$dto->success){
+                    $this->sendMessage($this->getMText('Driver found transport'));
+                }elseif (!$dto->driverLicense){
+                    $this->sendMessage($this->getMText("This driver's driver's license was not found."));
+                }else{
+
+                    $drivers[] = $dto;
+                    $this->drivers = $drivers;
+
+
+                    $police_data = $this->police_data != '' ? $this->police_data : [];
+                    $police_data['drivers'][] = [
+                        'document'      => $seria.$number,   // Passport seriya+raqam
+                        'birth_date'    => substr($birthdate, 0, 10),   // Tug'ilgan sana YYYY-MM-DD
+                        'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
+                        // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
+                        // 8=uka, 9=opa, 10=singlisi
+                    ];
+                    $this->police_data = $police_data;
+                    $this->sendMessageAdmin(json_encode($police_data));
+
+
+
+                    $count = count($drivers);
+
+                    $driverName = $dto->firstName . ' ' . $dto->lastName;
+
+                    if ($count < 5){
+                        $text = sprintf($this->getMText('Drivers saved'), $count, $driverName);
+                        $this->showDriverPage(true, $text);
+                    }else{
+                        $this->showPoliceSeasonPage();
+                    }
+                }
+            }else{
+                $this->showDriverPage(count($drivers));
+            }
+
+
+        } else {
+            $this->showPoliceSeasonPage();
+        }
+
+
+    }
+
+
+    public function handleDriverPage($driver_data = null)
+    {
+        if (!is_null($driver_data)){
+            $this->text = $driver_data;
+        }
         if (!is_null($this->text) && $this->getKeywordText($this->text) != 'No other drivers'){
 
             $passData = $this->parsePassportData($this->text);

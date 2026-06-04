@@ -11,6 +11,10 @@ use common\models\Police;
  */
 class PoliceSearch extends Police
 {
+    public $created_at_from;
+    public $created_at_to;
+    public $totalAmount = 0;
+
     /**
      * {@inheritdoc}
      */
@@ -18,7 +22,7 @@ class PoliceSearch extends Police
     {
         return [
             [['id', 'user_id', 'status', 'amount', 'driverRestriction', 'season_id', 'provider_id', 'anketa_id'], 'integer'],
-            [['policeId', 'startAt', 'endAt', 'pdfUrl', 'paymentId', 'paymentLink', 'gateway', 'created_at', 'updated_at'], 'safe'],
+            [['policeId', 'startAt', 'endAt', 'pdfUrl', 'paymentId', 'paymentLink', 'gateway', 'created_at', 'updated_at', 'created_at_from', 'created_at_to'], 'safe'],
         ];
     }
 
@@ -74,7 +78,6 @@ class PoliceSearch extends Police
             'amount' => $this->amount,
             'driverRestriction' => $this->driverRestriction,
             'season_id' => $this->season_id,
-            'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ]);
 
@@ -82,7 +85,11 @@ class PoliceSearch extends Police
             ->andFilterWhere(['like', 'pdfUrl', $this->pdfUrl])
             ->andFilterWhere(['like', 'paymentId', $this->paymentId])
             ->andFilterWhere(['like', 'paymentLink', $this->paymentLink])
-            ->andFilterWhere(['like', 'gateway', $this->gateway]);
+            ->andFilterWhere(['like', 'gateway', $this->gateway])
+            ->andFilterWhere(['>=', 'created_at', $this->created_at_from ? $this->created_at_from . ' 00:00:00' : null])
+            ->andFilterWhere(['<=', 'created_at', $this->created_at_to ? $this->created_at_to . ' 23:59:59' : null]);
+
+        $this->totalAmount = (clone $query)->sum('amount') ?? 0;
 
         return $dataProvider;
     }
