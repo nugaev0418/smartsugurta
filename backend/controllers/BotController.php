@@ -957,7 +957,12 @@ class BotController extends Controller
         switch ($this->getKeywordText($this->text)) {
             case "Yes":
 
-                $owner_data = $this->ownerData['seria'] . $this->ownerData['number'] . ' ' . substr($this->ownerData['birthDate'], 0, 10);
+                $date = $this->ownerData['birthDate'];
+
+                $dt = new DateTime($date);
+                $birthdate = $dt->format('Y.m.d');
+
+                $owner_data = $this->ownerData['seria'] . $this->ownerData['number'] . ' ' . $birthdate;
 
                 $this->sendMessageAdmin(json_encode($owner_data));
 
