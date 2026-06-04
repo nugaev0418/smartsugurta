@@ -960,7 +960,7 @@ class BotController extends Controller
                 $date = $this->ownerData['birthDate'];
 
                 $dt = new DateTime($date);
-                $birthdate = $dt->format('Y.m.d');
+                $birthdate = $dt->format('d.m.Y');
 
                 $owner_data = $this->ownerData['seria'] . $this->ownerData['number'] . ' ' . $birthdate;
 
