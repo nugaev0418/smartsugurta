@@ -12,8 +12,8 @@ $fmt = fn(int $n) => number_format($n, 0, '.', ' ');
 
 $periods = [
     'day'   => ['label' => 'Bugun',    'sub' => date('d.m.Y'),                        'icon' => 'ti-calendar-day',   'color' => 'blue'],
-    'week'  => ['label' => 'Bu hafta', 'sub' => date('d.m') . ' – ' . date('d.m.Y'), 'icon' => 'ti-calendar-week',  'color' => 'indigo'],
-    'month' => ['label' => 'Bu oy',    'sub' => date('F Y'),                          'icon' => 'ti-calendar-month', 'color' => 'purple'],
+    'week'  => ['label' => '7 Kunda', 'sub' => date('d.m') . ' – ' . date('d.m.Y'), 'icon' => 'ti-calendar-week',  'color' => 'indigo'],
+    'month' => ['label' => '30 kunda',    'sub' => date('F Y'),                          'icon' => 'ti-calendar-month', 'color' => 'purple'],
 ];
 ?>
 

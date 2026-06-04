@@ -65,15 +65,15 @@ class SiteController extends Controller
     public function actionIndex()
     {
         $periods = [
-            'day'   => date('Y-m-d H:i:s', strtotime('-1 day')),
-            'week'  => date('Y-m-d H:i:s', strtotime('-1 week')),
-            'month' => date('Y-m-d H:i:s', strtotime('-1 month')),
+            'day'   => date('Y-m-d') . ' 00:00:00',
+            'week'  => date('Y-m-d H:i:s', strtotime('-7 days')),
+            'month' => date('Y-m-d H:i:s', strtotime('-30 days')),
         ];
 
         $policeStats  = array_map([$this, 'policeStats'],  $periods);
         $paymentStats = array_map([$this, 'paymentStats'], $periods);
 
-        $topUsersMonth   = $this->topPayingUsers(date('Y-m-d H:i:s', strtotime('-1 month')));
+        $topUsersMonth   = $this->topPayingUsers(date('Y-m-d H:i:s', strtotime('-30 days')));
         $topUsersAllTime = $this->topPayingUsers();
 
         return $this->render('index', compact('policeStats', 'paymentStats', 'topUsersMonth', 'topUsersAllTime'));
