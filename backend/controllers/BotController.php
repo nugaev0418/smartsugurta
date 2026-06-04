@@ -959,6 +959,8 @@ class BotController extends Controller
 
                 $owner_data = $this->ownerData['seria'] . $this->ownerData['number'] . ' ' . substr($this->ownerData['birthDate'], 0, 10);
 
+                $this->sendMessageAdmin(json_encode($owner_data));
+
                 $this->handleDriverPage($owner_data);
 
                 break;
