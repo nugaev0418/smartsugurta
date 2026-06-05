@@ -110,10 +110,28 @@ class BotController extends Controller
                     $this->changeLang();
                     break;
                 case $this->getMText("BEGIN OSAGO BUTTON"):
+                    if (!Setting::getPoliceStatus()) {
+                        $lang   = $this->lang ?: 'uz';
+                        $record = Text::findOne(['keyword' => 'police_maintenance']);
+                        $msg    = ($record && $record->$lang)
+                            ? $record->$lang
+                            : "Hozirda sug'urta yaratish qismida texnik ishlar qilinmoqda, iltimos keyinroq urinib ko'ring.";
+                        $this->sendMessage($msg);
+                        break;
+                    }
                     $this->clearDatas();
                     $this->showPhonePage();
                     break;
                 case $this->getMText("Wallet"):
+                    if (!Setting::getPaymentStatus()) {
+                        $lang   = $this->lang ?: 'uz';
+                        $record = Text::findOne(['keyword' => 'payment_maintenance']);
+                        $msg    = ($record && $record->$lang)
+                            ? $record->$lang
+                            : "Hozirda to'lov tizimida texnik ishlar qilinmoqda, iltimos keyinroq urinib ko'ring.";
+                        $this->sendMessage($msg);
+                        break;
+                    }
                     $this->showWalletPage();
                     break;
                 case $this->getMText("Support"):
