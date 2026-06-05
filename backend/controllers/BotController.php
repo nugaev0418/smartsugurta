@@ -738,7 +738,7 @@ class BotController extends Controller
               . "ℹ️ Bonus hamyon balansiga avtomatik qo'shiladi.";
 
         $inline = [
-            [$this->telegram->buildInlineKeyBoardButton("📤 Do'stlarga ulashish", '', $shareUrl)],
+            [$this->telegram->buildInlineKeyBoardButton("📤 Do'stlarga ulashish", $shareUrl)],
         ];
         $this->sendMessageWithInlineKeyboard($text, $inline);
     }
