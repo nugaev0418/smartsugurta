@@ -4,12 +4,13 @@ namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
 use backend\models\EuroAsia;
-use common\eleirbag\Telegram;
 use common\models\Botuser;
+use common\models\Income;
 use common\models\Police;
 use backend\models\PoliceSearch;
+use common\models\Setting;
+use common\models\Text;
 use CURLFile;
-use Psy\VersionUpdater\Downloader\CurlDownloader;
 use Yii;
 use yii\base\ErrorException;
 use yii\web\Controller;
@@ -178,13 +179,14 @@ class PoliceController extends Controller
 
                     if (EuroAsia::download($police->policeId)){
                         $filePath = new CURLFile(Yii::getAlias('policeFiles/' . $police->policeId . '.pdf'));
-                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurtabot</b>";
-                        $this->sendDocument($filePath, $text);
+                        $docText = $this->getInsuranceReadyText($user);
+                        $this->sendDocument($filePath, $docText);
 
                         $this->addBonuse($user, $police->amount);
+                        $this->addReferralBonus($user, $police);
 
                         //send to channel
-                        $this->sendDocument($filePath, $text, BotController::ORDER_CHANNEL);
+                        $this->sendDocument($filePath, $docText, BotController::ORDER_CHANNEL);
                     }else{
                         $this->sendMessage("Nimadir xato Operator bilan bog'laning");
                     }
@@ -226,13 +228,14 @@ class PoliceController extends Controller
 
                     if (self::grossDownload($police->policeId)){
                         $filePath = new CURLFile(Yii::getAlias('policeFiles/' . $police->policeId . '.pdf'));
-                        $text = "<b>✅ Sug'urtangiz tayyor bo'ldi! / Ваша страховка готова!\n\n@smartsugurtabot</b>";
-                        $this->sendDocument($filePath, $text);
+                        $docText = $this->getInsuranceReadyText($user);
+                        $this->sendDocument($filePath, $docText);
 
                         $this->addBonuse($user, $police->amount);
+                        $this->addReferralBonus($user, $police);
 
                         //send to channel
-                        $this->sendDocument($filePath, $text, BotController::ORDER_CHANNEL);
+                        $this->sendDocument($filePath, $docText, BotController::ORDER_CHANNEL);
                     }else{
                         $this->sendMessage("Nimadir xato Operator bilan bog'laning");
                     }
@@ -328,31 +331,93 @@ class PoliceController extends Controller
         }
     }
 
-    public function addBonuse($user, $amount)
+    private function getUserLang(Botuser $user): string
     {
-        $bonus = $amount * 0.07;
+        if ($user->data) {
+            $data = json_decode($user->data, true);
+            return $data['lang'] ?? 'uz';
+        }
+        return 'uz';
+    }
+
+    private function getInsuranceReadyText(Botuser $user): string
+    {
+        $lang = $this->getUserLang($user);
+        $record = Text::findOne(['keyword' => 'insurance_ready']);
+        if ($record && $record->$lang) {
+            return $record->$lang;
+        }
+        return $lang === 'ru'
+            ? "<b>✅ Ваша страховка готова!\n\n@smartsugurtabot</b>"
+            : "<b>✅ Sug'urtangiz tayyor bo'ldi!\n\n@smartsugurtabot</b>";
+    }
+
+    public function addBonuse(Botuser $user, $amount): void
+    {
+        $percent = Setting::getUserPercent() ?: 0;
+        $bonus   = (int)($amount * $percent / 100);
+        $lang    = $this->getUserLang($user);
+
         $user->balance += $bonus;
+        $user->save(false);
 
+        $bonusFormatted = $this->formatMoney($bonus);
 
-        $user->save();
-
-
-
-        $text = "🎉 Tabriklayman!
-Sizning hisobingizga <b>%s</b> so'm bonus qo'shildi!
-
-Chiqarib olish uchun <b>🏧 Hamyon</b> tugmasini bosing.
-
-🎉 Поздравляем!
-На ваш счет зачислен бонус в размере <b>%s</b> сумов!
-
-Нажмите кнопку <b>🏧 Кошелек</b> для вывода средств.";
-
-        $bonus = $this->formatMoney($bonus);
-
-        $text = sprintf($text, $bonus, $bonus);
+        $record = Text::findOne(['keyword' => 'user_bonus_message']);
+        if ($record && $record->$lang) {
+            $text = sprintf($record->$lang, $bonusFormatted);
+        } elseif ($lang === 'ru') {
+            $text = "🎉 Поздравляем!\nНа ваш счет зачислен бонус в размере <b>{$bonusFormatted}</b> сумов!\n\nНажмите <b>🏧 Кошелек</b> для вывода средств.";
+        } else {
+            $text = "🎉 Tabriklayman!\nSizning hisobingizga <b>{$bonusFormatted}</b> so'm bonus qo'shildi!\n\nChiqarib olish uchun <b>🏧 Hamyon</b> tugmasini bosing.";
+        }
 
         $this->sendMessage($text);
+    }
+
+    private function addReferralBonus(Botuser $user, Police $police): void
+    {
+        if (!$user->referred_by) {
+            return;
+        }
+
+        $referrer = Botuser::findOne($user->referred_by);
+        if (!$referrer) {
+            return;
+        }
+
+        $percent = Setting::getReferralPercent() ?: 0;
+        $bonus   = (int)($police->amount * $percent / 100);
+        if ($bonus <= 0) {
+            return;
+        }
+
+        $referrer->balance += $bonus;
+        $referrer->save(false);
+
+        Income::add(
+            $referrer->id,
+            $bonus,
+            "Referal bonus — {$user->fname} {$user->lname} (polis #{$police->id})"
+        );
+
+        $refLang        = $this->getUserLang($referrer);
+        $bonusFormatted = $this->formatMoney($bonus);
+        $userName       = trim("{$user->fname} {$user->lname}") ?: "ID:{$user->id}";
+
+        $record = Text::findOne(['keyword' => 'referral_bonus_message']);
+        if ($record && $record->$refLang) {
+            $text = sprintf($record->$refLang, $userName, $bonusFormatted);
+        } elseif ($refLang === 'ru') {
+            $text = "💰 Ваш реферал <b>{$userName}</b> оформил страховку!\nВам начислен бонус: <b>{$bonusFormatted}</b> сумов.\n\nНажмите <b>🏧 Кошелек</b> для вывода.";
+        } else {
+            $text = "💰 Referalingiz <b>{$userName}</b> sug'urta rasmiyllashtirdi!\nSizga bonus qo'shildi: <b>{$bonusFormatted}</b> so'm.\n\nChiqarib olish uchun <b>🏧 Hamyon</b> tugmasini bosing.";
+        }
+
+        $savedChatId    = $this->chat_id;
+        $this->chat_id  = $referrer->chat_id;
+        $this->sendMessage($text);
+        $this->chat_id  = $savedChatId;
     }
 
     function formatMoney($number)

@@ -101,10 +101,20 @@ class BotController extends Controller
                 if ($referrer && $self && !$self->referred_by && $referrer->id !== $self->id) {
                     $self->referred_by = $referrer->id;
                     $self->save(false);
-                    $this->sendMessageWithID(
-                        $referrer->chat_id,
-                        "🎉 Sizning referal havolangiz orqali yangi foydalanuvchi qo'shildi!"
-                    );
+
+                    $refLang = 'uz';
+                    if ($referrer->data) {
+                        $refData = json_decode($referrer->data, true);
+                        $refLang = $refData['lang'] ?? 'uz';
+                    }
+                    $record = Text::findOne(['keyword' => 'referral_new_user']);
+                    $notifyMsg = ($record && $record->$refLang)
+                        ? $record->$refLang
+                        : ($refLang === 'ru'
+                            ? "🎉 По вашей реферальной ссылке зарегистрировался новый пользователь!"
+                            : "🎉 Sizning referal havolangiz orqali yangi foydalanuvchi qo'shildi!");
+
+                    $this->sendMessageWithID($referrer->chat_id, $notifyMsg);
                 }
                 $this->text = '/start';
             }
