@@ -700,8 +700,6 @@ class BotController extends Controller
 
     public function showReferralPage()
     {
-        $this->page = Pages::REFERRAL_PAGE;
-
         $user = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
 
         $referralLink = "https://t.me/" . self::BOT_USERNAME . "?start=ref_" . $user->referral_code;
@@ -721,22 +719,28 @@ class BotController extends Controller
                 ->sum('amount') ?? 0);
         }
 
-        $bonusFormatted = Setting::getReferralPercent();
+        $bonusPercent    = Setting::getReferralPercent();
         $earnedFormatted = number_format($totalEarned, 0, '.', ' ');
 
+        $shareMessage = urlencode(
+            "🎁 Bu bot orqali avtosug'urta rasmiylashtirsangiz $bonusPercent% bonus olasiz!\n\n"
+            . "👉 Havola: $referralLink"
+        );
+        $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=$shareMessage";
+
         $text = "🤝 <b>Referal tizimi</b>\n\n"
-              . "🔗 Sizning referal havolangiz:\n{$referralLink}\n\n"
-              . "👥 Referallar soni: <b>{$referralCount}</b>\n"
-              . "📋 Ularning sug'urtalari: <b>{$insuranceCount}</b>\n"
-              . "💰 Jami ishlagan: <b>{$earnedFormatted} so'm</b>\n\n"
+              . "🔗 Sizning referal havolangiz:\n<code>$referralLink</code>\n\n"
+              . "👥 Referallar soni: <b>$referralCount</b>\n"
+              . "📋 Ularning sug'urtalari: <b>$insuranceCount</b>\n"
+              . "💰 Jami ishlagan: <b>$earnedFormatted so'm</b>\n\n"
               . "📊 <b>Bonus jadvali:</b>\n"
-              . "Har bir to'langan sug'urta uchun: <b>{$bonusFormatted} % bonus beriladi.</b>\n\n"
+              . "Har bir to'langan sug'urta uchun: <b>$bonusPercent% bonus</b>\n\n"
               . "ℹ️ Bonus hamyon balansiga avtomatik qo'shiladi.";
 
-        $option = [
-            [$this->telegram->buildKeyboardButton($this->getMText("Main menu"))],
+        $inline = [
+            [$this->telegram->buildInlineKeyBoardButton("📤 Do'stlarga ulashish", '', $shareUrl)],
         ];
-        $this->sendMessageWithKeyborad($text, $option);
+        $this->sendMessageWithInlineKeyboard($text, $inline);
     }
 
     // ******** SHOW PAGES **** //
