@@ -725,9 +725,9 @@ class BotController extends Controller
         $shareMessage = urlencode(
             "🎁 Bu bot orqali avtosug'urta rasmiylashtirsangiz $bonusPercent% bonus olasiz!\n\n"
             . "Bonusni plastik karta yoki telefon raqamga chiqarib olsa bo'ladi.\n\n"
-            . "👉 Havola: $referralLink"
+            . "👉 Havola:"
         );
-        $shareUrl = "https://t.me/share/url?text=$shareMessage";
+        $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=$shareMessage";
 
         $text = "🤝 <b>Referal tizimi</b>\n\n"
               . "🔗 Sizning referal havolangiz:\n<code>$referralLink</code>\n\n"
