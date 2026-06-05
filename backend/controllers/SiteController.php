@@ -3,6 +3,7 @@
 namespace backend\controllers;
 
 use common\models\LoginForm;
+use common\models\User;
 use Yii;
 use yii\db\Query;
 use yii\filters\VerbFilter;
@@ -29,7 +30,7 @@ class SiteController extends Controller
                         'allow' => true,
                     ],
                     [
-                        'actions' => ['logout', 'index'],
+                        'actions' => ['logout', 'index', 'settings'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -148,6 +149,39 @@ class SiteController extends Controller
             'process_amount' => (int)($row['process_amount'] ?? 0),
             'cancel_count'   => (int)($row['cancel_count'] ?? 0),
         ];
+    }
+
+    public function actionSettings()
+    {
+        $errors = [];
+        $success = false;
+
+        if (Yii::$app->request->isPost) {
+            $currentPassword = Yii::$app->request->post('current_password');
+            $newPassword     = Yii::$app->request->post('new_password');
+            $confirmPassword = Yii::$app->request->post('confirm_password');
+
+            /** @var User $user */
+            $user = User::findOne(Yii::$app->user->id);
+
+            if (!$user->validatePassword($currentPassword)) {
+                $errors[] = 'Joriy parol noto\'g\'ri.';
+            } elseif (strlen($newPassword) < 6) {
+                $errors[] = 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak.';
+            } elseif ($newPassword !== $confirmPassword) {
+                $errors[] = 'Yangi parol va tasdiqlash paroli mos kelmadi.';
+            } else {
+                $user->setPassword($newPassword);
+                $user->generateAuthKey();
+                if ($user->save(false)) {
+                    $success = true;
+                } else {
+                    $errors[] = 'Parolni saqlashda xatolik yuz berdi.';
+                }
+            }
+        }
+
+        return $this->render('settings', compact('errors', 'success'));
     }
 
     /**

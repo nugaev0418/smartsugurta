@@ -12,6 +12,7 @@ use common\models\History;
 use common\models\Payment;
 use common\models\Police;
 use common\models\SeasonalInsurance;
+use common\models\Setting;
 use common\models\Text;
 use common\models\User;
 use DateTime;
@@ -81,6 +82,15 @@ class BotController extends Controller
                 $this->addUser();
             }
 
+            if (!Setting::getBotStatus()) {
+                $lang = $this->lang ?: 'uz';
+                $record = Text::findOne(['keyword' => 'bot_maintenance']);
+                $msg = ($record && $record->$lang)
+                    ? $record->$lang
+                    : "Hozirgi vaqtda botda texnik ishlar olib borilmoqda, iltimos birozdan keyin urinib ko'ring.";
+                $this->sendMessage($msg);
+                return 'ok';
+            }
 
             switch ($this->text) {
                 case '/start':

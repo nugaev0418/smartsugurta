@@ -25,6 +25,7 @@ $navItems = [
     ['label' => 'Season',   'url' => '/season/index',   'icon' => 'ti-calendar',       'controller' => 'season'],
     ['label' => 'Payment',  'url' => '/payment/index',  'icon' => 'ti-credit-card',    'controller' => 'payment'],
     ['label' => 'Text',     'url' => '/text/index',     'icon' => 'ti-file-text',      'controller' => 'text'],
+    ['label' => 'Setting',  'url' => '/setting/index',  'icon' => 'ti-adjustments',    'controller' => 'setting'],
 ];
 ?>
 <?php $this->beginPage() ?>
@@ -69,6 +70,10 @@ $navItems = [
                     </a>
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                         <div class="dropdown-header"><?= Html::encode(Yii::$app->user->identity->username) ?></div>
+                        <div class="dropdown-divider"></div>
+                        <a href="<?= Url::to(['/site/settings']) ?>" class="dropdown-item">
+                            <i class="dropdown-item-icon ti ti-settings"></i> Settings
+                        </a>
                         <div class="dropdown-divider"></div>
                         <?= Html::beginForm(['/site/logout'], 'post') ?>
                         <button type="submit" class="dropdown-item text-danger">
@@ -144,6 +149,10 @@ $navItems = [
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                            <a href="<?= Url::to(['/site/settings']) ?>" class="dropdown-item">
+                                <i class="dropdown-item-icon ti ti-settings"></i> Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
                             <?= Html::beginForm(['/site/logout'], 'post') ?>
                             <button type="submit" class="dropdown-item text-danger">
                                 <i class="dropdown-item-icon ti ti-logout"></i> Logout
