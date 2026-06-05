@@ -1895,14 +1895,20 @@ class BotController extends Controller
         }
     }
 
-    public function sendMessageWithInlineKeyboard($text, $option, $chat_id = null)
+    public function sendMessageWithInlineKeyboard($text, $option, $chat_id = null, $web_view = false)
     {
         if (is_null($chat_id)){
             $chat_id = $this->chat_id;
         }
 
         $keyb = $this->telegram->buildInlineKeyBoard($option);
-        $content = ['chat_id' => $chat_id, 'reply_markup' => $keyb, 'parse_mode' => 'html', 'text' => $text];
+        $content = [
+            'chat_id'                  => $chat_id,
+            'reply_markup'             => $keyb,
+            'parse_mode'               => 'html',
+            'text'                     => $text,
+            'disable_web_page_preview' => !$web_view,
+        ];
 
         $this->telegram->sendMessage($content);
     }
