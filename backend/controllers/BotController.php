@@ -1412,10 +1412,25 @@ class BotController extends Controller
         }
     }
 
+    private function isPaymentMaintenance(): bool
+    {
+        if (!Setting::getPaymentStatus()) {
+            $lang   = $this->lang ?: 'uz';
+            $record = Text::findOne(['keyword' => 'payment_maintenance']);
+            $msg    = ($record && $record->$lang)
+                ? $record->$lang
+                : "Hozirda to'lov tizimida texnik ishlar qilinmoqda, iltimos keyinroq urinib ko'ring.";
+            $this->sendMessage($msg);
+            return true;
+        }
+        return false;
+    }
+
     public function handleWalletPage()
     {
         switch ($this->getKeywordText($this->text)){
             case 'Withdraw':
+                if ($this->isPaymentMaintenance()) return;
                 $this->showWithdrawTypePage();
                 break;
             default:
@@ -1425,6 +1440,7 @@ class BotController extends Controller
 
     public function handleWithdrawTypePage()
     {
+        if ($this->isPaymentMaintenance()) return;
         switch ($this->getKeywordText($this->text)){
             case 'to phone':
                 $this->withdrawType = Payment::TO_PHONE;
@@ -1441,11 +1457,9 @@ class BotController extends Controller
 
     public function handleWithdrawAccountPage()
     {
+        if ($this->isPaymentMaintenance()) return;
         $phone_pattern = '/^(?:\+998|998)?(90|91|93|94|95|97|98|99|33|88|70|77|87)\d{7}$/';
         $card_pattern = '/^(4062|4067|4073|4097|4198|4294|5440|5555|5614|6262|8600|9860)\d{12}$/';
-
-
-
 
         $pattern = $this->withdrawType == Payment::TO_PHONE ? $phone_pattern : $card_pattern;
 
@@ -1459,6 +1473,7 @@ class BotController extends Controller
 
     public function handleWithdrawAmountPage()
     {
+        if ($this->isPaymentMaintenance()) return;
         if ($this->isAmount()){
             if ($this->paymentStatus()){
                 if ($this->text <= $this->getUserBalance()){
