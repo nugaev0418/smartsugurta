@@ -94,16 +94,23 @@ class BotController extends Controller
                 return 'ok';
             }
 
+            // /start ref_CODE deep linkni normalize qilish
+            if (preg_match('/^\/start ref_(\w+)$/', $this->text, $m)) {
+                $referrer = Botuser::find()->where(['referral_code' => $m[1]])->one();
+                $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
+                if ($referrer && $self && !$self->referred_by && $referrer->id !== $self->id) {
+                    $self->referred_by = $referrer->id;
+                    $self->save(false);
+                    $this->sendMessageWithID(
+                        $referrer->chat_id,
+                        "🎉 Sizning referal havolangiz orqali yangi foydalanuvchi qo'shildi!"
+                    );
+                }
+                $this->text = '/start';
+            }
+
             switch ($this->text) {
                 case '/start':
-                    if (preg_match('/^\/start ref_(\w+)$/', $this->text, $m)) {
-                        $referrer = Botuser::find()->where(['referral_code' => $m[1]])->one();
-                        $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
-                        if ($referrer && $self && !$self->referred_by && $referrer->id !== $self->id) {
-                            $self->referred_by = $referrer->id;
-                            $self->save(false);
-                        }
-                    }
                     if ($this->lang) {
                         $this->showMainPage();
                     } else {
