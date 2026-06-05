@@ -725,7 +725,7 @@ class BotController extends Controller
         $earnedFormatted = number_format($totalEarned, 0, '.', ' ');
 
         $text = "🤝 <b>Referal tizimi</b>\n\n"
-              . "🔗 Sizning referal havolangiz:\n<code>{$referralLink}</code>\n\n"
+              . "🔗 Sizning referal havolangiz:\n{$referralLink}\n\n"
               . "👥 Referallar soni: <b>{$referralCount}</b>\n"
               . "📋 Ularning sug'urtalari: <b>{$insuranceCount}</b>\n"
               . "💰 Jami ishlagan: <b>{$earnedFormatted} so'm</b>\n\n"
