@@ -304,15 +304,18 @@ class PoliceController extends Controller
         }
     }
 
-    public function sendMessage($text)
+    public function sendMessage($text, $chat_id = null)
     {
         try {
             $telegram = Yii::$app->telegram;
-            $content = ['chat_id' => $this->chat_id, 'parse_mode' => 'html', 'text' => $text, /*'disable_web_page_preview' => true*/];
+            $content = [
+                'chat_id'    => $chat_id ?? $this->chat_id,
+                'parse_mode' => 'html',
+                'text'       => $text,
+            ];
             $telegram->sendMessage($content);
         } catch (ErrorException $e) {
             Yii::error($e->getMessage());
-            throw new ErrorException($e);
         }
     }
 
@@ -414,10 +417,7 @@ class PoliceController extends Controller
             $text = "💰 Referalingiz <b>{$userName}</b> sug'urta rasmiyllashtirdi!\nSizga bonus qo'shildi: <b>{$bonusFormatted}</b> so'm.\n\nChiqarib olish uchun <b>🏧 Hamyon</b> tugmasini bosing.";
         }
 
-        $savedChatId    = $this->chat_id;
-        $this->chat_id  = $referrer->chat_id;
-        $this->sendMessage($text);
-        $this->chat_id  = $savedChatId;
+        $this->sendMessage($text, $referrer->chat_id);
     }
 
     function formatMoney($number)
