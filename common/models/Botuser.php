@@ -19,10 +19,13 @@ use Yii;
  * @property int|null $is_admin
  * @property int|null $is_banned
  * @property string|null $step
+ * @property string|null $referral_code
+ * @property int|null $referred_by
  * @property string|null $created_at
  * @property string|null $updated_at
  *
  * @property Police[] $polices
+ * @property Botuser[] $referrals
  */
 class Botuser extends \yii\db\ActiveRecord
 {
@@ -46,9 +49,11 @@ class Botuser extends \yii\db\ActiveRecord
             [['is_banned'], 'default', 'value' => 0],
             [['status'], 'default', 'value' => 1],
             [['chat_id'], 'required'],
-            [['chat_id', 'balance', 'status', 'is_admin', 'is_banned'], 'integer'],
+            [['chat_id', 'balance', 'status', 'is_admin', 'is_banned', 'referred_by'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['fname', 'lname', 'username', 'phone', 'step'], 'string', 'max' => 255],
+            [['referral_code'], 'string', 'max' => 20],
+            [['referral_code'], 'unique'],
         ];
     }
 
@@ -83,6 +88,19 @@ class Botuser extends \yii\db\ActiveRecord
     public function getPolices()
     {
         return $this->hasMany(Police::class, ['user_id' => 'id']);
+    }
+
+    public function getReferrals()
+    {
+        return $this->hasMany(static::class, ['referred_by' => 'id']);
+    }
+
+    public static function generateReferralCode(): string
+    {
+        do {
+            $code = strtoupper(substr(md5(uniqid()), 0, 8));
+        } while (static::find()->where(['referral_code' => $code])->exists());
+        return $code;
     }
 
 }

@@ -41,5 +41,6 @@ class Pages
 
         SETTING = 'setting_page',
         ADDRESS = 'address_page',
+        REFERRAL_PAGE = 'referral_page',
         MAIN = 'main_page';
 }

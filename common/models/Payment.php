@@ -23,11 +23,11 @@ class Payment extends \yii\db\ActiveRecord
 {
 
     const
-        TO_CARD = 1,
+        TO_CARD  = 1,
         TO_PHONE = 2;
     const STATUS_PROCESS = 0;
     const STATUS_SUCCESS = 1;
-    const STATUS_CANCEL = 2;
+    const STATUS_CANCEL  = 2;
 
 
     /**

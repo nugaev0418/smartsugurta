@@ -9,6 +9,7 @@ use backend\queue\GrossOsagoJob;
 use backend\queue\PaynetQueue;
 use common\models\Botuser;
 use common\models\History;
+use common\models\Income;
 use common\models\Payment;
 use common\models\Police;
 use common\models\SeasonalInsurance;
@@ -36,7 +37,8 @@ class BotController extends Controller
     const PAYMENT_CHANNEL       = '-1003501874314',
          PAYMENT_CHANNEL_ADMIN  = '-1001571664655',
           ADMIN_ID              = '3673579',
-          ORDER_CHANNEL         = '-1003782162980';
+          ORDER_CHANNEL         = '-1003782162980',
+          BOT_USERNAME          = 'smartsugurtabot';
 
     protected ?array $_dataCache = null;
 
@@ -94,6 +96,14 @@ class BotController extends Controller
 
             switch ($this->text) {
                 case '/start':
+                    if (preg_match('/^\/start ref_(\w+)$/', $this->text, $m)) {
+                        $referrer = Botuser::find()->where(['referral_code' => $m[1]])->one();
+                        $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
+                        if ($referrer && $self && !$self->referred_by && $referrer->id !== $self->id) {
+                            $self->referred_by = $referrer->id;
+                            $self->save(false);
+                        }
+                    }
                     if ($this->lang) {
                         $this->showMainPage();
                     } else {
@@ -136,6 +146,9 @@ class BotController extends Controller
                     break;
                 case $this->getMText("Support"):
                     $this->showSupportPage();
+                    break;
+                case $this->getMText("Referral system"):
+                    $this->showReferralPage();
                     break;
                 default:
                     switch ($this->page) {
@@ -224,10 +237,9 @@ class BotController extends Controller
                     $this->telegram->buildKeyboardButton($this->getMText("BEGIN OSAGO BUTTON")),
                     $this->telegram->buildKeyboardButton($this->getMText('Wallet')),
                 ],
-//                [
-//                    $this->telegram->buildKeyboardButton($this->getMText('Get to know the price')),
-//                    $this->telegram->buildKeyboardButton($this->getMText('My insurances')),
-//                ],
+                [
+                    $this->telegram->buildKeyboardButton($this->getMText('Referral system')),
+                ],
                 [
                     $this->telegram->buildKeyboardButton($this->getMText('Language selection')),
                     $this->telegram->buildKeyboardButton($this->getMText('Support')),
@@ -684,6 +696,47 @@ class BotController extends Controller
         $text = $this->getMText('support page message');
 
         $this->sendMessage($text);
+    }
+
+    public function showReferralPage()
+    {
+        $this->page = Pages::REFERRAL_PAGE;
+
+        $user = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
+
+        $referralLink = "https://t.me/" . self::BOT_USERNAME . "?start=ref_" . $user->referral_code;
+
+        $referralIds   = Botuser::find()->select('id')->where(['referred_by' => $user->id])->column();
+        $referralCount = count($referralIds);
+
+        $insuranceCount = 0;
+        $totalEarned    = 0;
+        if ($referralCount > 0) {
+            $insuranceCount = (int)Police::find()
+                ->where(['user_id' => $referralIds, 'payment_status' => 1])
+                ->count();
+
+            $totalEarned = (int)(Income::find()
+                ->where(['user_id' => $user->id])
+                ->sum('amount') ?? 0);
+        }
+
+        $bonusFormatted = Setting::getReferralPercent();
+        $earnedFormatted = number_format($totalEarned, 0, '.', ' ');
+
+        $text = "🤝 <b>Referal tizimi</b>\n\n"
+              . "🔗 Sizning referal havolangiz:\n<code>{$referralLink}</code>\n\n"
+              . "👥 Referallar soni: <b>{$referralCount}</b>\n"
+              . "📋 Ularning sug'urtalari: <b>{$insuranceCount}</b>\n"
+              . "💰 Jami ishlagan: <b>{$earnedFormatted} so'm</b>\n\n"
+              . "📊 <b>Bonus jadvali:</b>\n"
+              . "Har bir to'langan sug'urta uchun: <b>{$bonusFormatted} % bonus beriladi.</b>\n\n"
+              . "ℹ️ Bonus hamyon balansiga avtomatik qo'shiladi.";
+
+        $option = [
+            [$this->telegram->buildKeyboardButton($this->getMText("Main menu"))],
+        ];
+        $this->sendMessageWithKeyborad($text, $option);
     }
 
     // ******** SHOW PAGES **** //
@@ -1604,10 +1657,11 @@ class BotController extends Controller
 
     public function addUser(){
         $model = new Botuser();
-        $model->chat_id = $this->chat_id;
-        $model->fname = $this->firstname;
-        $model->lname = $this->lastname;
-        $model->username = $this->username;
+        $model->chat_id       = $this->chat_id;
+        $model->fname         = $this->firstname;
+        $model->lname         = $this->lastname;
+        $model->username      = $this->username;
+        $model->referral_code = Botuser::generateReferralCode();
         $model->save();
     }
 

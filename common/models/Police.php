@@ -2,6 +2,7 @@
 
 namespace common\models;
 
+use backend\controllers\BotController;
 use Yii;
 
 /**
@@ -99,6 +100,7 @@ class Police extends \yii\db\ActiveRecord
             'updated_at' => Yii::t('app', 'Updated At'),
         ];
     }
+
 
     /**
      * Gets query for [[Drivers]].
