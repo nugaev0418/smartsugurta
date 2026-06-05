@@ -17,8 +17,8 @@ class BotuserSearch extends Botuser
     public function rules()
     {
         return [
-            [['id', 'chat_id', 'balance', 'status', 'is_admin', 'is_banned'], 'integer'],
-            [['fname', 'lname', 'username', 'phone', 'data', 'step', 'created_at', 'updated_at'], 'safe'],
+            [['id', 'chat_id', 'balance', 'status', 'is_admin', 'is_banned', 'referred_by'], 'integer'],
+            [['fname', 'lname', 'username', 'phone', 'data', 'step', 'referral_code', 'created_at', 'updated_at'], 'safe'],
         ];
     }
 
@@ -64,14 +64,15 @@ class BotuserSearch extends Botuser
 
         // grid filtering conditions
         $query->andFilterWhere([
-            'id' => $this->id,
-            'chat_id' => $this->chat_id,
-            'balance' => $this->balance,
-            'status' => $this->status,
-            'is_admin' => $this->is_admin,
-            'is_banned' => $this->is_banned,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'id'          => $this->id,
+            'chat_id'     => $this->chat_id,
+            'balance'     => $this->balance,
+            'status'      => $this->status,
+            'is_admin'    => $this->is_admin,
+            'is_banned'   => $this->is_banned,
+            'referred_by' => $this->referred_by,
+            'created_at'  => $this->created_at,
+            'updated_at'  => $this->updated_at,
         ]);
 
         $query->andFilterWhere(['like', 'fname', $this->fname])
@@ -79,7 +80,8 @@ class BotuserSearch extends Botuser
             ->andFilterWhere(['like', 'username', $this->username])
             ->andFilterWhere(['like', 'phone', $this->phone])
             ->andFilterWhere(['like', 'data', $this->data])
-            ->andFilterWhere(['like', 'step', $this->step]);
+            ->andFilterWhere(['like', 'step', $this->step])
+            ->andFilterWhere(['like', 'referral_code', $this->referral_code]);
 
         return $dataProvider;
     }
