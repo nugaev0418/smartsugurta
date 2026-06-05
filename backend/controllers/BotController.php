@@ -723,14 +723,13 @@ class BotController extends Controller
         $earnedFormatted = number_format($totalEarned, 0, '.', ' ');
 
         $shareMessage = urlencode(
-            "🎁 Bu bot orqali avtosug'urta rasmiylashtirsangiz $bonusPercent% bonus olasiz!\n\n"
+            "\n🎁 Bu bot orqali avtosug'urta rasmiylashtirsangiz $bonusPercent% bonus olasiz!\n\n"
             . "Bonusni plastik karta yoki telefon raqamga chiqarib olsa bo'ladi.\n\n"
-            . "👉 Havola:"
         );
         $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=$shareMessage";
 
         $text = "🤝 <b>Referal tizimi</b>\n\n"
-              . "🔗 Sizning referal havolangiz:\n<code>$referralLink</code>\n\n"
+              . "🔗 Sizning referal havolangiz:\n$referralLink\n\n"
               . "👥 Referallar soni: <b>$referralCount</b>\n"
               . "📋 Ularning sug'urtalari: <b>$insuranceCount</b>\n"
               . "💰 Jami ishlagan: <b>$earnedFormatted so'm</b>\n\n"
