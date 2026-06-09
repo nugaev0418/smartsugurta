@@ -42,7 +42,17 @@ class BroadcastSendJob extends BaseObject implements JobInterface
                 $telegramMsgId = $result['result']['message_id'];
             }
         } catch (\Throwable $e) {
-            Yii::warning("BroadcastSendJob user {$this->user_id}: " . $e->getMessage(), 'broadcast');
+            $errMsg = $e->getMessage();
+            Yii::warning("BroadcastSendJob user {$this->user_id}: {$errMsg}", 'broadcast');
+
+            // Bot bloklangan yoki user mavjud emas → statusni 0 qilib qo'yish
+            if (str_contains($errMsg, 'bot was blocked')
+                || str_contains($errMsg, 'user is deactivated')
+                || str_contains($errMsg, 'chat not found')
+                || str_contains($errMsg, 'Forbidden')
+            ) {
+                \common\models\Botuser::updateAll(['status' => 0], ['id' => $this->user_id]);
+            }
         }
 
         $log                      = new BroadcastLog();

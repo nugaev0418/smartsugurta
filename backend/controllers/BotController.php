@@ -827,8 +827,6 @@ class BotController extends Controller
                 'user_id'      => (int)$user->id,
                 'chat_id'      => (int)$user->chat_id,
             ]));
-
-            break;
         }
 
         $this->sendMessage("✅ Xabar <b>{$total}</b> ta foydalanuvchiga yuborilmoqda...\n🆔 Broadcast ID: <b>{$broadcast->id}</b>");
