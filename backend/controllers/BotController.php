@@ -7,7 +7,9 @@ use backend\models\EuroAsia;
 use backend\models\Pages;
 use backend\queue\GrossOsagoJob;
 use backend\queue\PaynetQueue;
+use backend\queue\BroadcastSendJob;
 use common\models\Botuser;
+use common\models\Broadcast;
 use common\models\History;
 use common\models\Income;
 use common\models\Payment;
@@ -167,6 +169,12 @@ class BotController extends Controller
                 case $this->getMText("Referral system"):
                     $this->showReferralPage();
                     break;
+                case "⚙️ Admin panel":
+                    if ($this->isAdmin()) $this->showAdminPage();
+                    break;
+                case "📢 Xabar yuborish":
+                    if ($this->isAdmin()) $this->showBroadcastWaitPage();
+                    break;
                 default:
                     switch ($this->page) {
                         case Pages::LANG:
@@ -224,6 +232,9 @@ class BotController extends Controller
                         case Pages::WITHDRAW_AMOUNT_PAGE:
                             $this->handleWithdrawAmountPage();
                             break;
+                        case Pages::BROADCAST_PAGE:
+                            if ($this->isAdmin()) $this->handleBroadcastPage();
+                            break;
                     }
                     break;
             }
@@ -262,6 +273,9 @@ class BotController extends Controller
                     $this->telegram->buildKeyboardButton($this->getMText('Support')),
                 ],
             ];
+            if ($this->isAdmin()) {
+                $option[] = [$this->telegram->buildKeyboardButton("⚙️ Admin panel")];
+            }
             $this->sendMessageWithKeyborad($text, $option);
         }catch (ErrorException $e) {
             Yii::error($e->getMessage());
@@ -758,6 +772,67 @@ class BotController extends Controller
             [$this->telegram->buildInlineKeyBoardButton("📤 Do'stlarga ulashish", $shareUrl)],
         ];
         $this->sendMessageWithInlineKeyboard($text, $inline);
+    }
+
+    private function isAdmin(): bool
+    {
+        return (string)$this->chat_id === (string)self::ADMIN_ID;
+    }
+
+    public function showAdminPage(): void
+    {
+        $this->page = Pages::ADMIN_PAGE;
+        $option = [
+            [$this->telegram->buildKeyboardButton("📢 Xabar yuborish")],
+            [$this->telegram->buildKeyboardButton($this->getMText("Main menu"))],
+        ];
+        $this->sendMessageWithKeyborad("⚙️ <b>Admin panel</b>", $option);
+    }
+
+    public function showBroadcastWaitPage(): void
+    {
+        $this->page = Pages::BROADCAST_PAGE;
+        $option = [[$this->telegram->buildKeyboardButton($this->getMText("Cancel"))]];
+        $this->sendMessageWithKeyborad("📨 Xabar yuboring yoki forward qiling:", $option);
+    }
+
+    public function handleBroadcastPage(): void
+    {
+        $msgData = $this->data['message'] ?? null;
+        if (!$msgData) {
+            $this->showBroadcastWaitPage();
+            return;
+        }
+
+        $typeMap = ['text', 'photo', 'video', 'document', 'audio', 'voice', 'sticker', 'animation', 'video_note'];
+        $msgType = 'text';
+        foreach ($typeMap as $t) {
+            if (isset($msgData[$t])) { $msgType = $t; break; }
+        }
+
+        $activeUsers = Botuser::find()->where(['status' => 1])->all();
+        $total       = count($activeUsers);
+
+        $broadcast               = new Broadcast();
+        $broadcast->message_type = $msgType;
+        $broadcast->message_data = json_encode($msgData, JSON_UNESCAPED_UNICODE);
+        $broadcast->from_chat_id = (int)$this->chat_id;
+        $broadcast->total_users  = $total;
+        $broadcast->status       = Broadcast::STATUS_SENDING;
+        $broadcast->save(false);
+
+        foreach ($activeUsers as $user) {
+            Yii::$app->broadcastQueue->push(new BroadcastSendJob([
+                'broadcast_id' => $broadcast->id,
+                'user_id'      => (int)$user->id,
+                'chat_id'      => (int)$user->chat_id,
+            ]));
+
+            break;
+        }
+
+        $this->sendMessage("✅ Xabar <b>{$total}</b> ta foydalanuvchiga yuborilmoqda...\n🆔 Broadcast ID: <b>{$broadcast->id}</b>");
+        $this->showAdminPage();
     }
 
     // ******** SHOW PAGES **** //

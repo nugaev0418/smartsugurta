@@ -25,6 +25,7 @@ $navItems = [
     ['label' => 'Season',   'url' => '/season/index',   'icon' => 'ti-calendar',       'controller' => 'season'],
     ['label' => 'Payment',  'url' => '/payment/index',  'icon' => 'ti-credit-card',    'controller' => 'payment'],
     ['label' => 'Text',     'url' => '/text/index',     'icon' => 'ti-file-text',      'controller' => 'text'],
+    ['label' => 'Broadcast', 'url' => '/broadcast/index', 'icon' => 'ti-speakerphone',   'controller' => 'broadcast'],
     ['label' => 'Income',   'url' => '/income/index',   'icon' => 'ti-cash',           'controller' => 'income'],
     ['label' => 'Setting',  'url' => '/setting/index',  'icon' => 'ti-adjustments',    'controller' => 'setting'],
 ];

@@ -39,8 +39,10 @@ class Pages
         SEND_ERROR_MESSAGE = 'send_error_massage_page',
 //        *** End Admin pages ***
 
-        SETTING = 'setting_page',
-        ADDRESS = 'address_page',
-        REFERRAL_PAGE = 'referral_page',
-        MAIN = 'main_page';
+        SETTING        = 'setting_page',
+        ADDRESS        = 'address_page',
+        REFERRAL_PAGE  = 'referral_page',
+        ADMIN_PAGE     = 'admin_page',
+        BROADCAST_PAGE = 'broadcast_page',
+        MAIN           = 'main_page';
 }

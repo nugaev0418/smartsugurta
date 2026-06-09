@@ -14,6 +14,7 @@ return [
         'log',
         'paynetQueue',
         'grossQueue',
+        'broadcastQueue',
     ],
     'controllerNamespace' => 'console\controllers',
     'aliases' => [
@@ -42,6 +43,10 @@ return [
         'grossQueue' => [
             'class' => \yii\queue\db\Queue::class,
             'channel' => 'gross',
+        ],
+        'broadcastQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'broadcast',
         ],
         'log' => [
             'targets' => [
