@@ -21,6 +21,7 @@ use Yii;
  * @property string|null $step
  * @property string|null $referral_code
  * @property int|null $referred_by
+ * @property string|null $deeplink_code
  * @property string|null $created_at
  * @property string|null $updated_at
  *
@@ -54,6 +55,7 @@ class Botuser extends \yii\db\ActiveRecord
             [['fname', 'lname', 'username', 'phone', 'step'], 'string', 'max' => 255],
             [['referral_code'], 'string', 'max' => 20],
             [['referral_code'], 'unique'],
+            [['deeplink_code'], 'string', 'max' => 20],
         ];
     }
 

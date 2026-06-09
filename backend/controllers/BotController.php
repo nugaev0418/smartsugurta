@@ -10,6 +10,7 @@ use backend\queue\PaynetQueue;
 use backend\queue\BroadcastSendJob;
 use common\models\Botuser;
 use common\models\Broadcast;
+use common\models\Deeplink;
 use common\models\History;
 use common\models\Income;
 use common\models\Payment;
@@ -117,6 +118,17 @@ class BotController extends Controller
                             : "🎉 Sizning referal havolangiz orqali yangi foydalanuvchi qo'shildi!");
 
                     $this->sendMessageWithID($referrer->chat_id, $notifyMsg);
+                }
+                $this->text = '/start';
+            }
+
+            // Deeplink tracking: /start dl_CODE
+            if (preg_match('/^\/start (dl\w+)$/', $this->text, $m)) {
+                $deeplink = Deeplink::findOne(['code' => $m[1]]);
+                $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
+                if ($deeplink && $self && !$self->deeplink_code) {
+                    $self->deeplink_code = $deeplink->code;
+                    $self->save(false);
                 }
                 $this->text = '/start';
             }

@@ -18,7 +18,7 @@ class BotuserSearch extends Botuser
     {
         return [
             [['id', 'chat_id', 'balance', 'status', 'is_admin', 'is_banned', 'referred_by'], 'integer'],
-            [['fname', 'lname', 'username', 'phone', 'data', 'step', 'referral_code', 'created_at', 'updated_at'], 'safe'],
+            [['fname', 'lname', 'username', 'phone', 'data', 'step', 'referral_code', 'deeplink_code', 'created_at', 'updated_at'], 'safe'],
         ];
     }
 
@@ -81,7 +81,8 @@ class BotuserSearch extends Botuser
             ->andFilterWhere(['like', 'phone', $this->phone])
             ->andFilterWhere(['like', 'data', $this->data])
             ->andFilterWhere(['like', 'step', $this->step])
-            ->andFilterWhere(['like', 'referral_code', $this->referral_code]);
+            ->andFilterWhere(['like', 'referral_code', $this->referral_code])
+            ->andFilterWhere(['deeplink_code' => $this->deeplink_code ?: null]);
 
         return $dataProvider;
     }
