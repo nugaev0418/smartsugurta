@@ -83,7 +83,8 @@ class BotController extends Controller
                 $this->setHistory();
             }
 
-            if (!$this->isUser()) {
+            $isNewUser = !$this->isUser();
+            if ($isNewUser) {
                 $this->addUser();
             }
 
@@ -126,7 +127,7 @@ class BotController extends Controller
             if (preg_match('/^\/start (dl\w+)$/', $this->text, $m)) {
                 $deeplink = Deeplink::findOne(['code' => $m[1]]);
                 $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
-                if ($deeplink && $self && !$self->deeplink_code) {
+                if ($deeplink && $self && $isNewUser) {
                     $self->deeplink_code = $deeplink->code;
                     $self->save(false);
                 }
