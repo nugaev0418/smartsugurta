@@ -899,7 +899,7 @@ class BotController extends Controller
     public function handleLisenceNumberPage()
     {
         if (!is_null($this->text)) {
-            $this->lisenceNumber = strtoupper($this->text);
+            $this->lisenceNumber = str_replace(" ", '', strtoupper($this->text));
             $this->showTexPassSeriaPage();
 
             $police_data = $this->police_data != '' ? $this->police_data : [];
