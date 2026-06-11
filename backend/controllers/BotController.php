@@ -2,7 +2,9 @@
 
 namespace backend\controllers;
 
+use backend\component\DeeplinkService;
 use backend\component\EuroAsiaService;
+use backend\component\ReferralService;
 use backend\models\EuroAsia;
 use backend\models\Pages;
 use backend\queue\GrossOsagoJob;
@@ -10,9 +12,7 @@ use backend\queue\PaynetQueue;
 use backend\queue\BroadcastSendJob;
 use common\models\Botuser;
 use common\models\Broadcast;
-use common\models\Deeplink;
 use common\models\History;
-use common\models\Income;
 use common\models\Payment;
 use common\models\Police;
 use common\models\SeasonalInsurance;
@@ -98,39 +98,15 @@ class BotController extends Controller
                 return 'ok';
             }
 
-            // /start ref_CODE deep linkni normalize qilish
-            if (preg_match('/^\/start ref_(\w+)$/', $this->text, $m)) {
-                $referrer = Botuser::find()->where(['referral_code' => $m[1]])->one();
-                $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
-                if ($referrer && $self && !$self->referred_by && $referrer->id !== $self->id) {
-                    $self->referred_by = $referrer->id;
-                    $self->save(false);
-
-                    $refLang = 'uz';
-                    if ($referrer->data) {
-                        $refData = json_decode($referrer->data, true);
-                        $refLang = $refData['lang'] ?? 'uz';
-                    }
-                    $record = Text::findOne(['keyword' => 'referral_new_user']);
-                    $notifyMsg = ($record && $record->$refLang)
-                        ? $record->$refLang
-                        : ($refLang === 'ru'
-                            ? "🎉 По вашей реферальной ссылке зарегистрировался новый пользователь!"
-                            : "🎉 Sizning referal havolangiz orqali yangi foydalanuvchi qo'shildi!");
-
-                    $this->sendMessageWithID($referrer->chat_id, $notifyMsg);
-                }
+            $referralNotify = (new ReferralService())->processStartCommand($this->text, $this->chat_id, $isNewUser);
+            if ($referralNotify) {
+                $this->sendMessageWithID($referralNotify['chat_id'], $referralNotify['message']);
+            }
+            if (preg_match('/^\/start ref_/', $this->text)) {
                 $this->text = '/start';
             }
 
-            // Deeplink tracking: /start dl_CODE
-            if (preg_match('/^\/start (dl\w+)$/', $this->text, $m)) {
-                $deeplink = Deeplink::findOne(['code' => $m[1]]);
-                $self     = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
-                if ($deeplink && $self && $isNewUser) {
-                    $self->deeplink_code = $deeplink->code;
-                    $self->save(false);
-                }
+            if ((new DeeplinkService())->processStartCommand($this->text, $this->chat_id, $isNewUser)) {
                 $this->text = '/start';
             }
 
@@ -744,47 +720,11 @@ class BotController extends Controller
 
     public function showReferralPage()
     {
-        $user = Botuser::find()->where(['chat_id' => $this->chat_id])->one();
-
-        $referralLink = "https://t.me/" . self::BOT_USERNAME . "?start=ref_" . $user->referral_code;
-
-        $referralIds   = Botuser::find()->select('id')->where(['referred_by' => $user->id])->column();
-        $referralCount = count($referralIds);
-
-        $insuranceCount = 0;
-        $totalEarned    = 0;
-        if ($referralCount > 0) {
-            $insuranceCount = (int)Police::find()
-                ->where(['user_id' => $referralIds, 'payment_status' => 1])
-                ->count();
-
-            $totalEarned = (int)(Income::find()
-                ->where(['user_id' => $user->id])
-                ->sum('amount') ?? 0);
-        }
-
-        $bonusPercent    = Setting::getReferralPercent();
-        $earnedFormatted = number_format($totalEarned, 0, '.', ' ');
-
-        $shareMessage = urlencode(
-            "\n🎁 Bu bot orqali avtosug'urta rasmiylashtirsangiz $bonusPercent% bonus olasiz!\n\n"
-            . "Bonusni plastik karta yoki telefon raqamga chiqarib olsa bo'ladi.\n\n"
-        );
-        $shareUrl = "https://t.me/share/url?url=" . urlencode($referralLink) . "&text=$shareMessage";
-
-        $text = "🤝 <b>Referal tizimi</b>\n\n"
-              . "🔗 Sizning referal havolangiz:\n$referralLink\n\n"
-              . "👥 Referallar soni: <b>$referralCount</b>\n"
-              . "📋 Ularning sug'urtalari: <b>$insuranceCount</b>\n"
-              . "💰 Jami ishlagan: <b>$earnedFormatted so'm</b>\n\n"
-              . "📊 <b>Bonus jadvali:</b>\n"
-              . "Har bir to'langan sug'urta uchun: <b>$bonusPercent% bonus</b>\n\n"
-              . "ℹ️ Bonus hamyon balansiga avtomatik qo'shiladi.";
-
+        $data   = (new ReferralService(self::BOT_USERNAME))->buildPageData($this->chat_id);
         $inline = [
-            [$this->telegram->buildInlineKeyBoardButton("📤 Do'stlarga ulashish", $shareUrl)],
+            [$this->telegram->buildInlineKeyBoardButton($data['shareLabel'], $data['shareUrl'])],
         ];
-        $this->sendMessageWithInlineKeyboard($text, $inline);
+        $this->sendMessageWithInlineKeyboard($data['text'], $inline);
     }
 
     private function isAdmin(): bool
