@@ -98,15 +98,17 @@ class BotController extends Controller
                 return 'ok';
             }
 
-            $referralNotify = (new ReferralService())->processStartCommand($this->text, $this->chat_id, $isNewUser);
+            $referralNotify = $this->text
+                ? (new ReferralService())->processStartCommand($this->text, $this->chat_id, $isNewUser)
+                : null;
             if ($referralNotify) {
                 $this->sendMessageWithID($referralNotify['chat_id'], $referralNotify['message']);
             }
-            if (preg_match('/^\/start ref_/', $this->text)) {
+            if ($this->text && preg_match('/^\/start ref_/', $this->text)) {
                 $this->text = '/start';
             }
 
-            if ((new DeeplinkService())->processStartCommand($this->text, $this->chat_id, $isNewUser)) {
+            if ($this->text && (new DeeplinkService())->processStartCommand($this->text, $this->chat_id, $isNewUser)) {
                 $this->text = '/start';
             }
 
