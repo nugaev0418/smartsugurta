@@ -2,6 +2,7 @@
 
 namespace backend\gross;
 use DOMDocument;
+use Exception;
 
 class GrossOsagoClient
 {
