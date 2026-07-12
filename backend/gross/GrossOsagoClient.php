@@ -78,7 +78,7 @@ class GrossOsagoClient
     ////////////////////////////////////////////////////////
     public function getCaptchaSrc(string $html): ?string
     {
-        preg_match('/<img[^>]+src="([^"]*im\.php\?t=\d+)"/i', $html, $match);
+        preg_match('/<img[^>]+src="([^"]*im\.php\?t=[^"]*)"/i', $html, $match);
 
         return $match[1] ?? null;
     }

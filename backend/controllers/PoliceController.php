@@ -220,7 +220,7 @@ class PoliceController extends Controller
                 $police->pdfUrl = "https://ersp.e-osgo.uz/site/export-to-pdf?id={$police->policeId}";
                 $police->payment_status = 1;
 
-                $police->save();
+                $police->save(false);
 
                 if ($police->status){
                     $user = Botuser::find()->where(['id'=>$police->user_id])->one();
