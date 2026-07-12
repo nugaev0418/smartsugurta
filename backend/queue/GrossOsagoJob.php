@@ -8,6 +8,7 @@ use backend\gross\GrossOsago;
 use common\models\Botuser;
 use common\models\Police;
 use common\models\SeasonalInsurance;
+use common\models\Text;
 use Yii;
 use yii\base\BaseObject;
 use yii\queue\JobInterface;
@@ -101,13 +102,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 $police->save(false);
 
 
-                $text = sprintf(
-                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali to'lovni amalga oshiring.\n❗Agar Click orqali to'lov amalga oshmasa, Payme orqali to'lov qilishingiz mumkin.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.\n❗Если оплата через Click не проходит, вы можете оплатить через Payme.</b> \n<a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>"
-                    ,
-                    $police->id,
-                    $result['payme_url'],
-                    $result['click_url']
-                );
+                $text = $this->getInsuranceReadyPaymentText($botuser, $police, $result);
 
                 $this->sendMessage($this->chatId, $text);
 
@@ -226,6 +221,35 @@ class GrossOsagoJob extends BaseObject implements JobInterface
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+
+    private function getUserLang(Botuser $user): string
+    {
+        if ($user->data) {
+            $data = json_decode($user->data, true);
+            return $data['lang'] ?? 'uz';
+        }
+        return 'uz';
+    }
+
+    private function getInsuranceReadyPaymentText(Botuser $user, Police $police, array $result): string
+    {
+        $lang   = $this->getUserLang($user);
+        $record = Text::findOne(['keyword' => 'insurance_ready_payment']);
+
+        if ($record && $record->$lang) {
+            return sprintf($record->$lang, $police->id, $result['payme_url'], $result['click_url']);
+        }
+
+        return $lang === 'ru'
+            ? sprintf(
+                "ID: %s <b>Ваша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.\n❗Если оплата через Click не проходит, вы можете оплатить через Payme.</b> \n<a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>",
+                $police->id, $result['payme_url'], $result['click_url']
+            )
+            : sprintf(
+                "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali to'lovni amalga oshiring.\n❗Agar Click orqali to'lov amalga oshmasa, Payme orqali to'lov qilishingiz mumkin.</b> \n<a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>",
+                $police->id, $result['payme_url'], $result['click_url']
+            );
+    }
 
     private function sendMessage(string $chatId, string $text): void
     {
