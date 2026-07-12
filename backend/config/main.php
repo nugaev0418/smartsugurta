@@ -9,6 +9,7 @@ $params = array_merge(
 return [
     'id' => 'app-backend',
     'name' => 'Smart Panel',
+    'timeZone' => 'Asia/Tashkent',
     'container' => [
         'definitions' => [
             \yii\grid\GridView::class => [
