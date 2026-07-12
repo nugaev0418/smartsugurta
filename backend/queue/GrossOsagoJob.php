@@ -102,7 +102,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
 
 
                 $text = sprintf(
-                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali o'tib to'lovni amalga oshiring.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.</b> \n<a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>"
+                    "ID: %s <b>Sug'urtangiz tayyor! Pastdagi havola orqali to'lovni amalga oshiring.\n❗Agar Click orqali to'lov amalga oshmasa, Payme orqali to'lov qilishingiz mumkin.\n\nВаша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.\n❗Если оплата через Click не проходит, вы можете оплатить через Payme.</b> \n<a href='%s'>👉 Payme</a>\n<a href='%s'>👉 Click</a>"
                     ,
                     $police->id,
                     $result['payme_url'],
