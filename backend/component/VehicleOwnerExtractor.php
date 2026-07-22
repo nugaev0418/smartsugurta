@@ -19,6 +19,8 @@ class VehicleOwnerExtractor
                 'birthDate'              => 'owner.birthDate',
                 'useTerritoryRegionId'   => 'useTerritoryRegion.id',
                 'vehicleGroupId'         => 'vehicleType.vehicleGroup.id',
+                'model'                  => 'model',
+                'vehicleTypeName'        => 'vehicleType.name',
             ],
             function ($result) {
                 $map = [

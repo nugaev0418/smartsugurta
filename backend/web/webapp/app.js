@@ -134,11 +134,17 @@
     $('legalFields').classList.toggle('hidden', vt === 'PERSON');
     if (vt === 'ORGANIZATION') {
       $('orgNameView').value = state.vehicleData.name || '';
-      $('orgInnView').value = state.vehicleData.inn || '';
     } else {
       $('physSeries').value = state.physSeries;
       $('physNumber').value = state.physNumber;
     }
+
+    var hasVehicleInfo = !!(state.vehicleData.model || state.vehicleData.vehicleTypeName);
+    $('vehicleInfoCard').classList.toggle('hidden', !hasVehicleInfo);
+    $('vehicleModelLine').innerHTML = state.vehicleData.model
+      ? 'Model: <strong>' + escapeHtml(state.vehicleData.model) + '</strong>' : '';
+    $('vehicleTypeLine').innerHTML = state.vehicleData.vehicleTypeName
+      ? 'Turi: <strong>' + escapeHtml(state.vehicleData.vehicleTypeName) + '</strong>' : '';
   }
 
   function renderStep3() {
@@ -317,6 +323,10 @@
     $('sumPhone').textContent = '+998 ' + state.phone;
     $('sumPlate').innerHTML = 'Davlat raqami: <strong>' + escapeHtml(state.plateNumber) + '</strong>';
     $('sumTech').innerHTML = 'Texpassport: <strong>' + escapeHtml(state.techSeria + state.techNumber) + '</strong>';
+    var modelBits = [];
+    if (state.vehicleData.model) modelBits.push(escapeHtml(state.vehicleData.model));
+    if (state.vehicleData.vehicleTypeName) modelBits.push(escapeHtml(state.vehicleData.vehicleTypeName));
+    $('sumVehicleModel').innerHTML = modelBits.length ? 'Model: <strong>' + modelBits.join(' · ') + '</strong>' : '';
     $('sumOwner').textContent = state.vehicleData.ownerType === 'ORGANIZATION' ? 'Yuridik shaxs' : 'Jismoniy shaxs';
 
     var driversCard = $('sumDriversCard');

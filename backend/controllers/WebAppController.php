@@ -96,6 +96,8 @@ class WebAppController extends Controller
             'birthDate' => $dto->birthDate,
             'useTerritoryRegionId' => $dto->useTerritoryRegionId,
             'vehicleGroupId' => $dto->vehicleGroupId,
+            'model' => $dto->model,
+            'vehicleTypeName' => $dto->vehicleTypeName,
         ];
     }
 

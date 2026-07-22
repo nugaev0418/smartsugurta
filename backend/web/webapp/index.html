@@ -72,6 +72,11 @@
           <div id="ownerTypeLabel" class="owner-label"></div>
         </div>
 
+        <div class="vehicle-info-card hidden" id="vehicleInfoCard">
+          <div id="vehicleModelLine"></div>
+          <div id="vehicleTypeLine"></div>
+        </div>
+
         <div class="field" id="physFields">
           <label>Passport seriya va raqami</label>
           <div class="row">
@@ -84,8 +89,6 @@
         <div class="field hidden" id="legalFields">
           <label>Tashkilot nomi</label>
           <input type="text" id="orgNameView" disabled>
-          <label style="margin-top:14px">STIR (INN)</label>
-          <input type="text" id="orgInnView" disabled>
         </div>
       </div>
 
@@ -166,6 +169,7 @@
           <div class="summary-head"><span>Transport ma'lumotlari</span><a data-goto="1">tahrirlash</a></div>
           <div id="sumPlate"></div>
           <div id="sumTech"></div>
+          <div id="sumVehicleModel"></div>
         </div>
 
         <div class="summary-card">

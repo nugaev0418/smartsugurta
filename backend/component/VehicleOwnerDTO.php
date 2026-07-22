@@ -18,6 +18,9 @@ class VehicleOwnerDTO
     public ?string $useTerritoryRegionId = null;
     public ?string $vehicleGroupId = null;
 
+    public ?string $model = null;
+    public ?string $vehicleTypeName = null;
+
     public function __construct(array $data = [])
     {
         foreach ($data as $key => $value) {
