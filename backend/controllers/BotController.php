@@ -266,9 +266,16 @@ class BotController extends Controller
             ];
             if ($this->isAdmin()) {
                 $option[] = [$this->telegram->buildKeyboardButton("⚙️ Admin panel")];
-                $option[] = [
-                    ['text' => '🌐 Web App', 'web_app' => ['url' => Url::base('https') . '/webapp/index.html']],
-                ];
+                // Reply-keyboard "web_app" buttons don't receive signed initData from Telegram;
+                // only the per-chat Menu Button does, so it's set here instead of a keyboard button.
+                $this->telegram->endpoint('setChatMenuButton', [
+                    'chat_id' => $this->chat_id,
+                    'menu_button' => json_encode([
+                        'type' => 'web_app',
+                        'text' => 'Web App',
+                        'web_app' => ['url' => Url::base('https') . '/webapp/index.html'],
+                    ]),
+                ]);
             }
             $this->sendMessageWithKeyborad($text, $option);
         }catch (ErrorException $e) {
