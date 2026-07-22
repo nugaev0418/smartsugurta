@@ -220,6 +220,13 @@ class WebAppController extends Controller
             return $this->fail("Telegram orqali tekshiruvdan o'ta olmadingiz. Web App-ni botdan qayta oching");
         }
 
+        // A captured/replayed request (e.g. resent from Postman) carries the exact same
+        // signed initData as the original — reject a second submit with the same signature
+        // so it can't create duplicate policies/payment links.
+        if (!$this->claimInitDataOnce((string)($input['initData'] ?? ''))) {
+            return $this->fail("Bu so'rov allaqachon yuborilgan. Web App-ni botdan qayta oching");
+        }
+
         $botuser = Botuser::find()->where(['chat_id' => $telegramUser['id']])->one();
         if (!$botuser) {
             return $this->fail("Avval botga /start buyrug'ini yuboring");
@@ -436,6 +443,25 @@ class WebAppController extends Controller
             'parse_mode' => 'html',
             'text' => $text,
         ]);
+    }
+
+    /**
+     * initData stays identical for the whole Mini App session (every step reuses it),
+     * so it can't be blocked as "used" on first sight — only actionSubmit (the one
+     * action with real side effects: policy + payment link) claims it here, once,
+     * right before doing anything else. Yii::$app->cache->add() only succeeds the
+     * first time a given key is set, giving atomic single-use semantics without a
+     * DB migration. TTL matches verifyInitData()'s own 24h freshness window, since a
+     * hash can never be re-validated as fresh past that point anyway.
+     */
+    private function claimInitDataOnce(string $initData): bool
+    {
+        parse_str($initData, $parsed);
+        $hash = $parsed['hash'] ?? null;
+        if (!$hash) {
+            return false;
+        }
+        return Yii::$app->cache->add('webapp_submit_' . $hash, 1, 90000);
     }
 
     /**
