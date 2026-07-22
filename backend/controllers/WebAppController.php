@@ -30,18 +30,39 @@ class WebAppController extends Controller
         '20d' => ['id' => '0d546748-0ba6-43bc-9ce2-1b977ad9e494', 'days' => 20, 'period_type' => 8],
     ];
 
+    /** @var array|null the input() call for the current action, kept for the admin audit log */
+    private ?array $lastInput = null;
+    /** @var array|null the verified Telegram user for the current action (null if unverified), kept for the admin audit log */
+    private ?array $lastTelegramUser = null;
+
     public function beforeAction($action)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
         return parent::beforeAction($action);
     }
 
+    /**
+     * Sends every Web App API call (endpoint, who, request, response) to the admin
+     * as a Telegram message, mirroring BotController's own sendMessageAdmin() audit
+     * trail pattern. Runs for every action regardless of outcome, so both normal use
+     * and rejected/unauthenticated attempts are visible to the admin.
+     */
+    public function afterAction($action, $result)
+    {
+        $this->logToAdmin($action->id, $result);
+        return parent::afterAction($action, $result);
+    }
+
     public function actionVehicle()
     {
         $input = $this->input();
 
-        if (!$this->requireTelegramUser($input)) {
+        $telegramUser = $this->requireTelegramUser($input);
+        if (!$telegramUser) {
             return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
         }
 
         $techSeria = strtoupper(trim((string)($input['techSeria'] ?? '')));
@@ -82,8 +103,12 @@ class WebAppController extends Controller
     {
         $input = $this->input();
 
-        if (!$this->requireTelegramUser($input)) {
+        $telegramUser = $this->requireTelegramUser($input);
+        if (!$telegramUser) {
             return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
         }
 
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
@@ -122,8 +147,12 @@ class WebAppController extends Controller
     {
         $input = $this->input();
 
-        if (!$this->requireTelegramUser($input)) {
+        $telegramUser = $this->requireTelegramUser($input);
+        if (!$telegramUser) {
             return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
         }
 
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
@@ -166,8 +195,12 @@ class WebAppController extends Controller
     {
         $input = $this->input();
 
-        if (!$this->requireTelegramUser($input)) {
+        $telegramUser = $this->requireTelegramUser($input);
+        if (!$telegramUser) {
             return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
         }
 
         $seasonKey = (string)($input['duration'] ?? '');
@@ -465,6 +498,29 @@ class WebAppController extends Controller
     }
 
     /**
+     * Basic per-user abuse guard for the read-only lookup endpoints (vehicle/owner/
+     * driver/calculate), which a valid-but-malicious admin session could otherwise use
+     * to bulk-enumerate plate numbers or passport series+numbers against EAI's PII API.
+     * Shares one counter across all four endpoints per chat_id so it can't be bypassed
+     * by spreading requests across them.
+     */
+    private function rateLimitOk($chatId, int $max = 30, int $windowSeconds = 60): bool
+    {
+        $key = 'webapp_rl_' . $chatId;
+        $count = Yii::$app->cache->get($key);
+        if ($count === false) {
+            Yii::$app->cache->set($key, 1, $windowSeconds);
+            return true;
+        }
+        if ($count >= $max) {
+            Yii::warning("Web App: chat_id {$chatId} tezlik chegarasidan oshdi", 'webapp');
+            return false;
+        }
+        Yii::$app->cache->set($key, $count + 1, $windowSeconds);
+        return true;
+    }
+
+    /**
      * Every action must call this: verifies the caller is a genuine Telegram user via
      * HMAC-signed initData. The Web App's inline button is admin-only for now (gated
      * in BotController), but this check intentionally does NOT also require admin —
@@ -475,7 +531,9 @@ class WebAppController extends Controller
      */
     private function requireTelegramUser(array $input): ?array
     {
-        return $this->verifyInitData((string)($input['initData'] ?? ''));
+        $telegramUser = $this->verifyInitData((string)($input['initData'] ?? ''));
+        $this->lastTelegramUser = $telegramUser;
+        return $telegramUser;
     }
 
     private function verifyInitData(string $initData): ?array
@@ -545,11 +603,56 @@ class WebAppController extends Controller
     {
         $raw = Yii::$app->request->getRawBody();
         $decoded = $raw !== '' ? json_decode($raw, true) : null;
-        return is_array($decoded) ? $decoded : (array)Yii::$app->request->post();
+        $input = is_array($decoded) ? $decoded : (array)Yii::$app->request->post();
+        $this->lastInput = $input;
+        return $input;
     }
 
     private function fail(string $message): array
     {
         return ['success' => false, 'message' => $message];
+    }
+
+    private function logToAdmin(string $actionId, $result): void
+    {
+        try {
+            $user = $this->lastTelegramUser;
+            if ($user) {
+                $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+                $who = ($name !== '' ? $name : 'ismsiz') . " (chat_id: {$user['id']}"
+                    . (!empty($user['username']) ? ", @{$user['username']}" : '') . ')';
+            } else {
+                $who = "tasdiqlanmagan (initData yaroqsiz yoki bo'sh)";
+            }
+
+            $logInput = (array)$this->lastInput;
+            unset($logInput['initData'], $logInput['clientDebug']);
+
+            $text = "🌐 <b>Web App so'rovi</b>\n"
+                . 'Endpoint: <code>' . htmlspecialchars($actionId, ENT_QUOTES, 'UTF-8') . "</code>\n"
+                . 'Foydalanuvchi: ' . htmlspecialchars($who, ENT_QUOTES, 'UTF-8') . "\n\n"
+                . "So'rov:\n<pre>" . htmlspecialchars(
+                    json_encode($logInput, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) . "</pre>\n\n"
+                . "Javob:\n<pre>" . htmlspecialchars(
+                    json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) . '</pre>';
+
+            if (mb_strlen($text) > 3900) {
+                $text = mb_substr($text, 0, 3900) . "\n… (qisqartirildi)";
+            }
+
+            Yii::$app->telegram->sendMessage([
+                'chat_id' => BotController::ADMIN_ID,
+                'parse_mode' => 'html',
+                'text' => $text,
+            ]);
+        } catch (\Throwable $e) {
+            Yii::error('Admin webapp logini yuborishda xato: ' . $e->getMessage(), 'webapp');
+        }
     }
 }
