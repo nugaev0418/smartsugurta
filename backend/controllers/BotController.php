@@ -266,18 +266,19 @@ class BotController extends Controller
             ];
             if ($this->isAdmin()) {
                 $option[] = [$this->telegram->buildKeyboardButton("⚙️ Admin panel")];
-                // Reply-keyboard "web_app" buttons don't receive signed initData from Telegram;
-                // only the per-chat Menu Button does, so it's set here instead of a keyboard button.
-                $this->telegram->endpoint('setChatMenuButton', [
-                    'chat_id' => $this->chat_id,
-                    'menu_button' => json_encode([
-                        'type' => 'web_app',
-                        'text' => 'Web App',
-                        'web_app' => ['url' => Url::base('https') . '/webapp/index.html'],
-                    ]),
-                ]);
             }
             $this->sendMessageWithKeyborad($text, $option);
+
+            if ($this->isAdmin()) {
+                // Reply-keyboard "web_app" buttons don't receive signed initData from Telegram,
+                // so the Web App is offered via an inline button on a separate message instead.
+                $this->sendMessageWithInlineKeyboard(
+                    "🌐 Web App orqali sug'urta rasmiylashtirish",
+                    [[
+                        ['text' => '🌐 Web App', 'web_app' => ['url' => Url::base('https') . '/webapp/index.html']],
+                    ]]
+                );
+            }
         }catch (ErrorException $e) {
             Yii::error($e->getMessage());
             throw new ErrorException($e);
