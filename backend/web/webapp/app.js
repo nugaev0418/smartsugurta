@@ -76,12 +76,26 @@
     el.classList.toggle('invalid', !!invalid);
   }
 
+  function telegramInitData() {
+    var tg = window.Telegram && window.Telegram.WebApp;
+    return tg ? tg.initData : '';
+  }
+
   function api(action, body) {
+    // initData is always attached here (not left to each call site) so every
+    // endpoint can be verified server-side as coming from the bot's admin.
+    var payload = Object.assign({}, body || {}, { initData: telegramInitData() });
     return fetch('/web-app/' + action, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     }).then(function (r) { return r.json(); });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -177,19 +191,20 @@
       var card = document.createElement('div');
       card.className = 'driver-card';
       var label = d.isOwner ? 'Siz (avtomobil egasi)' : 'Haydovchi ' + (i + 1);
+      var safeId = escapeHtml(d.id);
       card.innerHTML =
         '<div class="driver-head"><div class="name">' + label + '</div>' +
-        (!d.isOwner ? '<div class="driver-remove" data-remove="' + d.id + '">✕</div>' : '') +
+        (!d.isOwner ? '<div class="driver-remove" data-remove="' + safeId + '">✕</div>' : '') +
         '</div>' +
         '<div class="driver-row">' +
-        '<input type="text" placeholder="Seriya" maxlength="2" data-field="seria" data-id="' + d.id + '" value="' + d.seria + '">' +
-        '<input type="text" placeholder="Raqami" maxlength="7" data-field="number" data-id="' + d.id + '" value="' + d.number + '">' +
+        '<input type="text" placeholder="Seriya" maxlength="2" data-field="seria" data-id="' + safeId + '" value="' + escapeHtml(d.seria) + '">' +
+        '<input type="text" placeholder="Raqami" maxlength="7" data-field="number" data-id="' + safeId + '" value="' + escapeHtml(d.number) + '">' +
         '</div>' +
-        '<input type="date" data-field="birthDate" data-id="' + d.id + '" value="' + d.birthDate + '" max="' + todayYmd() + '">' +
-        '<select data-field="relation" data-id="' + d.id + '">' +
-        RELATIONS.map(function (r) { return '<option value="' + r + '"' + (r === d.relation ? ' selected' : '') + '>' + r + '</option>'; }).join('') +
+        '<input type="date" data-field="birthDate" data-id="' + safeId + '" value="' + escapeHtml(d.birthDate) + '" max="' + todayYmd() + '">' +
+        '<select data-field="relation" data-id="' + safeId + '">' +
+        RELATIONS.map(function (r) { return '<option value="' + escapeHtml(r) + '"' + (r === d.relation ? ' selected' : '') + '>' + escapeHtml(r) + '</option>'; }).join('') +
         '</select>' +
-        '<div class="driver-status ' + statusClass(d.status) + '">' + statusText(d) + '</div>';
+        '<div class="driver-status ' + statusClass(d.status) + '">' + escapeHtml(statusText(d)) + '</div>';
       container.appendChild(card);
     });
 
@@ -300,15 +315,15 @@
 
   function renderStep6() {
     $('sumPhone').textContent = '+998 ' + state.phone;
-    $('sumPlate').innerHTML = 'Davlat raqami: <strong>' + state.plateNumber + '</strong>';
-    $('sumTech').innerHTML = 'Texpassport: <strong>' + state.techSeria + state.techNumber + '</strong>';
+    $('sumPlate').innerHTML = 'Davlat raqami: <strong>' + escapeHtml(state.plateNumber) + '</strong>';
+    $('sumTech').innerHTML = 'Texpassport: <strong>' + escapeHtml(state.techSeria + state.techNumber) + '</strong>';
     $('sumOwner').textContent = state.vehicleData.ownerType === 'ORGANIZATION' ? 'Yuridik shaxs' : 'Jismoniy shaxs';
 
     var driversCard = $('sumDriversCard');
     if (state.insuranceType === 'limited') {
       driversCard.classList.remove('hidden');
       $('sumDrivers').innerHTML = state.drivers.map(function (d) {
-        return '<div class="driver-summary-row">' + d.seria + d.number + ' · ' + d.relation + '</div>';
+        return '<div class="driver-summary-row">' + escapeHtml(d.seria + d.number) + ' · ' + escapeHtml(d.relation) + '</div>';
       }).join('');
     } else {
       driversCard.classList.add('hidden');
@@ -466,7 +481,7 @@
     state.submitting = true; render();
 
     var tg = window.Telegram && window.Telegram.WebApp;
-    var initData = tg ? tg.initData : '';
+    var initData = telegramInitData();
 
     var clientDebug = {
       hasTelegram: !!window.Telegram,
@@ -481,7 +496,6 @@
     };
 
     var payload = {
-      initData: initData,
       clientDebug: clientDebug,
       plateNumber: state.plateNumber,
       techSeria: state.techSeria,

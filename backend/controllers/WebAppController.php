@@ -40,6 +40,10 @@ class WebAppController extends Controller
     {
         $input = $this->input();
 
+        if (!$this->requireTelegramUser($input)) {
+            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
+
         $techSeria = strtoupper(trim((string)($input['techSeria'] ?? '')));
         $techNumber = trim((string)($input['techNumber'] ?? ''));
         $plateNumber = str_replace(' ', '', strtoupper(trim((string)($input['plateNumber'] ?? ''))));
@@ -78,6 +82,10 @@ class WebAppController extends Controller
     {
         $input = $this->input();
 
+        if (!$this->requireTelegramUser($input)) {
+            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
+
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
         $number = trim((string)($input['number'] ?? ''));
         $pinfl = trim((string)($input['pinfl'] ?? ''));
@@ -113,6 +121,10 @@ class WebAppController extends Controller
     public function actionDriver()
     {
         $input = $this->input();
+
+        if (!$this->requireTelegramUser($input)) {
+            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
 
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
         $number = trim((string)($input['number'] ?? ''));
@@ -153,6 +165,10 @@ class WebAppController extends Controller
     public function actionCalculate()
     {
         $input = $this->input();
+
+        if (!$this->requireTelegramUser($input)) {
+            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+        }
 
         $seasonKey = (string)($input['duration'] ?? '');
         if (!isset(self::SEASONS[$seasonKey])) {
@@ -199,7 +215,7 @@ class WebAppController extends Controller
             Yii::warning('clientDebug: ' . json_encode($input['clientDebug'], JSON_UNESCAPED_UNICODE), 'webapp');
         }
 
-        $telegramUser = $this->verifyInitData((string)($input['initData'] ?? ''));
+        $telegramUser = $this->requireTelegramUser($input);
         if (!$telegramUser) {
             return $this->fail("Telegram orqali tekshiruvdan o'ta olmadingiz. Web App-ni botdan qayta oching");
         }
@@ -420,6 +436,20 @@ class WebAppController extends Controller
             'parse_mode' => 'html',
             'text' => $text,
         ]);
+    }
+
+    /**
+     * Every action must call this: verifies the caller is a genuine Telegram user via
+     * HMAC-signed initData. The Web App's inline button is admin-only for now (gated
+     * in BotController), but this check intentionally does NOT also require admin —
+     * once the button is shown to regular bot users, their requests must keep working.
+     * Without this check at all, the lookup endpoints would be an unauthenticated PII
+     * oracle (vehicle/passport/driver data) reachable by anyone on the internet; this
+     * still closes that hole, since forging a valid signature requires the bot token.
+     */
+    private function requireTelegramUser(array $input): ?array
+    {
+        return $this->verifyInitData((string)($input['initData'] ?? ''));
     }
 
     private function verifyInitData(string $initData): ?array
