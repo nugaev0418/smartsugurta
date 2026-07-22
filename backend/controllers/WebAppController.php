@@ -421,11 +421,13 @@ class WebAppController extends Controller
     private function verifyInitData(string $initData): ?array
     {
         if ($initData === '') {
+            Yii::warning('initData bo\'sh keldi (Telegram.WebApp.initData mijozda to\'ldirilmagan)', 'webapp');
             return null;
         }
 
         parse_str($initData, $parsed);
         if (!isset($parsed['hash'])) {
+            Yii::warning('initData ichida hash yo\'q: ' . $initData, 'webapp');
             return null;
         }
 
@@ -441,6 +443,7 @@ class WebAppController extends Controller
 
         $botToken = getenv('TELEGRAM_BOT_TOKEN');
         if (!$botToken) {
+            Yii::warning('TELEGRAM_BOT_TOKEN topilmadi (getenv bo\'sh)', 'webapp');
             return null;
         }
 
@@ -448,15 +451,21 @@ class WebAppController extends Controller
         $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
 
         if (!hash_equals($calculatedHash, $hash)) {
+            Yii::warning(
+                "initData hash mos kelmadi.\ndataCheckString: {$dataCheckString}\nkutilgan: {$calculatedHash}\nkelgan: {$hash}",
+                'webapp'
+            );
             return null;
         }
 
         if (isset($parsed['auth_date']) && (time() - (int)$parsed['auth_date']) > 86400) {
+            Yii::warning('initData eskirgan (auth_date 24 soatdan katta)', 'webapp');
             return null;
         }
 
         $user = isset($parsed['user']) ? json_decode($parsed['user'], true) : null;
         if (!$user || empty($user['id'])) {
+            Yii::warning('initData ichida user.id topilmadi', 'webapp');
             return null;
         }
 
