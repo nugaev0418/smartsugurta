@@ -468,8 +468,21 @@
     var tg = window.Telegram && window.Telegram.WebApp;
     var initData = tg ? tg.initData : '';
 
+    var clientDebug = {
+      hasTelegram: !!window.Telegram,
+      hasWebApp: !!tg,
+      version: tg ? tg.version : null,
+      platform: tg ? tg.platform : null,
+      initDataLength: initData ? initData.length : 0,
+      initDataUnsafeUser: tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null,
+      locationHash: location.hash,
+      locationSearch: location.search,
+      href: location.href,
+    };
+
     var payload = {
       initData: initData,
+      clientDebug: clientDebug,
       plateNumber: state.plateNumber,
       techSeria: state.techSeria,
       techNumber: state.techNumber,

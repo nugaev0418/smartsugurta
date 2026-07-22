@@ -195,6 +195,10 @@ class WebAppController extends Controller
     {
         $input = $this->input();
 
+        if (!empty($input['clientDebug'])) {
+            Yii::warning('clientDebug: ' . json_encode($input['clientDebug'], JSON_UNESCAPED_UNICODE), 'webapp');
+        }
+
         $telegramUser = $this->verifyInitData((string)($input['initData'] ?? ''));
         if (!$telegramUser) {
             return $this->fail("Telegram orqali tekshiruvdan o'ta olmadingiz. Web App-ni botdan qayta oching");
