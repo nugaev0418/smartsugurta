@@ -266,6 +266,9 @@ class BotController extends Controller
             ];
             if ($this->isAdmin()) {
                 $option[] = [$this->telegram->buildKeyboardButton("⚙️ Admin panel")];
+                $option[] = [
+                    ['text' => '🌐 Web App', 'web_app' => ['url' => Url::base('https') . '/webapp/index.html']],
+                ];
             }
             $this->sendMessageWithKeyborad($text, $option);
         }catch (ErrorException $e) {

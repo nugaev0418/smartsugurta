@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{margin:0;background:#efeff4;}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.4) sepia(1) saturate(3) hue-rotate(180deg);}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:28px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;">
+<div style="width:390px;max-width:100%;height:800px;background:#ffffff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.14);overflow:hidden;display:flex;flex-direction:column;position:relative;">
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:16px;left:16px;right:16px;z-index:20;background:#DF3F40;color:#ffffff;padding:14px 16px;border-radius:6px;font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(223,63,64,0.35);text-align:center;">{{ toast }}</div>
+  </sc-if>
+
+  <sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:16px;">
+      <div style="width:72px;height:72px;border-radius:50%;background:#3390EC;display:flex;align-items:center;justify-content:center;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div style="font-size:19px;font-weight:600;color:#0b0b0c;">Ariza qabul qilindi</div>
+      <div style="font-size:14px;color:#707579;line-height:1.5;">Sug'urta polisingiz {{ endDateFormatted }} sanasigacha amal qiladi. To'lov cheki botga yuboriladi.</div>
+      <div style="font-size:24px;font-weight:700;color:#3390EC;margin-top:8px;">{{ priceFormatted }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ !submitted }}" hint-placeholder-val="{{ true }}">
+  <div>
+    <div style="padding:16px 18px 14px;border-bottom:1px solid #ECECEE;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:13px;font-weight:600;color:#0b0b0c;">Qadam {{ step }}/6</span>
+        <span style="font-size:13px;color:#707579;">{{ stepTitle }}</span>
+      </div>
+      <div style="height:5px;background:#ECECEE;border-radius:3px;overflow:hidden;">
+        <div style="height:100%;background:#3390EC;border-radius:3px;transition:width 0.3s ease;width:{{ progressPct }};"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding:20px 18px 24px;">
+
+    <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0b0b0c;margin-bottom:4px;">Transport ma'lumotlari</div>
+          <div style="font-size:14px;color:#707579;line-height:1.4;">Avtomobilingiz haqidagi ma'lumotlarni kiriting</div>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">Davlat raqami</label>
+          <input type="text" placeholder="01 A 123 BB" value="{{ plateNumber }}" onChange="{{ onPlateChange }}" style="{{ plateInputStyle }}" maxlength="9">
+          <sc-if value="{{ errors.plate }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.plate }}</div></sc-if>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">Texpassport seriya va raqami</label>
+          <div style="display:flex;gap:10px;">
+            <input type="text" placeholder="ADM" value="{{ techSeries }}" onChange="{{ onTechSeriesChange }}" style="{{ techSeriesInputStyle }}" maxlength="3">
+            <input type="text" placeholder="1234567" value="{{ techNumber }}" onChange="{{ onTechNumberChange }}" style="{{ techNumberInputStyle }}" maxlength="7">
+          </div>
+          <sc-if value="{{ errors.tech }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.tech }}</div></sc-if>
+        </div>
+
+        <sc-if value="{{ checking }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:8px;color:#707579;font-size:13px;">
+            <div style="width:16px;height:16px;border:2px solid #ECECEE;border-top-color:#3390EC;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            Tekshirilmoqda...
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0b0b0c;margin-bottom:4px;">Avtomobil egasi</div>
+          <div style="font-size:14px;color:#707579;line-height:1.4;">Avtomobil egasi ma'lumotlarini kiriting</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#F1F8FF;border:1px solid #D6EAFF;border-radius:8px;">
+          <div style="width:40px;height:40px;border-radius:50%;background:#3390EC;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="font-size:15px;font-weight:600;color:#0b0b0c;">{{ ownerTypeLabel }}</div>
+        </div>
+
+        <sc-if value="{{ isPhys }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">Passport seriya va raqami</label>
+            <div style="display:flex;gap:10px;">
+              <input type="text" placeholder="AD" value="{{ physPassSeries }}" onChange="{{ onPhysSeriesChange }}" style="{{ physSeriesInputStyle }}" maxlength="2">
+              <input type="text" placeholder="1234567" value="{{ physPassNumber }}" onChange="{{ onPhysNumberChange }}" style="{{ physNumberInputStyle }}" maxlength="7">
+            </div>
+            <sc-if value="{{ errors.physPass }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.physPass }}</div></sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isLegal }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">Tashkilot nomi</label>
+              <input type="text" placeholder="MChJ \" nomi\""="" value="{{ orgName }}" onChange="{{ onOrgNameChange }}" style="{{ orgNameInputStyle }}">
+              <sc-if value="{{ errors.orgName }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.orgName }}</div></sc-if>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">STIR (INN)</label>
+              <input type="text" placeholder="123456789" value="{{ inn }}" onChange="{{ onInnChange }}" style="{{ innInputStyle }}" maxlength="9">
+              <sc-if value="{{ errors.inn }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.inn }}</div></sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0b0b0c;margin-bottom:4px;">Sug'urta turi</div>
+          <div style="font-size:14px;color:#707579;line-height:1.4;">Sizga mos variantni tanlang</div>
+        </div>
+        <sc-for list="{{ insuranceCards }}" as="card" hint-placeholder-count="2">
+          <div onClick="{{ card.onSelect }}" style="{{ card.style }}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:16px;font-weight:700;color:#0b0b0c;">{{ card.title }}</div>
+              <div style="{{ card.dotStyle }}"></div>
+            </div>
+            <div style="font-size:13px;color:#707579;margin-top:6px;line-height:1.4;">{{ card.desc }}</div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ errors.insurance }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;">{{ errors.insurance }}</div></sc-if>
+
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">Sug'urtalovchi telefon raqami</label>
+          <div style="display:flex;align-items:center;gap:10px;border:1px solid #E4E4E7;border-radius:8px;overflow:hidden;padding-left:14px;">
+            <div style="font-size:15px;color:#707579;font-weight:600;">+998</div>
+            <input type="tel" placeholder="90 123 45 67" value="{{ phone }}" onChange="{{ onPhoneDigitsChange }}" maxlength="12" style="{{ phoneInputStyle }}">
+          </div>
+          <sc-if value="{{ errors.phone }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.phone }}</div></sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#0b0b0c;margin-bottom:4px;">Haydovchilar</div>
+            <div style="font-size:14px;color:#707579;">Ro'yxatga haydovchilarni qo'shing</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:#3390EC;white-space:nowrap;">{{ driversCountLabel }}</div>
+        </div>
+
+        <div onClick="{{ toggleOwnerIsDriver }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid #ECECEE;border-radius:8px;cursor:pointer;">
+          <div style="{{ ownerCheckboxStyle }}">
+            <sc-if value="{{ ownerIsDriver }}" hint-placeholder-val="{{ false }}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </sc-if>
+          </div>
+          <div style="font-size:14.5px;color:#0b0b0c;font-weight:500;">Avtomobil egasi ham haydovchimi?</div>
+        </div>
+
+        <sc-for list="{{ driversView }}" as="d" hint-placeholder-count="1">
+          <div style="border:1px solid #ECECEE;border-radius:8px;padding:16px;position:relative;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:14px;font-weight:600;color:#0b0b0c;">{{ d.label }}</div>
+              <sc-if value="{{ d.removable }}" hint-placeholder-val="{{ true }}">
+                <div onClick="{{ d.onRemove }}" style="width:26px;height:26px;border-radius:50%;background:#F4F4F5;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#707579;font-size:14px;">✕</div>
+              </sc-if>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <input type="text" placeholder="Seriya" value="{{ d.passportSeries }}" onChange="{{ d.onSeries }}" style="flex:1;min-width:0;border:1px solid #E4E4E7;border-radius:6px;padding:12px;font-size:14.5px;box-sizing:border-box;" maxlength="2">
+              <input type="text" placeholder="Raqami" value="{{ d.passportNumber }}" onChange="{{ d.onNumber }}" style="flex:1.4;min-width:0;border:1px solid #E4E4E7;border-radius:6px;padding:12px;font-size:14.5px;box-sizing:border-box;" maxlength="7">
+            </div>
+            <input type="date" value="{{ d.birthDate }}" onChange="{{ d.onBirth }}" max="{{ todayIso }}" style="border:1px solid #E4E4E7;border-radius:6px;padding:12px;font-size:14.5px;box-sizing:border-box;color:#0b0b0c;">
+            <select value="{{ d.relation }}" onChange="{{ d.onRelation }}" style="border:1px solid #E4E4E7;border-radius:6px;padding:12px;font-size:14.5px;box-sizing:border-box;color:#0b0b0c;background:white;">
+              <sc-for list="{{ relationOptions }}" as="opt" hint-placeholder-count="5">
+                <option value="{{ opt }}">{{ opt }}</option>
+              </sc-for>
+            </select>
+            <sc-if value="{{ d.error }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;">{{ d.error }}</div></sc-if>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ canAddDriver }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ addDriver }}" style="border:1.5px dashed #3390EC;border-radius:8px;padding:14px;text-align:center;color:#3390EC;font-size:14.5px;font-weight:600;cursor:pointer;">+ Haydovchi qo'shish</div>
+        </sc-if>
+        <sc-if value="{{ errors.drivers }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;">{{ errors.drivers }}</div></sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep5 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0b0b0c;margin-bottom:4px;">Sug'urta muddati</div>
+          <div style="font-size:14px;color:#707579;">Boshlanish sanasi va muddatni tanlang</div>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:6px;">Boshlanish sanasi</label>
+          <input type="date" value="{{ startDate }}" onChange="{{ onStartDateChange }}" min="{{ todayIso }}" style="{{ startDateInputStyle }}">
+          <sc-if value="{{ errors.startDate }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.startDate }}</div></sc-if>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#0b0b0c;margin-bottom:10px;">Muddat</label>
+          <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;">
+            <sc-for list="{{ durationOptions }}" as="opt" hint-placeholder-count="5">
+              <div onClick="{{ opt.onSelect }}" style="{{ opt.style }}">{{ opt.label }}</div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ errors.duration }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#DF3F40;margin-top:6px;">{{ errors.duration }}</div></sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep6 }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:#0b0b0c;margin-bottom:4px;">Ma'lumotlarni ko'rib chiqing</div>
+          <div style="font-size:14px;color:#707579;">Yuborishdan oldin tekshirib chiqing</div>
+        </div>
+
+        <div style="border:1px solid #ECECEE;border-radius:8px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:700;color:#707579;text-transform:uppercase;letter-spacing:0.3px;">Arizaberuvchi</div>
+            <div onClick="{{ editStep3 }}" style="font-size:13px;color:#3390EC;font-weight:600;cursor:pointer;">tahrirlash</div>
+          </div>
+          <div style="font-size:14.5px;color:#0b0b0c;">+998 {{ phone }}</div>
+        </div>
+
+        <div style="border:1px solid #ECECEE;border-radius:8px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:700;color:#707579;text-transform:uppercase;letter-spacing:0.3px;">Transport ma'lumotlari</div>
+            <div onClick="{{ editStep1 }}" style="font-size:13px;color:#3390EC;font-weight:600;cursor:pointer;">tahrirlash</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:14.5px;color:#0b0b0c;">
+            <div>Davlat raqami: <strong>{{ plateNumber }}</strong></div>
+            <div>Texpassport: <strong>{{ techSeries }}{{ techNumber }}</strong></div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #ECECEE;border-radius:8px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:700;color:#707579;text-transform:uppercase;letter-spacing:0.3px;">Avtomobil egasi</div>
+            <div onClick="{{ editStep2 }}" style="font-size:13px;color:#3390EC;font-weight:600;cursor:pointer;">tahrirlash</div>
+          </div>
+          <div style="font-size:14.5px;color:#0b0b0c;">{{ ownerTypeLabel }}</div>
+        </div>
+
+        <sc-if value="{{ isLimited }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid #ECECEE;border-radius:8px;padding:16px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:13px;font-weight:700;color:#707579;text-transform:uppercase;letter-spacing:0.3px;">Haydovchilar</div>
+              <div onClick="{{ editStep4 }}" style="font-size:13px;color:#3390EC;font-weight:600;cursor:pointer;">tahrirlash</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ driversSummary }}" as="d" hint-placeholder-count="1">
+                <div style="background:#F8F8F9;border-radius:6px;padding:10px 12px;font-size:13.5px;color:#0b0b0c;">{{ d.passportSeries }}{{ d.passportNumber }} · {{ d.relation }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="border:1px solid #ECECEE;border-radius:8px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:700;color:#707579;text-transform:uppercase;letter-spacing:0.3px;">Sug'urta muddati</div>
+            <div onClick="{{ editStep5 }}" style="font-size:13px;color:#3390EC;font-weight:600;cursor:pointer;">tahrirlash</div>
+          </div>
+          <div style="font-size:14.5px;color:#0b0b0c;">{{ startDateFormatted }} — {{ endDateFormatted }}</div>
+        </div>
+
+        <div style="background:#F1F8FF;border:1px solid #D6EAFF;border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:13px;color:#707579;font-weight:600;">Sug'urta narxi</div>
+          <div style="font-size:28px;font-weight:800;color:#3390EC;">{{ priceFormatted }}</div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="display:flex;gap:12px;padding:14px 18px;border-top:1px solid #ECECEE;background:#ffffff;">
+    <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ goBack }}" style="flex:1;padding:15px;border-radius:8px;border:1px solid #E4E4E7;background:#ffffff;color:#0b0b0c;font-size:15px;font-weight:600;cursor:pointer;">Orqaga</button>
+    </sc-if>
+    <button onClick="{{ goNext }}" disabled="{{ checking }}" style="{{ nextButtonStyle }}">{{ nextLabel }}</button>
+  </div>
+  </sc-if>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RELATIONS = ["O'zi", "Turmush o'rtog'i", "Farzandi", "Ota-onasi", "Boshqa qarindosh"];
+const DURATIONS = [
+  { key: '20d', label: "20 kun", days: 20 },
+  { key: '6m', label: "6 oy", days: 180 },
+  { key: '1y', label: "1 yil", days: 365 },
+];
+const STEP_TITLES = { 1: "Transport", 2: "Egasi", 3: "Sug'urta turi", 4: "Haydovchilar", 5: "Muddat", 6: "Tasdiqlash" };
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+class Component extends DCLogic {
+  state = {
+    step: 1,
+    plateNumber: '', techSeries: '', techNumber: '',
+    checking: false, ownerType: null,
+    physPassSeries: '', physPassNumber: '',
+    orgName: '', inn: '',
+    insuranceType: null,
+    ownerIsDriver: false,
+    drivers: [],
+    startDate: new Date().toISOString().slice(0, 10), duration: null,
+    phone: '',
+    errors: {},
+    toast: null,
+    submitted: false,
+  };
+
+  setErr(key, msg) { this.setState(s => ({ errors: { ...s.errors, [key]: msg } })); }
+  clearErr(keys) { this.setState(s => { const e = { ...s.errors }; keys.forEach(k => delete e[k]); return { errors: e }; }); }
+
+  onPlateChange = (e) => { this.setState({ plateNumber: e.target.value.toUpperCase() }); this.clearErr(['plate']); };
+  onTechSeriesChange = (e) => { this.setState({ techSeries: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') }); this.clearErr(['tech']); };
+  onTechNumberChange = (e) => { this.setState({ techNumber: e.target.value.replace(/[^0-9]/g, '') }); this.clearErr(['tech']); };
+  onPhysSeriesChange = (e) => { this.setState({ physPassSeries: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') }); this.clearErr(['physPass']); };
+  onPhysNumberChange = (e) => { this.setState({ physPassNumber: e.target.value.replace(/[^0-9]/g, '') }); this.clearErr(['physPass']); };
+  onOrgNameChange = (e) => { this.setState({ orgName: e.target.value }); this.clearErr(['orgName']); };
+  onInnChange = (e) => { this.setState({ inn: e.target.value.replace(/[^0-9]/g, '') }); this.clearErr(['inn']); };
+  onStartDateChange = (e) => { this.setState({ startDate: e.target.value }); this.clearErr(['startDate']); };
+  onPhoneChange = (e) => { this.setState({ phone: e.target.value }); this.clearErr(['phone']); };
+
+  toggleOwnerIsDriver = () => {
+    this.setState(s => {
+      if (s.ownerIsDriver) {
+        return { ownerIsDriver: false, drivers: s.drivers.filter(d => !d.isOwner) };
+      }
+      const ownerDriver = {
+        id: 'owner', isOwner: true,
+        passportSeries: s.physPassSeries, passportNumber: s.physPassNumber,
+        birthDate: '', relation: "O'zi",
+      };
+      return { ownerIsDriver: true, drivers: [ownerDriver, ...s.drivers] };
+    });
+  };
+
+  addDriver = () => {
+    this.setState(s => s.drivers.length >= 5 ? null : {
+      drivers: [...s.drivers, { id: 'd' + Date.now() + Math.random(), isOwner: false, passportSeries: '', passportNumber: '', birthDate: '', relation: RELATIONS[0] }]
+    });
+  };
+  removeDriver = (id) => this.setState(s => ({ drivers: s.drivers.filter(d => d.id !== id) }));
+  updateDriver = (id, field, value) => this.setState(s => ({ drivers: s.drivers.map(d => d.id === id ? { ...d, [field]: value } : d) }));
+
+  selectInsurance = (key) => { this.setState({ insuranceType: key }); this.clearErr(['insurance']); };
+  selectDuration = (key) => { this.setState({ duration: key }); this.clearErr(['duration']); };
+
+  validateStep(step) {
+    const s = this.state;
+    const errs = {};
+    if (step === 1) {
+      if (!s.plateNumber || s.plateNumber.replace(/\s/g, '').length < 6) errs.plate = "Davlat raqamini to'liq kiriting";
+      if (s.techSeries.length < 3 || s.techNumber.length < 7) errs.tech = "Seriya (3 harf) va raqam (7 raqam) to'liq kiritilishi kerak";
+    } else if (step === 2) {
+      if (s.ownerType === 'phys') {
+        if (s.physPassSeries.length < 2 || s.physPassNumber.length < 7) errs.physPass = "Passport ma'lumotlarini to'liq kiriting";
+      } else if (s.ownerType === 'legal') {
+        if (!s.orgName) errs.orgName = "Tashkilot nomini kiriting";
+        if (s.inn.length < 9) errs.inn = "STIR 9 ta raqamdan iborat bo'lishi kerak";
+      }
+    } else if (step === 3) {
+      if (!s.insuranceType) errs.insurance = "Sug'urta turini tanlang";
+      if (!s.phone || s.phone.length < 9) errs.phone = "Telefon raqamini to'liq kiriting";
+    } else if (step === 4) {
+      if (s.drivers.length === 0) errs.drivers = "Kamida bitta haydovchi qo'shing";
+      else {
+        for (const d of s.drivers) {
+          if (d.passportSeries.length < 2 || d.passportNumber.length < 7 || !d.birthDate) { errs.drivers = "Barcha haydovchilar ma'lumotini to'liq kiriting"; break; }
+        }
+      }
+    } else if (step === 5) {
+      if (!s.startDate) errs.startDate = "Boshlanish sanasini tanlang";
+      if (!s.duration) errs.duration = "Muddatni tanlang";
+    }
+    this.setState({ errors: errs });
+    return Object.keys(errs).length === 0;
+  }
+
+  goNext = () => {
+    const s = this.state;
+    if (s.checking) return;
+    if (!this.validateStep(s.step)) return;
+
+    if (s.step === 1) {
+      this.setState({ checking: true });
+      setTimeout(() => {
+        const ownerType = this.state.techSeries.startsWith('J') ? 'legal' : 'phys';
+        this.setState({ checking: false, ownerType, step: 2 });
+      }, 900);
+      return;
+    }
+    if (s.step === 3) {
+      this.setState({ step: s.insuranceType === 'limited' ? 4 : 5 });
+      return;
+    }
+    if (s.step === 6) {
+      this.setState({ submitted: true });
+      return;
+    }
+    this.setState({ step: s.step + 1 });
+  };
+
+  goBack = () => {
+    const s = this.state;
+    if (s.step === 5 && s.insuranceType !== 'limited') { this.setState({ step: 3 }); return; }
+    this.setState({ step: Math.max(1, s.step - 1) });
+  };
+
+  editTo = (step) => this.setState({ step });
+
+  showToast = (msg) => {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2600);
+  };
+
+  addDriverChecked = () => {
+    if (this.state.drivers.length >= 5) { this.showToast("Ko'pi bilan 5 ta haydovchi qo'shish mumkin"); return; }
+    this.addDriver();
+  };
+
+  onPhoneDigitsChange = (e) => {
+    const digits = e.target.value.replace(/[^0-9]/g, '').slice(0, 9);
+    this.setState({ phone: digits });
+    this.clearErr(['phone']);
+  };
+
+  computePrice() {
+    const s = this.state;
+    if (!s.duration) return 0;
+    const dur = DURATIONS.find(d => d.key === s.duration);
+    const base = { '20d': 150000, '1m': 300000, '3m': 800000, '6m': 1500000, '1y': 2800000 }[s.duration] || 0;
+    let price = base;
+    if (s.insuranceType === 'unlimited') price = Math.round(price * 1.6);
+    if (s.insuranceType === 'limited' && s.drivers.length > 1) price += (s.drivers.length - 1) * 50000;
+    return price;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const today = new Date();
+    const todayIso = today.toISOString().slice(0, 10);
+
+    const dur = DURATIONS.find(d => d.key === s.duration);
+    let endDateFormatted = '';
+    if (s.startDate && dur) {
+      const d = new Date(s.startDate);
+      d.setDate(d.getDate() + dur.days);
+      endDateFormatted = fmtDate(d.toISOString().slice(0, 10));
+    }
+
+    const errBorder = (err) => err ? '1.5px solid #DF3F40' : '1px solid #E4E4E7';
+    const baseInput = (err) => ({
+      width: '100%', boxSizing: 'border-box', border: errBorder(err), borderRadius: '6px',
+      padding: '14px', fontSize: '15px', color: '#0b0b0c', outline: 'none',
+    });
+
+    const insuranceCards = [
+      { key: 'limited', title: 'Cheklangan', desc: "Faqat ro'yxatdagi haydovchilar transport vositasini boshqarishi mumkin" },
+      { key: 'unlimited', title: 'Cheklanmagan', desc: "Har qanday shaxs transport vositasini boshqarishi mumkin" },
+    ].map(c => {
+      const selected = s.insuranceType === c.key;
+      return {
+        ...c,
+        onSelect: () => this.selectInsurance(c.key),
+        style: {
+          border: selected ? '2px solid #3390EC' : '1px solid #ECECEE',
+          background: selected ? '#F1F8FF' : '#ffffff',
+          borderRadius: '10px', padding: '18px', cursor: 'pointer',
+        },
+        dotStyle: {
+          width: '20px', height: '20px', borderRadius: '50%',
+          border: selected ? '6px solid #3390EC' : '2px solid #E4E4E7',
+          boxSizing: 'border-box', background: '#fff',
+        },
+      };
+    });
+
+    const driversView = s.drivers.map((d, i) => ({
+      ...d,
+      label: d.isOwner ? "Siz (avtomobil egasi)" : `Haydovchi ${i + 1}`,
+      removable: !d.isOwner,
+      error: null,
+      onSeries: (e) => this.updateDriver(d.id, 'passportSeries', e.target.value.toUpperCase().replace(/[^A-Z]/g, '')),
+      onNumber: (e) => this.updateDriver(d.id, 'passportNumber', e.target.value.replace(/[^0-9]/g, '')),
+      onBirth: (e) => this.updateDriver(d.id, 'birthDate', e.target.value),
+      onRelation: (e) => this.updateDriver(d.id, 'relation', e.target.value),
+      onRemove: () => this.removeDriver(d.id),
+    }));
+
+    const durationOptions = DURATIONS.map(o => {
+      const selected = s.duration === o.key;
+      return {
+        ...o,
+        onSelect: () => this.selectDuration(o.key),
+        style: {
+          flexShrink: 0, padding: '12px 18px', borderRadius: '999px', fontSize: '14px', fontWeight: 600,
+          border: selected ? '1.5px solid #3390EC' : '1px solid #E4E4E7',
+          background: selected ? '#3390EC' : '#ffffff',
+          color: selected ? '#ffffff' : '#0b0b0c', cursor: 'pointer', whiteSpace: 'nowrap',
+        },
+      };
+    });
+
+    const price = this.computePrice();
+    const step = s.step;
+
+    return {
+      step, stepTitle: STEP_TITLES[step], progressPct: (step / 6 * 100) + '%',
+      isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4, isStep5: step === 5, isStep6: step === 6,
+      showBack: step > 1,
+      nextLabel: step === 6 ? "To'lovga o'tish" : "Davom etish",
+      nextButtonStyle: {
+        flex: 1.6, padding: '15px', borderRadius: '8px', border: 'none', background: '#3390EC',
+        color: '#ffffff', fontSize: '15.5px', fontWeight: 700, cursor: 'pointer', opacity: s.checking ? 0.6 : 1,
+      },
+      goNext: this.goNext, goBack: this.goBack, submitted: s.submitted,
+
+      plateNumber: s.plateNumber, techSeries: s.techSeries, techNumber: s.techNumber,
+      onPlateChange: this.onPlateChange, onTechSeriesChange: this.onTechSeriesChange, onTechNumberChange: this.onTechNumberChange,
+      plateInputStyle: { ...baseInput(s.errors.plate) },
+      techSeriesInputStyle: { ...baseInput(s.errors.tech), flex: 0.9 },
+      techNumberInputStyle: { ...baseInput(s.errors.tech), flex: 1.3 },
+      checking: s.checking, errors: s.errors,
+
+      ownerType: s.ownerType, isPhys: s.ownerType === 'phys', isLegal: s.ownerType === 'legal',
+      ownerTypeLabel: s.ownerType === 'legal' ? 'Yuridik shaxs' : 'Jismoniy shaxs',
+      physPassSeries: s.physPassSeries, physPassNumber: s.physPassNumber,
+      onPhysSeriesChange: this.onPhysSeriesChange, onPhysNumberChange: this.onPhysNumberChange,
+      physSeriesInputStyle: { ...baseInput(s.errors.physPass), flex: 0.7 },
+      physNumberInputStyle: { ...baseInput(s.errors.physPass), flex: 1.3 },
+      orgName: s.orgName, inn: s.inn, onOrgNameChange: this.onOrgNameChange, onInnChange: this.onInnChange,
+      orgNameInputStyle: baseInput(s.errors.orgName), innInputStyle: baseInput(s.errors.inn),
+
+      insuranceCards, isLimited: s.insuranceType === 'limited',
+
+      ownerIsDriver: s.ownerIsDriver, toggleOwnerIsDriver: this.toggleOwnerIsDriver,
+      ownerCheckboxStyle: {
+        width: '24px', height: '24px', borderRadius: '4px', flexShrink: 0,
+        border: s.ownerIsDriver ? 'none' : '1.5px solid #D0D0D5',
+        background: s.ownerIsDriver ? '#3390EC' : '#ffffff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      },
+      driversView, driversSummary: s.drivers,
+      driversCountLabel: `${s.drivers.length}/5 haydovchi`,
+      canAddDriver: s.drivers.length < 5, addDriver: this.addDriverChecked,
+      toast: s.toast, onPhoneDigitsChange: this.onPhoneDigitsChange,
+      relationOptions: RELATIONS,
+
+      todayIso, startDate: s.startDate, onStartDateChange: this.onStartDateChange,
+      startDateInputStyle: baseInput(s.errors.startDate),
+      durationOptions,
+      startDateFormatted: fmtDate(s.startDate), endDateFormatted,
+
+      phone: s.phone.replace(/(\d{2})(\d{0,3})(\d{0,2})(\d{0,2})/, (m, a, b, c, d) => [a, b, c, d].filter(Boolean).join(' ')),
+      phoneInputStyle: { ...baseInput(s.errors.phone), border: 'none', padding: '14px 14px 14px 0', letterSpacing: '2.5px', borderRadius: 0 },
+      priceFormatted: price ? price.toLocaleString('ru-RU') + " so'm" : '—',
+
+      editStep1: () => this.editTo(1), editStep2: () => this.editTo(2), editStep3: () => this.editTo(3), editStep4: () => this.editTo(4), editStep5: () => this.editTo(5),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

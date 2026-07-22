@@ -112,7 +112,8 @@ return [
             'site/*',
             'police/check',
             'police/gross',
-            'bot/start'
+            'bot/start',
+            'web-app/*'
             //'sarmin/*'
         ]
     ],

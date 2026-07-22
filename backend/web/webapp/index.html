@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avtosugurta</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<div id="toast" class="toast hidden"></div>
+
+<div id="app">
+
+  <section id="successScreen" class="screen hidden">
+    <div class="success-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="success-title">Ariza qabul qilindi</div>
+    <div class="success-text" id="successText"></div>
+    <a id="paymentLinkBtn" class="btn btn-primary hidden" target="_blank" rel="noopener">To'lovni amalga oshirish</a>
+    <button id="closeBtn" class="btn btn-secondary">Yopish</button>
+  </section>
+
+  <section id="formScreen" class="screen">
+
+    <div class="header">
+      <div class="header-top">
+        <span id="stepLabel"></span>
+        <span id="stepTitle"></span>
+      </div>
+      <div class="progress-track"><div id="progressBar" class="progress-fill"></div></div>
+    </div>
+
+    <div class="content" id="content">
+
+      <!-- Step 1: Transport -->
+      <div class="step" data-step="1">
+        <div class="step-head">
+          <div class="step-title">Transport ma'lumotlari</div>
+          <div class="step-sub">Avtomobilingiz haqidagi ma'lumotlarni kiriting</div>
+        </div>
+
+        <div class="field">
+          <label>Davlat raqami</label>
+          <input type="text" id="plateNumber" placeholder="01 A 123 BB" maxlength="9">
+          <div class="error" id="err-plate"></div>
+        </div>
+
+        <div class="field">
+          <label>Texpassport seriya va raqami</label>
+          <div class="row">
+            <input type="text" id="techSeria" placeholder="ADM" maxlength="3" style="flex:0.9">
+            <input type="text" id="techNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
+          </div>
+          <div class="error" id="err-tech"></div>
+        </div>
+
+        <div class="checking hidden" id="checkingIndicator">
+          <span class="spinner"></span> Tekshirilmoqda...
+        </div>
+      </div>
+
+      <!-- Step 2: Owner -->
+      <div class="step" data-step="2">
+        <div class="step-head">
+          <div class="step-title">Avtomobil egasi</div>
+          <div class="step-sub">Avtomobil egasi ma'lumotlarini kiriting</div>
+        </div>
+
+        <div class="owner-card">
+          <div class="owner-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div id="ownerTypeLabel" class="owner-label"></div>
+        </div>
+
+        <div class="field" id="physFields">
+          <label>Passport seriya va raqami</label>
+          <div class="row">
+            <input type="text" id="physSeries" placeholder="AD" maxlength="2" style="flex:0.7">
+            <input type="text" id="physNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
+          </div>
+          <div class="error" id="err-physPass"></div>
+        </div>
+
+        <div class="field hidden" id="legalFields">
+          <label>Tashkilot nomi</label>
+          <input type="text" id="orgNameView" disabled>
+          <label style="margin-top:14px">STIR (INN)</label>
+          <input type="text" id="orgInnView" disabled>
+        </div>
+      </div>
+
+      <!-- Step 3: Insurance type + phone -->
+      <div class="step" data-step="3">
+        <div class="step-head">
+          <div class="step-title">Sug'urta turi</div>
+          <div class="step-sub">Sizga mos variantni tanlang</div>
+        </div>
+
+        <div id="insuranceCards"></div>
+        <div class="error" id="err-insurance"></div>
+
+        <div class="field">
+          <label>Sug'urtalovchi telefon raqami</label>
+          <div class="phone-row">
+            <div class="phone-prefix">+998</div>
+            <input type="tel" id="phoneInput" placeholder="90 123 45 67" maxlength="9">
+          </div>
+          <div class="error" id="err-phone"></div>
+        </div>
+      </div>
+
+      <!-- Step 4: Drivers -->
+      <div class="step" data-step="4">
+        <div class="step-head-row">
+          <div>
+            <div class="step-title">Haydovchilar</div>
+            <div class="step-sub">Ro'yxatga haydovchilarni qo'shing</div>
+          </div>
+          <div class="drivers-count" id="driversCountLabel"></div>
+        </div>
+
+        <div class="toggle-row hidden" id="ownerIsDriverToggle">
+          <div class="checkbox" id="ownerCheckbox"></div>
+          <div class="toggle-text">Avtomobil egasi ham haydovchimi?</div>
+        </div>
+
+        <div id="driversList"></div>
+
+        <div class="add-driver" id="addDriverBtn">+ Haydovchi qo'shish</div>
+        <div class="error" id="err-drivers"></div>
+      </div>
+
+      <!-- Step 5: Duration -->
+      <div class="step" data-step="5">
+        <div class="step-head">
+          <div class="step-title">Sug'urta muddati</div>
+          <div class="step-sub">Boshlanish sanasi va muddatni tanlang</div>
+        </div>
+
+        <div class="field">
+          <label>Boshlanish sanasi</label>
+          <input type="date" id="startDateInput">
+          <div class="error" id="err-startDate"></div>
+        </div>
+
+        <div class="field">
+          <label>Muddat</label>
+          <div class="chips" id="durationChips"></div>
+          <div class="error" id="err-duration"></div>
+        </div>
+      </div>
+
+      <!-- Step 6: Confirm -->
+      <div class="step" data-step="6">
+        <div class="step-head">
+          <div class="step-title">Ma'lumotlarni ko'rib chiqing</div>
+          <div class="step-sub">Yuborishdan oldin tekshirib chiqing</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-head"><span>Arizaberuvchi</span><a data-goto="3">tahrirlash</a></div>
+          <div id="sumPhone"></div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-head"><span>Transport ma'lumotlari</span><a data-goto="1">tahrirlash</a></div>
+          <div id="sumPlate"></div>
+          <div id="sumTech"></div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-head"><span>Avtomobil egasi</span><a data-goto="2">tahrirlash</a></div>
+          <div id="sumOwner"></div>
+        </div>
+
+        <div class="summary-card hidden" id="sumDriversCard">
+          <div class="summary-head"><span>Haydovchilar</span><a data-goto="4">tahrirlash</a></div>
+          <div id="sumDrivers"></div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-head"><span>Sug'urta muddati</span><a data-goto="5">tahrirlash</a></div>
+          <div id="sumDuration"></div>
+        </div>
+
+        <div class="field">
+          <label>To'lov usuli</label>
+          <div class="gateway-row" id="gatewayChoice"></div>
+        </div>
+
+        <div class="price-box">
+          <div class="price-label">Sug'urta narxi</div>
+          <div class="price-value" id="priceDisplay">&mdash;</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      <button id="backBtn" class="btn btn-secondary hidden">Orqaga</button>
+      <button id="nextBtn" class="btn btn-primary">Davom etish</button>
+    </div>
+
+  </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
