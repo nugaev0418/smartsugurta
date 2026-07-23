@@ -504,12 +504,7 @@ class GrossOsagoClient
         return $this->request(
             $this->baseUrl . "/epolis_oplata.php?ln=2&uuid={$uuid}&anketa={$anketaId}",
             'POST',
-            [
-                'Content-Type: application/x-www-form-urlencoded',
-                'Origin: https://osago.gross.uz',
-                'Referer: ' . $this->baseUrl . "/epolis_oplata.php?ln=2&uuid={$uuid}&anketa={$anketaId}",
-                'User-Agent: Mozilla/5.0',
-            ],
+            $this->paymentFormHeaders($uuid, $anketaId),
             $data
         );
     }
@@ -532,14 +527,40 @@ class GrossOsagoClient
         return $this->request(
             $this->baseUrl . "/epolis_oplata.php?ln=2&uuid={$uuid}&anketa={$anketaId}",
             'POST',
-            [
-                'Content-Type: application/x-www-form-urlencoded',
-                'Origin: https://osago.gross.uz',
-                'Referer: ' . $this->baseUrl . "/epolis_oplata.php?ln=2&uuid={$uuid}&anketa={$anketaId}",
-                'User-Agent: Mozilla/5.0',
-            ],
+            $this->paymentFormHeaders($uuid, $anketaId),
             $data
         );
+    }
+
+////////////////////////////////////////////////////////
+// Shared browser-like headers for the payment-method POST — matches the
+// full header set openEpolisOplata() sends for the GET, since payWithClick()/
+// payWithPayme() previously sent only a bare "User-Agent: Mozilla/5.0",
+// unlike a real form submission on this Cloudflare-fronted page.
+////////////////////////////////////////////////////////
+    private function paymentFormHeaders(string $uuid, string $anketaId): array
+    {
+        $referer = $this->baseUrl . "/epolis_oplata.php?ln=2&uuid={$uuid}&anketa={$anketaId}";
+
+        return [
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language: ru,en-US;q=0.9,en;q=0.8,uz;q=0.7',
+            'Cache-Control: no-cache',
+            'Content-Type: application/x-www-form-urlencoded',
+            'Origin: https://osago.gross.uz',
+            'Pragma: no-cache',
+            'Priority: u=0, i',
+            'Referer: ' . $referer,
+            'Sec-Ch-Ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
+            'Sec-Ch-Ua-Mobile: ?0',
+            'Sec-Ch-Ua-Platform: "Windows"',
+            'Sec-Fetch-Dest: document',
+            'Sec-Fetch-Mode: navigate',
+            'Sec-Fetch-Site: same-origin',
+            'Sec-Fetch-User: ?1',
+            'Upgrade-Insecure-Requests: 1',
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+        ];
     }
 
 ////////////////////////////////////////////////////////
