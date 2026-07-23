@@ -5,6 +5,7 @@ namespace backend\controllers;
 use backend\component\DeeplinkService;
 use backend\component\EuroAsiaService;
 use backend\component\ReferralService;
+use backend\component\RelativeType;
 use backend\models\EuroAsia;
 use backend\models\Pages;
 use backend\queue\GrossOsagoJob;
@@ -1121,6 +1122,24 @@ class BotController extends Controller
     }
 
 
+    // Button-label -> canonical Gross relative_type code (0-10), matching the
+    // scheme documented in finalizeDriver() and shared with EuroAsia via
+    // RelativeType::eaiId(). Keyed on getKeywordText()'s language-independent
+    // keyword, same as showRelativePage()'s buttons.
+    private const RELATIVE_CODE_BY_KEYWORD = [
+        'Not related' => RelativeType::NOT_RELATED,
+        'Father' => RelativeType::FATHER,
+        'Mother' => RelativeType::MOTHER,
+        'Husband' => RelativeType::HUSBAND,
+        'Wife' => RelativeType::WIFE,
+        'Son' => RelativeType::SON,
+        'Girl' => RelativeType::DAUGHTER,
+        'Big brother' => RelativeType::OLDER_BROTHER,
+        'Little brother' => RelativeType::YOUNGER_BROTHER,
+        'Big sister' => RelativeType::OLDER_SISTER,
+        'Little sister' => RelativeType::YOUNGER_SISTER,
+    ];
+
     public function handleDriverPage($driver_data = null)
     {
         if (!is_null($driver_data)){
@@ -1147,32 +1166,20 @@ class BotController extends Controller
                     $this->sendMessage($this->getMText("This driver's driver's license was not found."));
                 }else{
 
-                    $drivers[] = $dto;
-                    $this->drivers = $drivers;
-
-
-                    $police_data = $this->police_data != '' ? $this->police_data : [];
-                    $police_data['drivers'][] = [
-                        'document'      => $seria.$number,   // Passport seriya+raqam
-                        'birth_date'    => substr($birthdate, 0, 10),   // Tug'ilgan sana YYYY-MM-DD
-                        'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
-                        // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
-                        // 8=uka, 9=opa, 10=singlisi
+                    $this->pendingDriver = [
+                        'seria' => $seria,
+                        'number' => $number,
+                        'birthdate' => $birthdate,
+                        'firstName' => $dto->firstName,
+                        'lastName' => $dto->lastName,
                     ];
-                    $this->police_data = $police_data;
-                    $this->sendMessageAdmin(json_encode($police_data));
 
-
-
-                    $count = count($drivers);
-
-                    $driverName = $dto->firstName . ' ' . $dto->lastName;
-
-                    if ($count < 5){
-                        $text = sprintf($this->getMText('Drivers saved'), $count, $driverName);
-                        $this->showDriverPage(true, $text);
-                    }else{
-                        $this->showPoliceSeasonPage();
+                    if (!is_null($driver_data)) {
+                        // Owner added as their own driver (handleOwnerIsDriverPage) — no
+                        // relation prompt, defaults to "not related" like the web app's "O'zi".
+                        $this->finalizeDriver(RelativeType::NOT_RELATED);
+                    } else {
+                        $this->showRelativePage();
                     }
                 }
             }else{
@@ -1189,93 +1196,61 @@ class BotController extends Controller
 
     public function handleRelativePage()
     {
+        $code = self::RELATIVE_CODE_BY_KEYWORD[$this->getKeywordText($this->text)] ?? null;
 
-        switch ($this->getKeywordText($this->text)) {
-            case "Father":
-                break;
-            case "Mother":
-                break;
-            case "Husband":
-                break;
-            case "Wife":
-                break;
-            case "Son":
-                break;
-            case "Girl":
-                break;
-            case "Big brother":
-                break;
-            case "Little brother":
-                break;
-            case "Big sister":
-                break;
-            case "Little sister":
-                break;
-            case "Not related":
-                break;
-            default:
-                $this->showRelativePage();
+        if ($code === null) {
+            $this->showRelativePage();
+            return;
         }
 
-        if (!is_null($this->text) && $this->getKeywordText($this->text) != 'No other drivers'){
-
-            $passData = $this->parsePassportData($this->text);
-            $drivers = $this->drivers != '' ? $this->drivers : [];
-            if ($passData['success']){
-                $seria = $passData['series'];
-                $number = $passData['number'];
-                $birthdate = self::toIsoDate($passData['birth']);
+        $this->finalizeDriver($code);
 
 
-                $eai = new EuroAsiaService();
+    }
 
-                $dto = $eai->getPersonByBirthdateDTO($seria, $number, $birthdate);
+    /**
+     * Common tail for both handleDriverPage() (owner-as-driver, no relation
+     * prompt) and handleRelativePage() (manual driver, relation chosen via
+     * keyboard): appends the passport-validated driver stashed in
+     * pendingDriver to both $this->drivers (EAI shape) and
+     * police_data['drivers'] (Gross shape, carries the raw 0-10 code).
+     */
+    private function finalizeDriver(int $relativeCode): void
+    {
+        $pending = $this->pendingDriver != '' ? $this->pendingDriver : null;
+        if (!$pending) {
+            $this->showPoliceSeasonPage();
+            return;
+        }
 
+        $drivers = $this->drivers != '' ? $this->drivers : [];
+        $drivers[] = [
+            'birthDate' => $pending['birthdate'],
+            'number' => $pending['number'],
+            'seria' => $pending['seria'],
+        ];
+        $this->drivers = $drivers;
 
-                if (!$dto->success){
-                    $this->sendMessage($this->getMText('Driver found transport'));
-                }elseif (!$dto->driverLicense){
-                    $this->sendMessage($this->getMText("This driver's driver's license was not found."));
-                }else{
+        $police_data = $this->police_data != '' ? $this->police_data : [];
+        $police_data['drivers'][] = [
+            'document'      => $pending['seria'] . $pending['number'],
+            'birth_date'    => substr($pending['birthdate'], 0, 10),
+            'relative_type' => $relativeCode,
+        ];
+        $this->police_data = $police_data;
+        $this->pendingDriver = '';
 
-                    $drivers[] = $dto;
-                    $this->drivers = $drivers;
+        $this->sendMessageAdmin(json_encode($police_data));
 
+        $count = count($drivers);
+        $driverName = $pending['firstName'] . ' ' . $pending['lastName'];
 
-                    $police_data = $this->police_data != '' ? $this->police_data : [];
-                    $police_data['drivers'][] = [
-                        'document'      => $seria.$number,   // Passport seriya+raqam
-                        'birth_date'    => substr($birthdate, 0, 10),   // Tug'ilgan sana YYYY-MM-DD
-                        'relative_type' => 0,              // 0=qarindosh emas, 1=ota, 2=ona, 3=er,
-                        // 4=xotin, 5=o'gil, 6=qiz, 7=aka,
-                        // 8=uka, 9=opa, 10=singlisi
-                    ];
-                    $this->police_data = $police_data;
-                    $this->sendMessageAdmin(json_encode($police_data));
-
-
-
-                    $count = count($drivers);
-
-                    $driverName = $dto->firstName . ' ' . $dto->lastName;
-
-                    if ($count < 5){
-                        $text = sprintf($this->getMText('Drivers saved'), $count, $driverName);
-                        $this->showDriverPage(true, $text);
-                    }else{
-                        $this->showPoliceSeasonPage();
-                    }
-                }
-            }else{
-                $this->showDriverPage(count($drivers));
-            }
-
-
-        } else {
+        if ($count < 5){
+            $text = sprintf($this->getMText('Drivers saved'), $count, $driverName);
+            $this->showDriverPage(true, $text);
+        }else{
             $this->showPoliceSeasonPage();
         }
-
-
     }
 
     public function handleConfirmPage()
@@ -1300,12 +1275,12 @@ class BotController extends Controller
 
                 $drivers = [];
                 if ($this->drivers != ''){
-                    foreach ($this->drivers as $driver) {
+                    foreach ($this->drivers as $i => $driver) {
                         $drivers[] = [
                             "passportBirthdate" => $driver['birthDate'],
                             "passportNumber" => $driver['number'],
                             "passportSeria" => $driver['seria'],
-                            "relativeId" => ""
+                            "relativeId" => RelativeType::eaiId($this->police_data['drivers'][$i]['relative_type'] ?? 0),
                         ];
                     }
                 }
@@ -1407,12 +1382,12 @@ class BotController extends Controller
                 $this->sendMessageAdmin('Toshkent Avtomobili');
                 $drivers = [];
                 if ($this->drivers != ''){
-                    foreach ($this->drivers as $driver) {
+                    foreach ($this->drivers as $i => $driver) {
                         $drivers[] = [
                             "passportBirthdate" => $driver['birthDate'],
                             "passportNumber" => $driver['number'],
                             "passportSeria" => $driver['seria'],
-                            "relativeId" => ""
+                            "relativeId" => RelativeType::eaiId($this->police_data['drivers'][$i]['relative_type'] ?? 0),
                         ];
                     }
                 }
@@ -1732,6 +1707,7 @@ class BotController extends Controller
     public function clearDatas()
     {
         $this->drivers = '';
+        $this->pendingDriver = '';
         $this->phone = '';
         $this->ownerData = '';
         $this->lisenceNumber = '';

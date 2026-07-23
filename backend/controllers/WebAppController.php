@@ -3,6 +3,7 @@
 namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
+use backend\component\RelativeType;
 use common\models\Botuser;
 use common\models\Police;
 use common\models\SeasonalInsurance;
@@ -480,17 +481,18 @@ class WebAppController extends Controller
             if (!$dBirthIso) {
                 return $this->fail($this->msg('driver_birthdate_invalid', $lang));
             }
+            $relation = (string)($driver['relation'] ?? '');
+            $relativeType = self::RELATIVE_TYPES[$relation] ?? 0;
             $eaiDrivers[] = [
                 'passportBirthdate' => $dBirthIso,
                 'passportNumber' => $dNumber,
                 'passportSeria' => $dSeria,
-                'relativeId' => '',
+                'relativeId' => RelativeType::eaiId($relativeType),
             ];
-            $relation = (string)($driver['relation'] ?? '');
             $grossDrivers[] = [
                 'document' => $dSeria . $dNumber,
                 'birth_date' => $dBirth,
-                'relative_type' => self::RELATIVE_TYPES[$relation] ?? 0,
+                'relative_type' => $relativeType,
             ];
         }
 
