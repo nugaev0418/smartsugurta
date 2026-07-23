@@ -118,15 +118,15 @@ class GrossOsago
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
         file_put_contents($sessionDir . '/payment-click.html', $clickHtml);
 
-        $paymeHtml = $this->http->payWithPayme($uuid, $anketaId);
-        file_put_contents($sessionDir . '/payment-payme.html', $paymeHtml);
+//        $paymeHtml = $this->http->payWithPayme($uuid, $anketaId);
+//        file_put_contents($sessionDir . '/payment-payme.html', $paymeHtml);
 
         return [
             'uuid'        => $uuid,
             'anketa_id'   => $anketaId,
             'premium'     => $premium,
             'click_url'   => $this->http->extractPaymentLink($clickHtml),
-            'payme_url'   => $this->http->extractPaymentLink($paymeHtml),
+            'payme_url'   => '',//$this->http->extractPaymentLink($paymeHtml),
             'session_dir' => $sessionDir,
         ];
     }
