@@ -1228,6 +1228,10 @@ class BotController extends Controller
             'birthDate' => $pending['birthdate'],
             'number' => $pending['number'],
             'seria' => $pending['seria'],
+            // showConfirmPage() reads these to list drivers by name in the
+            // confirmation text — must stay alongside the EAI-shape fields above.
+            'firstName' => $pending['firstName'],
+            'lastName' => $pending['lastName'],
         ];
         $this->drivers = $drivers;
 
