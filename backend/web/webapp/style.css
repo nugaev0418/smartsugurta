@@ -62,6 +62,23 @@ html, body {
 .error { font-size: 12px; color: #DF3F40; margin-top: 6px; min-height: 0; }
 .error:empty { display: none; }
 
+.date-field { position: relative; display: flex; align-items: center; }
+.date-field input[type="text"] { padding-right: 44px; }
+.date-pick-btn {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; border: none; background: transparent;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; font-size: 18px;
+}
+/* !important here beats the more specific ".driver-card input, .driver-card select"
+   rule (width:100% etc.) so this stays a true 1x1 hidden node, not just invisible. */
+input.date-native {
+  position: absolute !important; left: 0 !important; top: 0 !important;
+  width: 1px !important; height: 1px !important; min-width: 0 !important;
+  opacity: 0 !important; border: none !important; padding: 0 !important;
+  pointer-events: none !important;
+}
+.driver-card input.invalid { border-color: #DF3F40 !important; }
+
 .checking { display: flex; align-items: center; gap: 8px; color: #707579; font-size: 13px; }
 .spinner {
   width: 16px; height: 16px; border: 2px solid #ECECEE; border-top-color: #3390EC;

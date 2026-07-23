@@ -37,6 +37,49 @@
     return p[2] + '.' + p[1] + '.' + p[0];
   }
 
+  function formatDateMask(raw) {
+    var d = raw.replace(/\D/g, '').slice(0, 8);
+    var out = d.slice(0, 2);
+    if (d.length > 2) out += '.' + d.slice(2, 4);
+    if (d.length > 4) out += '.' + d.slice(4, 8);
+    return out;
+  }
+
+  function maskToYmd(masked) {
+    var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(masked);
+    if (!m) return '';
+    var day = +m[1], month = +m[2], year = +m[3];
+    if (month < 1 || month > 12) return '';
+    if (day < 1 || day > new Date(year, month, 0).getDate()) return '';
+    return year + '-' + (month < 10 ? '0' : '') + month + '-' + (day < 10 ? '0' : '') + day;
+  }
+
+  function wireDateField(textEl, nativeEl, pickBtn, onCommit) {
+    textEl.addEventListener('input', function (e) {
+      var masked = formatDateMask(e.target.value);
+      e.target.value = masked;
+      if (masked.length === 10) {
+        var ymd = maskToYmd(masked);
+        textEl.classList.toggle('invalid', !ymd);
+        if (ymd) { nativeEl.value = ymd; onCommit(ymd); }
+      } else {
+        textEl.classList.remove('invalid');
+      }
+    });
+    nativeEl.addEventListener('change', function (e) {
+      textEl.value = fmtDate(e.target.value);
+      textEl.classList.remove('invalid');
+      onCommit(e.target.value);
+    });
+    pickBtn.addEventListener('click', function () {
+      if (typeof nativeEl.showPicker === 'function') {
+        try { nativeEl.showPicker(); return; } catch (err) { /* fall through to focus/click */ }
+      }
+      nativeEl.focus();
+      nativeEl.click();
+    });
+  }
+
   function durationDays(key) {
     var d = DURATIONS.filter(function (o) { return o.key === key; })[0];
     return d ? d.days : 0;
@@ -74,6 +117,16 @@
     var el = $(id);
     if (!el) return;
     el.classList.toggle('invalid', !!invalid);
+  }
+
+  // Jumps focus to the paired "number" field right when "seria" just became
+  // full via typing — not while merely editing an already-full field (no-op
+  // unless wasFull is false), and not on a delete keystroke.
+  function autoAdvance(e, wasFull, nowFull, nextEl) {
+    if (!nextEl || wasFull || !nowFull) return;
+    var t = e.inputType;
+    if (t && /^delete/.test(t)) return;
+    nextEl.focus();
   }
 
   function telegramInitData() {
@@ -206,12 +259,28 @@
         '<input type="text" placeholder="Seriya" maxlength="2" data-field="seria" data-id="' + safeId + '" value="' + escapeHtml(d.seria) + '">' +
         '<input type="text" placeholder="Raqami" maxlength="7" data-field="number" data-id="' + safeId + '" value="' + escapeHtml(d.number) + '">' +
         '</div>' +
-        '<input type="date" data-field="birthDate" data-id="' + safeId + '" value="' + escapeHtml(d.birthDate) + '" max="' + todayYmd() + '">' +
+        '<div class="date-field">' +
+        '<input type="text" inputmode="numeric" placeholder="KK.OO.YYYY" maxlength="10" data-birth-text value="' + escapeHtml(fmtDate(d.birthDate)) + '">' +
+        '<button type="button" class="date-pick-btn" data-birth-pick aria-label="Sanani tanlash">📅</button>' +
+        '<input type="date" class="date-native" data-birth-native value="' + escapeHtml(d.birthDate) + '" max="' + todayYmd() + '">' +
+        '</div>' +
         '<select data-field="relation" data-id="' + safeId + '">' +
         RELATIONS.map(function (r) { return '<option value="' + escapeHtml(r) + '"' + (r === d.relation ? ' selected' : '') + '>' + escapeHtml(r) + '</option>'; }).join('') +
         '</select>' +
         '<div class="driver-status ' + statusClass(d.status) + '">' + escapeHtml(statusText(d)) + '</div>';
       container.appendChild(card);
+
+      wireDateField(
+        card.querySelector('[data-birth-text]'),
+        card.querySelector('[data-birth-native]'),
+        card.querySelector('[data-birth-pick]'),
+        function (ymd) {
+          d.birthDate = ymd;
+          d.status = 'idle'; d.statusMsg = ''; d.name = '';
+          updateDriverStatusDom(d);
+          maybeValidateDriver(d);
+        }
+      );
     });
 
     var fields = container.querySelectorAll('[data-field]');
@@ -239,11 +308,18 @@
     var driver = findDriver(id);
     if (!driver) return;
 
+    var oldValue = driver[field];
+
     var value = e.target.value;
     if (field === 'seria') value = value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
     if (field === 'number') value = value.replace(/[^0-9]/g, '').slice(0, 7);
     driver[field] = value;
     e.target.value = value;
+
+    if (field === 'seria') {
+      var numberEl = e.target.closest('.driver-card').querySelector('[data-field="number"]');
+      autoAdvance(e, (oldValue || '').length >= 2, value.length >= 2, numberEl);
+    }
 
     driver.status = 'idle';
     driver.statusMsg = '';
@@ -293,6 +369,7 @@
   function renderStep5() {
     $('startDateInput').value = state.startDate;
     $('startDateInput').min = todayYmd();
+    $('startDateText').value = fmtDate(state.startDate);
     var chips = $('durationChips');
     chips.innerHTML = '';
     DURATIONS.forEach(function (o) {
@@ -563,8 +640,10 @@
       e.target.value = state.plateNumber;
     });
     $('techSeria').addEventListener('input', function (e) {
+      var wasFull = state.techSeria.length >= 3;
       state.techSeria = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
       e.target.value = state.techSeria;
+      autoAdvance(e, wasFull, state.techSeria.length >= 3, $('techNumber'));
     });
     $('techNumber').addEventListener('input', function (e) {
       state.techNumber = e.target.value.replace(/[^0-9]/g, '');
@@ -572,8 +651,10 @@
     });
 
     $('physSeries').addEventListener('input', function (e) {
+      var wasFull = state.physSeries.length >= 2;
       state.physSeries = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
       e.target.value = state.physSeries;
+      autoAdvance(e, wasFull, state.physSeries.length >= 2, $('physNumber'));
     });
     $('physNumber').addEventListener('input', function (e) {
       state.physNumber = e.target.value.replace(/[^0-9]/g, '');
@@ -613,8 +694,8 @@
       renderStep4();
     });
 
-    $('startDateInput').addEventListener('change', function (e) {
-      state.startDate = e.target.value;
+    wireDateField($('startDateText'), $('startDateInput'), $('startDatePickBtn'), function (ymd) {
+      state.startDate = ymd;
       setErr('startDate', '');
     });
 

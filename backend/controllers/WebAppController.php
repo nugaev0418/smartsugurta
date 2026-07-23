@@ -450,7 +450,7 @@ class WebAppController extends Controller
             return [
                 'success' => true,
                 'mode' => 'eai',
-                'paymentLink' => $dto->paymentLink,
+                'message' => "Arizangiz qabul qilindi. 3 daqiqa ichida sizga to'lov havolasi yuboriladi.",
                 'policeId' => $police->id,
             ];
         } catch (\Throwable $e) {
