@@ -30,6 +30,13 @@ class WebAppController extends Controller
         '20d' => ['id' => '0d546748-0ba6-43bc-9ce2-1b977ad9e494', 'days' => 20, 'period_type' => 8],
     ];
 
+    // Gross relative_type codes, per BotController.php's own documented mapping
+    // (0=qarindosh emas, 1=ota, 2=ona, 3=er, 4=xotin, 5=o'g'il, 6=qiz, 7=aka, 8=uka, 9=opa, 10=singlisi).
+    private const RELATIVE_TYPES = [
+        'Ota' => 1, 'Ona' => 2, 'Er' => 3, 'Xotin' => 4, "O'g'li" => 5,
+        'Qizi' => 6, 'Aka' => 7, 'Uka' => 8, 'Opa' => 9, 'Singil' => 10,
+    ];
+
     /** @var array|null the input() call for the current action, kept for the admin audit log */
     private ?array $lastInput = null;
     /** @var array|null the verified Telegram user for the current action (null if unverified), kept for the admin audit log */
@@ -324,10 +331,11 @@ class WebAppController extends Controller
                 'passportSeria' => $dSeria,
                 'relativeId' => '',
             ];
+            $relation = (string)($driver['relation'] ?? '');
             $grossDrivers[] = [
                 'document' => $dSeria . $dNumber,
                 'birth_date' => $dBirth,
-                'relative_type' => 0,
+                'relative_type' => self::RELATIVE_TYPES[$relation] ?? 0,
             ];
         }
 

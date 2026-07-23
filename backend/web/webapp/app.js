@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var RELATIONS = ["O'zi", "Turmush o'rtog'i", "Farzandi", "Ota-onasi", "Boshqa qarindosh"];
+  var RELATIONS = ['Aka', 'Uka', 'Ota', 'Ona', 'Opa', 'Singil', 'Xotin', 'Er', "O'g'li", 'Qizi'];
   var DURATIONS = [
     { key: '20d', label: '20 kun', days: 20 },
     { key: '6m', label: '6 oy', days: 180 },
@@ -29,7 +29,16 @@
 
   function $(id) { return document.getElementById(id); }
 
-  function todayYmd() { return new Date().toISOString().slice(0, 10); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  // Local-calendar-date helpers. Deliberately avoid Date#toISOString() here:
+  // it converts to UTC, which silently shifts the date back a day for any
+  // timezone ahead of UTC (e.g. Asia/Tashkent, UTC+5) whenever the underlying
+  // Date ends up representing local midnight — exactly the "1 kun kam" bug.
+  function todayYmd() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
 
   function fmtDate(ymd) {
     if (!ymd) return '';
@@ -86,17 +95,16 @@
   }
 
   function addDaysYmd(ymd, days) {
-    var d = new Date(ymd + 'T00:00:00');
+    var p = ymd.split('-').map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
     d.setDate(d.getDate() + days);
-    return d.toISOString().slice(0, 10);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
   }
 
   function isoToYmd(iso) {
-    try {
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) return '';
-      return d.toISOString().slice(0, 10);
-    } catch (e) { return ''; }
+    if (!iso) return '';
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+    return m ? m[0] : '';
   }
 
   var toastTimer = null;
@@ -265,6 +273,7 @@
         '<input type="date" class="date-native" data-birth-native value="' + escapeHtml(d.birthDate) + '" max="' + todayYmd() + '">' +
         '</div>' +
         '<select data-field="relation" data-id="' + safeId + '">' +
+        (d.isOwner ? '<option value="O\'zi"' + (d.relation === "O'zi" ? ' selected' : '') + '>O\'zi</option>' : '') +
         RELATIONS.map(function (r) { return '<option value="' + escapeHtml(r) + '"' + (r === d.relation ? ' selected' : '') + '>' + escapeHtml(r) + '</option>'; }).join('') +
         '</select>' +
         '<div class="driver-status ' + statusClass(d.status) + '">' + escapeHtml(statusText(d)) + '</div>';
