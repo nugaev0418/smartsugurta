@@ -570,6 +570,12 @@ class BotController extends Controller
 
             $service = new EuroAsiaService();
             $driverRestriction = $this->driverRestriction == 'Limited' ? true : false;
+            $calcRequest = [
+                'seasonalInsuranceId' => $muddat['id'],
+                'driverRestriction' => $driverRestriction,
+                'useTerritoryRegionId' => $this->vehicleData['useTerritoryRegionId'],
+                'vehicleGroupId' => $this->vehicleData['vehicleGroupId'],
+            ];
             $dto = $service->getCalculateOsagoDTO(
                 [],
                 $muddat['id'],
@@ -577,6 +583,7 @@ class BotController extends Controller
                 $this->vehicleData['useTerritoryRegionId'],
                 $this->vehicleData['vehicleGroupId']
             );
+            $this->logApiCall('EuroAsiaService::getCalculateOsagoDTO', $calcRequest, $dto);
 
             if ($dto->success){
                 $jami_summa = $this->formatMoney((float)$dto->premium / 100);
@@ -898,6 +905,11 @@ class BotController extends Controller
             $this->texPassNumber,
             $this->lisenceNumber
         );
+        $this->logApiCall('EuroAsiaService::getVehicleOwnerDTO', [
+            'techPassportSeria' => $this->texPassSeria,
+            'techPassportNumber' => $this->texPassNumber,
+            'licenseNumber' => $this->lisenceNumber,
+        ], $dto);
 
         if (!$dto->success) {
             $this->showMainPage($this->getMText('Not found transport'));
@@ -937,6 +949,11 @@ class BotController extends Controller
                 $this->texPassNumber,
                 $this->lisenceNumber
             );
+            $this->logApiCall('EuroAsiaService::getVehicleOwnerDTO', [
+                'techPassportSeria' => $this->texPassSeria,
+                'techPassportNumber' => $this->texPassNumber,
+                'licenseNumber' => $this->lisenceNumber,
+            ], $dto);
 
             if (!$dto->success) {
                 // xato ishlovi
@@ -973,6 +990,11 @@ class BotController extends Controller
 
             $pinfl = $this->vehicleData['pinfl'];
             $dto = $eai->getPersonByPinflDTO($seria, $number, $pinfl);
+            $this->logApiCall('EuroAsiaService::getPersonByPinflDTO', [
+                'seria' => $seria,
+                'number' => $number,
+                'pinfl' => $pinfl,
+            ], $dto);
 
             if (!$dto->success){
                 $this->showMainPage($this->getMText('Owner found transport'));
@@ -1158,6 +1180,11 @@ class BotController extends Controller
                 $eai = new EuroAsiaService();
 
                 $dto = $eai->getPersonByBirthdateDTO($seria, $number, $birthdate);
+                $this->logApiCall('EuroAsiaService::getPersonByBirthdateDTO', [
+                    'seria' => $seria,
+                    'number' => $number,
+                    'birthdate' => $birthdate,
+                ], $dto);
 
 
                 if (!$dto->success){
@@ -1277,6 +1304,14 @@ class BotController extends Controller
 
                 /***** CREATE EAI DATA ****/
 
+                // Read police_data into a local var first: `??`/isset() on
+                // $this->police_data[...] directly is unreliable here — Yii's
+                // Component::__isset() (inherited, no matching getPoliceData())
+                // always reports it "unset", so `?? default` would silently
+                // ignore every real value and only ever return the fallback.
+                $policeDataLocal = $this->police_data;
+                $policeDrivers = is_array($policeDataLocal) ? ($policeDataLocal['drivers'] ?? []) : [];
+
                 $drivers = [];
                 if ($this->drivers != ''){
                     foreach ($this->drivers as $i => $driver) {
@@ -1284,7 +1319,7 @@ class BotController extends Controller
                             "passportBirthdate" => $driver['birthDate'],
                             "passportNumber" => $driver['number'],
                             "passportSeria" => $driver['seria'],
-                            "relativeId" => RelativeType::eaiId($this->police_data['drivers'][$i]['relative_type'] ?? 0),
+                            "relativeId" => RelativeType::eaiId($policeDrivers[$i]['relative_type'] ?? 0),
                         ];
                     }
                 }
@@ -1384,6 +1419,10 @@ class BotController extends Controller
 // EAI SUGURTAGA YUBORISH
 
                 $this->sendMessageAdmin('Toshkent Avtomobili');
+
+                $policeDataLocal = $this->police_data;
+                $policeDrivers = is_array($policeDataLocal) ? ($policeDataLocal['drivers'] ?? []) : [];
+
                 $drivers = [];
                 if ($this->drivers != ''){
                     foreach ($this->drivers as $i => $driver) {
@@ -1391,7 +1430,7 @@ class BotController extends Controller
                             "passportBirthdate" => $driver['birthDate'],
                             "passportNumber" => $driver['number'],
                             "passportSeria" => $driver['seria'],
-                            "relativeId" => RelativeType::eaiId($this->police_data['drivers'][$i]['relative_type'] ?? 0),
+                            "relativeId" => RelativeType::eaiId($policeDrivers[$i]['relative_type'] ?? 0),
                         ];
                     }
                 }
@@ -1472,6 +1511,7 @@ class BotController extends Controller
 
                 $eai = new EuroAsiaService();
                 $dto = $eai->createOsagoDTO($data);
+                $this->logApiCall('EuroAsiaService::createOsagoDTO', $data, $dto);
 
 
                 if ($dto->success){
@@ -1900,6 +1940,44 @@ class BotController extends Controller
         } catch (ErrorException $e) {
             Yii::error($e->getMessage());
             throw new ErrorException($e);
+        }
+    }
+
+    /**
+     * Sends every outbound API call the bot makes (EuroAsia/Gross lookups and
+     * submissions) to the admin as a Telegram message, mirroring
+     * WebAppController::logToAdmin()'s audit-trail format so both surfaces
+     * are equally traceable. $response may be a DTO object or a plain array —
+     * both json_encode() cleanly.
+     */
+    public function logApiCall(string $label, $request, $response): void
+    {
+        try {
+            $text = "🔌 <b>API so'rovi (Bot)</b>\n"
+                . 'Metod: <code>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</code>\n"
+                . "Chat ID: <code>{$this->chat_id}</code>\n\n"
+                . "So'rov:\n<pre>" . htmlspecialchars(
+                    json_encode($request, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) . "</pre>\n\n"
+                . "Javob:\n<pre>" . htmlspecialchars(
+                    json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) . '</pre>';
+
+            if (mb_strlen($text) > 3900) {
+                $text = mb_substr($text, 0, 3900) . "\n… (qisqartirildi)";
+            }
+
+            Yii::$app->telegram->sendMessage([
+                'chat_id' => self::ADMIN_ID,
+                'parse_mode' => 'html',
+                'text' => $text,
+            ]);
+        } catch (\Throwable $e) {
+            Yii::error("Bot API logini yuborishda xato ({$label}): " . $e->getMessage(), 'bot');
         }
     }
 
