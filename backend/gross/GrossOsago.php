@@ -108,6 +108,13 @@ class GrossOsago
         $epolisHtml = $this->http->openEpolisOplata($uuid, $anketaId);
         file_put_contents($sessionDir . '/epolis-oplata.html', $epolisHtml);
 
+        // A real user takes a while to look at the payment page and pick a method;
+        // our bot used to submit payWithClick() right after the GET. Click specifically
+        // (not Payme) started failing with "Абонент топилмади", suspected to be a race
+        // with some async server-side registration gross.uz/Click do after the GET —
+        // this delay mimics natural human pacing to give that time to complete.
+        sleep(random_int(10, 25));
+
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
         file_put_contents($sessionDir . '/payment-click.html', $clickHtml);
 
