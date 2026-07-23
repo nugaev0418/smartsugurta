@@ -86,6 +86,14 @@ input.date-native {
 }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+/* Global loading overlay, shown while any api() request is in flight */
+.global-loader {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.65);
+}
+.spinner-lg { width: 34px; height: 34px; border-width: 3px; }
+
 /* Owner card */
 .owner-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #F1F8FF; border: 1px solid #D6EAFF; border-radius: 8px; }
 .owner-icon { width: 40px; height: 40px; border-radius: 50%; background: #3390EC; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

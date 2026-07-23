@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var RELATIONS = ['Aka', 'Uka', 'Ota', 'Ona', 'Opa', 'Singil', 'Xotin', 'Er', "O'g'li", 'Qizi'];
+  var RELATIONS = ["Qarindosh emas", 'Aka', 'Uka', 'Ota', 'Ona', 'Opa', 'Singil', 'Xotin', 'Er', "O'g'li", 'Qizi'];
   var DURATIONS = [
     { key: '20d', label: '20 kun', days: 20 },
     { key: '6m', label: '6 oy', days: 180 },
@@ -142,15 +142,30 @@
     return tg ? tg.initData : '';
   }
 
+  // Global request counter so overlapping api() calls (e.g. a driver check
+  // still in flight when "calculate" fires) keep the loader up until the
+  // last one finishes, instead of each call independently show/hiding it.
+  var pendingRequests = 0;
+  function setGlobalLoading(loading) {
+    var el = $('globalLoader');
+    if (el) el.classList.toggle('hidden', !loading);
+  }
+
   function api(action, body) {
     // initData is always attached here (not left to each call site) so every
     // endpoint can be verified server-side as coming from the bot's admin.
     var payload = Object.assign({}, body || {}, { initData: telegramInitData() });
+    pendingRequests++;
+    setGlobalLoading(true);
     return fetch('/web-app/' + action, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-    }).then(function (r) { return r.json(); });
+    }).then(function (r) { return r.json(); })
+      .finally(function () {
+        pendingRequests = Math.max(0, pendingRequests - 1);
+        if (pendingRequests === 0) setGlobalLoading(false);
+      });
   }
 
   function escapeHtml(s) {
@@ -324,6 +339,10 @@
     if (field === 'number') value = value.replace(/[^0-9]/g, '').slice(0, 7);
     driver[field] = value;
     e.target.value = value;
+
+    // Relation doesn't affect passport lookup — changing it must not reset the
+    // already-fetched status/name or re-trigger the "driver" API check.
+    if (field === 'relation') return;
 
     if (field === 'seria') {
       var numberEl = e.target.closest('.driver-card').querySelector('[data-field="number"]');

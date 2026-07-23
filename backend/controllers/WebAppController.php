@@ -33,6 +33,7 @@ class WebAppController extends Controller
     // Gross relative_type codes, per BotController.php's own documented mapping
     // (0=qarindosh emas, 1=ota, 2=ona, 3=er, 4=xotin, 5=o'g'il, 6=qiz, 7=aka, 8=uka, 9=opa, 10=singlisi).
     private const RELATIVE_TYPES = [
+        'Qarindosh emas' => 0,
         'Ota' => 1, 'Ona' => 2, 'Er' => 3, 'Xotin' => 4, "O'g'li" => 5,
         'Qizi' => 6, 'Aka' => 7, 'Uka' => 8, 'Opa' => 9, 'Singil' => 10,
     ];
