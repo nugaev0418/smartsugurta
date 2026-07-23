@@ -463,6 +463,34 @@ class GrossOsagoClient
 
 
 ////////////////////////////////////////////////////////
+// OPEN EPOLIS OPLATA PAGE (warm-up GET before payment POSTs)
+////////////////////////////////////////////////////////
+    public function openEpolisOplata(string $uuid, string $anketaId): string
+    {
+        return $this->request(
+            $this->baseUrl . "/epolis_oplata.php?ln=2&uuid={$uuid}&anketa={$anketaId}",
+            'GET',
+            [
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Language: ru,en-US;q=0.9,en;q=0.8,uz;q=0.7',
+                'Cache-Control: no-cache',
+                'Pragma: no-cache',
+                'Priority: u=0, i',
+                'Referer: https://osago.gross.uz/osago/index.php?ln=2',
+                'Sec-Ch-Ua: "Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
+                'Sec-Ch-Ua-Mobile: ?0',
+                'Sec-Ch-Ua-Platform: "Windows"',
+                'Sec-Fetch-Dest: document',
+                'Sec-Fetch-Mode: navigate',
+                'Sec-Fetch-Site: same-origin',
+                'Sec-Fetch-User: ?1',
+                'Upgrade-Insecure-Requests: 1',
+                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+            ]
+        );
+    }
+
+////////////////////////////////////////////////////////
 // PAYMENT — CLICK (payment_method=5)
 ////////////////////////////////////////////////////////
     public function payWithClick(string $uuid, string $anketaId): string

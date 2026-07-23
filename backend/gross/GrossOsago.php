@@ -105,6 +105,9 @@ class GrossOsago
 //        $premium  = '320000';
 
 
+        $epolisHtml = $this->http->openEpolisOplata($uuid, $anketaId);
+        file_put_contents($sessionDir . '/epolis-oplata.html', $epolisHtml);
+
         $clickHtml = $this->http->payWithClick($uuid, $anketaId);
         file_put_contents($sessionDir . '/payment-click.html', $clickHtml);
 
