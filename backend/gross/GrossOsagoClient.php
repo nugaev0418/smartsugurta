@@ -583,7 +583,7 @@ class GrossOsagoClient
                 $href   = $nodes->item(0)->nodeValue;
                 $parsed = parse_url($href);
                 parse_str($parsed['query'] ?? '', $params);
-//                unset($params['return_url'], $params['card_type']);
+                unset($params['return_url'], $params['card_type']);
                 $query = http_build_query($params);
                 return $parsed['scheme'] . '://' . $parsed['host'] . $parsed['path']
                      . ($query ? '?' . $query : '');
