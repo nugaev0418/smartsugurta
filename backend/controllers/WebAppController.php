@@ -418,6 +418,7 @@ class WebAppController extends Controller
                     'start_date' => $startDate,
                     'period_type' => $season['period_type'],
                     'drivers' => $grossDrivers,
+                    'payment_gateway' => $gateway,
                 ];
 
                 Yii::$app->grossQueue->push(new GrossOsagoJob([

@@ -30,7 +30,7 @@ class GrossOsago
     // ================================================================
 
     /**
-     * @return array{uuid: string, anketa_id: string, premium: int, click_url: ?string, payme_url: ?string, session_dir: string}
+     * @return array{uuid: string, anketa_id: string, premium: int, gateway: string, payment_url: ?string, session_dir: string}
      */
     public function run(array $policyData): array
     {
@@ -105,6 +105,11 @@ class GrossOsago
 //        $premium  = '320000';
 
 
+        $gateway = strtoupper($policyData['payment_gateway'] ?? 'CLICK');
+        if (!in_array($gateway, ['CLICK', 'PAYME'], true)) {
+            throw new RuntimeException("Noma'lum to'lov turi: {$gateway}");
+        }
+
         $epolisHtml = $this->http->openEpolisOplata($uuid, $anketaId);
         file_put_contents($sessionDir . '/epolis-oplata.html', $epolisHtml);
 
@@ -115,18 +120,19 @@ class GrossOsago
         // this delay mimics natural human pacing to give that time to complete.
         sleep(random_int(10, 25));
 
-        $clickHtml = $this->http->payWithClick($uuid, $anketaId);
-        file_put_contents($sessionDir . '/payment-click.html', $clickHtml);
-
-//        $paymeHtml = $this->http->payWithPayme($uuid, $anketaId);
-//        file_put_contents($sessionDir . '/payment-payme.html', $paymeHtml);
+        if ($gateway === 'PAYME') {
+            $paymentHtml = $this->http->payWithPayme($uuid, $anketaId);
+        } else {
+            $paymentHtml = $this->http->payWithClick($uuid, $anketaId);
+        }
+        file_put_contents($sessionDir . '/payment-' . strtolower($gateway) . '.html', $paymentHtml);
 
         return [
             'uuid'        => $uuid,
             'anketa_id'   => $anketaId,
             'premium'     => $premium,
-            'click_url'   => $this->http->extractPaymentLink($clickHtml),
-            'payme_url'   => '',//$this->http->extractPaymentLink($paymeHtml),
+            'gateway'     => $gateway,
+            'payment_url' => $this->http->extractPaymentLink($paymentHtml),
             'session_dir' => $sessionDir,
         ];
     }

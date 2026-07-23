@@ -1382,6 +1382,8 @@ class BotController extends Controller
                 /***** END CREATE EAI DATA ****/
 
 
+                $this->police_data['payment_gateway'] = $billingGateway;
+
                 $police_data = [
                     'policyDataGross' => $this->police_data,
                     'policyDataEAI' => $eaiData,
