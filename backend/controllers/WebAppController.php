@@ -32,10 +32,142 @@ class WebAppController extends Controller
 
     // Gross relative_type codes, per BotController.php's own documented mapping
     // (0=qarindosh emas, 1=ota, 2=ona, 3=er, 4=xotin, 5=o'g'il, 6=qiz, 7=aka, 8=uka, 9=opa, 10=singlisi).
+    // Keys stay Uzbek (canonical) regardless of UI language — the front-end only
+    // translates the *displayed* label, never the value it submits.
     private const RELATIVE_TYPES = [
         'Qarindosh emas' => 0,
         'Ota' => 1, 'Ona' => 2, 'Er' => 3, 'Xotin' => 4, "O'g'li" => 5,
         'Qizi' => 6, 'Aka' => 7, 'Uka' => 8, 'Opa' => 9, 'Singil' => 10,
+    ];
+
+    // Every user-facing message this controller can return, in uz/ru. Which
+    // language is picked is resolved per-request from the caller's own bot
+    // language setting (Botuser.data.lang) — see lang().
+    private const MESSAGES = [
+        'no_access' => [
+            'uz' => "Ruxsat yo'q. Web App-ni botdan qayta oching",
+            'ru' => "Нет доступа. Откройте Web App через бота ещё раз",
+        ],
+        'rate_limited' => [
+            'uz' => "Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring",
+            'ru' => "Слишком много запросов. Попробуйте немного позже",
+        ],
+        'fill_all_fields' => [
+            'uz' => "Barcha maydonlarni to'ldiring",
+            'ru' => "Заполните все поля",
+        ],
+        'vehicle_fetch_error' => [
+            'uz' => "Transport ma'lumotlarini olishda xatolik yuz berdi",
+            'ru' => "Ошибка при получении данных транспорта",
+        ],
+        'vehicle_not_found' => [
+            'uz' => "Transport topilmadi. Ma'lumotlarni tekshirib qayta urinib ko'ring",
+            'ru' => "Транспорт не найден. Проверьте данные и попробуйте снова",
+        ],
+        'owner_fetch_error' => [
+            'uz' => "Egasi ma'lumotlarini olishda xatolik yuz berdi",
+            'ru' => "Ошибка при получении данных владельца",
+        ],
+        'owner_not_found' => [
+            'uz' => "Avtomobil egasi topilmadi. Pasport ma'lumotlarini tekshiring",
+            'ru' => "Владелец автомобиля не найден. Проверьте паспортные данные",
+        ],
+        'driver_fetch_error' => [
+            'uz' => "Haydovchi ma'lumotlarini olishda xatolik yuz berdi",
+            'ru' => "Ошибка при получении данных водителя",
+        ],
+        'birthdate_invalid' => [
+            'uz' => "Tug'ilgan sana noto'g'ri",
+            'ru' => "Неверная дата рождения",
+        ],
+        'driver_not_found' => [
+            'uz' => "Haydovchi topilmadi. Ma'lumotlarni tekshiring",
+            'ru' => "Водитель не найден. Проверьте данные",
+        ],
+        'driver_license_not_found' => [
+            'uz' => "Bu shaxsning haydovchilik guvohnomasi topilmadi",
+            'ru' => "У этого человека не найдено водительское удостоверение",
+        ],
+        'duration_invalid' => [
+            'uz' => "Sug'urta muddati noto'g'ri tanlangan",
+            'ru' => "Неверно выбран срок страхования",
+        ],
+        'enter_vehicle_first' => [
+            'uz' => "Avval transport ma'lumotlarini kiriting",
+            'ru' => "Сначала введите данные транспорта",
+        ],
+        'calculate_error' => [
+            'uz' => "Narxni hisoblashda xatolik yuz berdi",
+            'ru' => "Ошибка при расчёте стоимости",
+        ],
+        'calculate_failed' => [
+            'uz' => "Narxni aniqlab bo'lmadi",
+            'ru' => "Не удалось рассчитать стоимость",
+        ],
+        'telegram_verify_failed' => [
+            'uz' => "Telegram orqali tekshiruvdan o'ta olmadingiz. Web App-ni botdan qayta oching",
+            'ru' => "Не удалось пройти проверку через Telegram. Откройте Web App через бота ещё раз",
+        ],
+        'already_submitted' => [
+            'uz' => "Bu so'rov allaqachon yuborilgan. Web App-ni botdan qayta oching",
+            'ru' => "Этот запрос уже был отправлен. Откройте Web App через бота ещё раз",
+        ],
+        'start_bot_first' => [
+            'uz' => "Avval botga /start buyrug'ini yuboring",
+            'ru' => "Сначала отправьте команду /start боту",
+        ],
+        'vehicle_data_incomplete' => [
+            'uz' => "Transport ma'lumotlari to'liq emas",
+            'ru' => "Данные транспорта заполнены не полностью",
+        ],
+        'insurance_type_choose' => [
+            'uz' => "Sug'urta turini tanlang",
+            'ru' => "Выберите тип страхования",
+        ],
+        'phone_incomplete' => [
+            'uz' => "Telefon raqamini to'liq kiriting",
+            'ru' => "Введите номер телефона полностью",
+        ],
+        'gateway_choose' => [
+            'uz' => "To'lov turini tanlang",
+            'ru' => "Выберите способ оплаты",
+        ],
+        'start_date_invalid' => [
+            'uz' => "Boshlanish sanasi noto'g'ri",
+            'ru' => "Неверная дата начала",
+        ],
+        'add_at_least_one_driver' => [
+            'uz' => "Kamida bitta haydovchi qo'shing",
+            'ru' => "Добавьте хотя бы одного водителя",
+        ],
+        'drivers_data_incomplete' => [
+            'uz' => "Haydovchilar ma'lumoti to'liq emas",
+            'ru' => "Данные водителей заполнены не полностью",
+        ],
+        'driver_birthdate_invalid' => [
+            'uz' => "Haydovchi tug'ilgan sanasi noto'g'ri",
+            'ru' => "Неверная дата рождения водителя",
+        ],
+        'owner_data_incomplete' => [
+            'uz' => "Avtomobil egasi ma'lumotlari to'liq emas",
+            'ru' => "Данные владельца автомобиля заполнены не полностью",
+        ],
+        'submitted_gross' => [
+            'uz' => "Arizangiz qabul qilindi va 3 daqiqa ichida sug'urta qilinasiz! To'lov havolasi botga yuboriladi.",
+            'ru' => "Ваша заявка принята, страховка будет оформлена в течение 3 минут! Ссылка на оплату придёт в бот.",
+        ],
+        'create_insurance_error' => [
+            'uz' => "Sug'urta yaratishda xatolik yuz berdi. Iltimos qayta urinib ko'ring",
+            'ru' => "Ошибка при оформлении страховки. Пожалуйста, попробуйте снова",
+        ],
+        'submitted_eai' => [
+            'uz' => "Arizangiz qabul qilindi. 3 daqiqa ichida sizga to'lov havolasi yuboriladi.",
+            'ru' => "Ваша заявка принята. В течение 3 минут вам придёт ссылка на оплату.",
+        ],
+        'submit_error' => [
+            'uz' => "Ariza yuborishda xatolik yuz berdi. Iltimos qayta urinib ko'ring",
+            'ru' => "Ошибка при отправке заявки. Пожалуйста, попробуйте снова",
+        ],
     ];
 
     /** @var array|null the input() call for the current action, kept for the admin audit log */
@@ -61,16 +193,34 @@ class WebAppController extends Controller
         return parent::afterAction($action, $result);
     }
 
+    /**
+     * First call the Mini App makes on load: resolves which language (uz/ru) the
+     * user has picked in the bot, so the front-end can render itself accordingly.
+     * Always succeeds (defaults to 'uz') — this is a display preference only,
+     * never a gate, so an unverified/first-time caller still gets a usable app.
+     */
+    public function actionInit()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+
+        return [
+            'success' => true,
+            'lang' => $this->lang($telegramUser),
+        ];
+    }
+
     public function actionVehicle()
     {
         $input = $this->input();
 
         $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
         if (!$telegramUser) {
-            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+            return $this->fail($this->msg('no_access', $lang));
         }
         if (!$this->rateLimitOk($telegramUser['id'])) {
-            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
+            return $this->fail($this->msg('rate_limited', $lang));
         }
 
         $techSeria = strtoupper(trim((string)($input['techSeria'] ?? '')));
@@ -78,18 +228,18 @@ class WebAppController extends Controller
         $plateNumber = str_replace(' ', '', strtoupper(trim((string)($input['plateNumber'] ?? ''))));
 
         if ($techSeria === '' || $techNumber === '' || $plateNumber === '') {
-            return $this->fail("Barcha maydonlarni to'ldiring");
+            return $this->fail($this->msg('fill_all_fields', $lang));
         }
 
         try {
             $dto = (new EuroAsiaService())->getVehicleOwnerDTO($techSeria, $techNumber, $plateNumber);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
-            return $this->fail("Transport ma'lumotlarini olishda xatolik yuz berdi");
+            return $this->fail($this->msg('vehicle_fetch_error', $lang));
         }
 
         if (!$dto->success) {
-            return $this->fail("Transport topilmadi. Ma'lumotlarni tekshirib qayta urinib ko'ring");
+            return $this->fail($this->msg('vehicle_not_found', $lang));
         }
 
         return [
@@ -114,11 +264,12 @@ class WebAppController extends Controller
         $input = $this->input();
 
         $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
         if (!$telegramUser) {
-            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+            return $this->fail($this->msg('no_access', $lang));
         }
         if (!$this->rateLimitOk($telegramUser['id'])) {
-            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
+            return $this->fail($this->msg('rate_limited', $lang));
         }
 
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
@@ -126,18 +277,18 @@ class WebAppController extends Controller
         $pinfl = trim((string)($input['pinfl'] ?? ''));
 
         if ($seria === '' || $number === '' || $pinfl === '') {
-            return $this->fail("Barcha maydonlarni to'ldiring");
+            return $this->fail($this->msg('fill_all_fields', $lang));
         }
 
         try {
             $dto = (new EuroAsiaService())->getPersonByPinflDTO($seria, $number, $pinfl);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
-            return $this->fail("Egasi ma'lumotlarini olishda xatolik yuz berdi");
+            return $this->fail($this->msg('owner_fetch_error', $lang));
         }
 
         if (!$dto->success) {
-            return $this->fail("Avtomobil egasi topilmadi. Pasport ma'lumotlarini tekshiring");
+            return $this->fail($this->msg('owner_not_found', $lang));
         }
 
         return [
@@ -158,11 +309,12 @@ class WebAppController extends Controller
         $input = $this->input();
 
         $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
         if (!$telegramUser) {
-            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+            return $this->fail($this->msg('no_access', $lang));
         }
         if (!$this->rateLimitOk($telegramUser['id'])) {
-            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
+            return $this->fail($this->msg('rate_limited', $lang));
         }
 
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
@@ -170,27 +322,27 @@ class WebAppController extends Controller
         $birthDate = trim((string)($input['birthDate'] ?? ''));
 
         if ($seria === '' || $number === '' || $birthDate === '') {
-            return $this->fail("Barcha maydonlarni to'ldiring");
+            return $this->fail($this->msg('fill_all_fields', $lang));
         }
 
         $isoBirthdate = $this->ymdToIso($birthDate);
         if (!$isoBirthdate) {
-            return $this->fail("Tug'ilgan sana noto'g'ri");
+            return $this->fail($this->msg('birthdate_invalid', $lang));
         }
 
         try {
             $dto = (new EuroAsiaService())->getPersonByBirthdateDTO($seria, $number, $isoBirthdate);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
-            return $this->fail("Haydovchi ma'lumotlarini olishda xatolik yuz berdi");
+            return $this->fail($this->msg('driver_fetch_error', $lang));
         }
 
         if (!$dto->success) {
-            return $this->fail("Haydovchi topilmadi. Ma'lumotlarni tekshiring");
+            return $this->fail($this->msg('driver_not_found', $lang));
         }
 
         if (!$dto->driverLicense) {
-            return $this->fail("Bu shaxsning haydovchilik guvohnomasi topilmadi");
+            return $this->fail($this->msg('driver_license_not_found', $lang));
         }
 
         return [
@@ -206,16 +358,17 @@ class WebAppController extends Controller
         $input = $this->input();
 
         $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
         if (!$telegramUser) {
-            return $this->fail("Ruxsat yo'q. Web App-ni botdan qayta oching");
+            return $this->fail($this->msg('no_access', $lang));
         }
         if (!$this->rateLimitOk($telegramUser['id'])) {
-            return $this->fail("Juda ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring");
+            return $this->fail($this->msg('rate_limited', $lang));
         }
 
         $seasonKey = (string)($input['duration'] ?? '');
         if (!isset(self::SEASONS[$seasonKey])) {
-            return $this->fail("Sug'urta muddati noto'g'ri tanlangan");
+            return $this->fail($this->msg('duration_invalid', $lang));
         }
         $season = self::SEASONS[$seasonKey];
 
@@ -224,7 +377,7 @@ class WebAppController extends Controller
         $vehicleGroupId = (string)($input['vehicleGroupId'] ?? '');
 
         if ($useTerritoryRegionId === '' || $vehicleGroupId === '') {
-            return $this->fail("Avval transport ma'lumotlarini kiriting");
+            return $this->fail($this->msg('enter_vehicle_first', $lang));
         }
 
         try {
@@ -237,11 +390,11 @@ class WebAppController extends Controller
             );
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
-            return $this->fail("Narxni hisoblashda xatolik yuz berdi");
+            return $this->fail($this->msg('calculate_error', $lang));
         }
 
         if (!$dto->success) {
-            return $this->fail("Narxni aniqlab bo'lmadi");
+            return $this->fail($this->msg('calculate_failed', $lang));
         }
 
         return [
@@ -259,20 +412,21 @@ class WebAppController extends Controller
         }
 
         $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
         if (!$telegramUser) {
-            return $this->fail("Telegram orqali tekshiruvdan o'ta olmadingiz. Web App-ni botdan qayta oching");
+            return $this->fail($this->msg('telegram_verify_failed', $lang));
         }
 
         // A captured/replayed request (e.g. resent from Postman) carries the exact same
         // signed initData as the original — reject a second submit with the same signature
         // so it can't create duplicate policies/payment links.
         if (!$this->claimInitDataOnce((string)($input['initData'] ?? ''))) {
-            return $this->fail("Bu so'rov allaqachon yuborilgan. Web App-ni botdan qayta oching");
+            return $this->fail($this->msg('already_submitted', $lang));
         }
 
         $botuser = Botuser::find()->where(['chat_id' => $telegramUser['id']])->one();
         if (!$botuser) {
-            return $this->fail("Avval botga /start buyrug'ini yuboring");
+            return $this->fail($this->msg('start_bot_first', $lang));
         }
 
         $plateNumber = str_replace(' ', '', strtoupper(trim((string)($input['plateNumber'] ?? ''))));
@@ -288,29 +442,29 @@ class WebAppController extends Controller
         $gateway = (string)($input['gateway'] ?? '');
 
         if ($plateNumber === '' || $techSeria === '' || $techNumber === '' || empty($vehicleData['ownerType'])) {
-            return $this->fail("Transport ma'lumotlari to'liq emas");
+            return $this->fail($this->msg('vehicle_data_incomplete', $lang));
         }
         if (!in_array($insuranceType, ['limited', 'unlimited'], true)) {
-            return $this->fail("Sug'urta turini tanlang");
+            return $this->fail($this->msg('insurance_type_choose', $lang));
         }
         if (strlen($phoneDigits) < 9) {
-            return $this->fail("Telefon raqamini to'liq kiriting");
+            return $this->fail($this->msg('phone_incomplete', $lang));
         }
         if (!isset(self::SEASONS[$durationKey])) {
-            return $this->fail("Sug'urta muddati noto'g'ri tanlangan");
+            return $this->fail($this->msg('duration_invalid', $lang));
         }
         if (!in_array($gateway, ['CLICK', 'PAYME'], true)) {
-            return $this->fail("To'lov turini tanlang");
+            return $this->fail($this->msg('gateway_choose', $lang));
         }
         $startIso = $this->ymdToIso($startDate);
         if (!$startIso) {
-            return $this->fail("Boshlanish sanasi noto'g'ri");
+            return $this->fail($this->msg('start_date_invalid', $lang));
         }
 
         $driverRestriction = $insuranceType === 'limited';
 
         if ($driverRestriction && empty($driversInput)) {
-            return $this->fail("Kamida bitta haydovchi qo'shing");
+            return $this->fail($this->msg('add_at_least_one_driver', $lang));
         }
 
         $eaiDrivers = [];
@@ -320,11 +474,11 @@ class WebAppController extends Controller
             $dNumber = trim((string)($driver['number'] ?? ''));
             $dBirth = trim((string)($driver['birthDate'] ?? ''));
             if ($dSeria === '' || $dNumber === '' || $dBirth === '') {
-                return $this->fail("Haydovchilar ma'lumoti to'liq emas");
+                return $this->fail($this->msg('drivers_data_incomplete', $lang));
             }
             $dBirthIso = $this->ymdToIso($dBirth);
             if (!$dBirthIso) {
-                return $this->fail("Haydovchi tug'ilgan sanasi noto'g'ri");
+                return $this->fail($this->msg('driver_birthdate_invalid', $lang));
             }
             $eaiDrivers[] = [
                 'passportBirthdate' => $dBirthIso,
@@ -364,7 +518,7 @@ class WebAppController extends Controller
             ];
         } else {
             if (empty($ownerData['seria']) || empty($ownerData['number'])) {
-                return $this->fail("Avtomobil egasi ma'lumotlari to'liq emas");
+                return $this->fail($this->msg('owner_data_incomplete', $lang));
             }
             $owner = [
                 'isInsurant' => false,
@@ -431,13 +585,13 @@ class WebAppController extends Controller
                 return [
                     'success' => true,
                     'mode' => 'gross',
-                    'message' => "Arizangiz qabul qilindi va 3 daqiqa ichida sug'urta qilinasiz! To'lov havolasi botga yuboriladi.",
+                    'message' => $this->msg('submitted_gross', $lang),
                 ];
             }
 
             $dto = (new EuroAsiaService())->createOsagoDTO($eaiData);
             if (!$dto->success) {
-                return $this->fail("Sug'urta yaratishda xatolik yuz berdi. Iltimos qayta urinib ko'ring");
+                return $this->fail($this->msg('create_insurance_error', $lang));
             }
 
             $seasonModel = SeasonalInsurance::find()->where(['seasonId' => $season['id']])->one();
@@ -460,25 +614,26 @@ class WebAppController extends Controller
             return [
                 'success' => true,
                 'mode' => 'eai',
-                'message' => "Arizangiz qabul qilindi. 3 daqiqa ichida sizga to'lov havolasi yuboriladi.",
+                'message' => $this->msg('submitted_eai', $lang),
                 'policeId' => $police->id,
             ];
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
-            return $this->fail("Ariza yuborishda xatolik yuz berdi. Iltimos qayta urinib ko'ring");
+            return $this->fail($this->msg('submit_error', $lang));
         }
     }
 
     private function notifyUser(Botuser $botuser, Police $police, string $paymentLink): void
     {
-        $data = $botuser->data ? json_decode($botuser->data, true) : [];
-        $lang = $data['lang'] ?? 'uz';
+        $lang = $this->userLang($botuser);
 
         $record = Text::findOne(['keyword' => 'Your insurance is ready']);
         $text = ($record && $record->$lang)
             ? sprintf($record->$lang, $police->id, $paymentLink)
             : sprintf(
-                "ID: %s Sug'urtangiz tayyor! Pastdagi havola orqali to'lovni amalga oshiring.\n%s",
+                $lang === 'ru'
+                    ? "ID: %s Ваша страховка готова! Перейдите по ссылке ниже, чтобы произвести оплату.\n%s"
+                    : "ID: %s Sug'urtangiz tayyor! Pastdagi havola orqali to'lovni amalga oshiring.\n%s",
                 $police->id,
                 $paymentLink
             );
@@ -546,6 +701,35 @@ class WebAppController extends Controller
         $telegramUser = $this->verifyInitData((string)($input['initData'] ?? ''));
         $this->lastTelegramUser = $telegramUser;
         return $telegramUser;
+    }
+
+    /**
+     * Resolves uz/ru for the calling Telegram user, from the same Botuser.data.lang
+     * value BotController's own getMText()/lang property reads (set via the bot's
+     * "Language selection" menu) — so the Mini App always matches the language the
+     * user already chose in the chat, with no separate preference to keep in sync.
+     */
+    private function lang(?array $telegramUser): string
+    {
+        if (!$telegramUser || empty($telegramUser['id'])) {
+            return 'uz';
+        }
+        $botuser = Botuser::find()->select(['data'])->where(['chat_id' => $telegramUser['id']])->one();
+        return $this->userLang($botuser);
+    }
+
+    private function userLang(?Botuser $botuser): string
+    {
+        if (!$botuser || !$botuser->data) {
+            return 'uz';
+        }
+        $data = json_decode($botuser->data, true);
+        return ($data['lang'] ?? 'uz') === 'ru' ? 'ru' : 'uz';
+    }
+
+    private function msg(string $key, string $lang): string
+    {
+        return self::MESSAGES[$key][$lang] ?? self::MESSAGES[$key]['uz'] ?? $key;
     }
 
     private function verifyInitData(string $initData): ?array

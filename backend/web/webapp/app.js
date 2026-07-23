@@ -1,15 +1,135 @@
 (function () {
   'use strict';
 
+  // -----------------------------------------------------------------------
+  // i18n
+  // -----------------------------------------------------------------------
+  // All user-facing text lives here, keyed the same way as the data-i18n /
+  // data-i18n-placeholder / data-i18n-aria attributes in index.html for the
+  // static markup, plus extra keys used only from JS-generated strings.
+  var STRINGS = {
+    successTitle: { uz: "Ariza qabul qilindi", ru: "Заявка принята" },
+    paymentLinkBtn: { uz: "To'lovni amalga oshirish", ru: "Перейти к оплате" },
+    closeBtn: { uz: "✕ Yopish", ru: "✕ Закрыть" },
+    step1Title: { uz: "Transport ma'lumotlari", ru: "Данные транспорта" },
+    step1Sub: { uz: "Avtomobilingiz haqidagi ma'lumotlarni kiriting", ru: "Введите данные о вашем автомобиле" },
+    labelPlate: { uz: "Davlat raqami", ru: "Госномер" },
+    labelTech: { uz: "Texpassport seriya va raqami", ru: "Серия и номер техпаспорта" },
+    checkingText: { uz: "Tekshirilmoqda...", ru: "Проверка..." },
+    step2Title: { uz: "Avtomobil egasi", ru: "Владелец автомобиля" },
+    step2Sub: { uz: "Avtomobil egasi ma'lumotlarini kiriting", ru: "Введите данные владельца автомобиля" },
+    labelPassport: { uz: "Passport seriya va raqami", ru: "Серия и номер паспорта" },
+    labelOrgName: { uz: "Tashkilot nomi", ru: "Название организации" },
+    step3Title: { uz: "Sug'urta turi", ru: "Тип страхования" },
+    step3Sub: { uz: "Sizga mos variantni tanlang", ru: "Выберите подходящий вариант" },
+    labelInsurerPhone: { uz: "Sug'urtalovchi telefon raqami", ru: "Номер телефона страхователя" },
+    step4Title: { uz: "Haydovchilar", ru: "Водители" },
+    step4Sub: { uz: "Ro'yxatga haydovchilarni qo'shing", ru: "Добавьте водителей в список" },
+    ownerIsDriverToggle: { uz: "Avtomobil egasi ham haydovchimi?", ru: "Владелец авто тоже за рулём?" },
+    addDriverBtn: { uz: "+ Haydovchi qo'shish", ru: "+ Добавить водителя" },
+    step5Title: { uz: "Sug'urta muddati", ru: "Срок страхования" },
+    step5Sub: { uz: "Boshlanish sanasi va muddatni tanlang", ru: "Выберите дату начала и срок" },
+    labelStartDate: { uz: "Boshlanish sanasi", ru: "Дата начала" },
+    labelDuration: { uz: "Muddat", ru: "Срок" },
+    step6Title: { uz: "Ma'lumotlarni ko'rib chiqing", ru: "Проверьте данные" },
+    step6Sub: { uz: "Yuborishdan oldin tekshirib chiqing", ru: "Проверьте перед отправкой" },
+    sumHeadApplicant: { uz: "Arizaberuvchi", ru: "Заявитель" },
+    editLink: { uz: "tahrirlash", ru: "изменить" },
+    sumHeadTransport: { uz: "Transport ma'lumotlari", ru: "Данные транспорта" },
+    sumHeadOwner: { uz: "Avtomobil egasi", ru: "Владелец автомобиля" },
+    sumHeadDrivers: { uz: "Haydovchilar", ru: "Водители" },
+    sumHeadDuration: { uz: "Sug'urta muddati", ru: "Срок страхования" },
+    labelGateway: { uz: "To'lov usuli", ru: "Способ оплаты" },
+    labelPrice: { uz: "Sug'urta narxi", ru: "Стоимость страховки" },
+    backBtn: { uz: "Orqaga", ru: "Назад" },
+    nextBtn: { uz: "Davom etish", ru: "Продолжить" },
+    nextBtnFinal: { uz: "To'lovga o'tish", ru: "Перейти к оплате" },
+    dateMask: { uz: "KK.OO.YYYY", ru: "ДД.ММ.ГГГГ" },
+    ariaDatePick: { uz: "Sanani tanlash", ru: "Выбрать дату" },
+
+    stepLabelPrefix: { uz: "Qadam", ru: "Шаг" },
+    ownerTypeOrg: { uz: "Yuridik shaxs", ru: "Юридическое лицо" },
+    ownerTypePerson: { uz: "Jismoniy shaxs", ru: "Физическое лицо" },
+    modelPrefix: { uz: "Model:", ru: "Модель:" },
+    typePrefix: { uz: "Turi:", ru: "Тип:" },
+    insuranceLimitedTitle: { uz: "Cheklangan", ru: "Ограниченный" },
+    insuranceLimitedDesc: {
+      uz: "Faqat ro'yxatdagi haydovchilar transport vositasini boshqarishi mumkin",
+      ru: "Управлять транспортом могут только водители из списка",
+    },
+    insuranceUnlimitedTitle: { uz: "Cheklanmagan", ru: "Неограниченный" },
+    insuranceUnlimitedDesc: {
+      uz: "Har qanday shaxs transport vositasini boshqarishi mumkin",
+      ru: "Управлять транспортом может любое лицо",
+    },
+    driversCountSuffix: { uz: "haydovchi", ru: "водителей" },
+    driverSelfLabel: { uz: "Siz (avtomobil egasi)", ru: "Вы (владелец авто)" },
+    driverLabelPrefix: { uz: "Haydovchi", ru: "Водитель" },
+    placeholderSeria: { uz: "Seriya", ru: "Серия" },
+    placeholderNumber: { uz: "Raqami", ru: "Номер" },
+    statusErrorDefault: { uz: "Xato", ru: "Ошибка" },
+    plateSummaryPrefix: { uz: "Davlat raqami:", ru: "Госномер:" },
+    techSummaryPrefix: { uz: "Texpassport:", ru: "Техпаспорт:" },
+    priceCurrency: { uz: "so'm", ru: "сум" },
+
+    toastVehicleNotFound: { uz: "Transport topilmadi", ru: "Транспорт не найден" },
+    toastGenericError: { uz: "Xatolik yuz berdi", ru: "Произошла ошибка" },
+    toastOwnerNotFound: { uz: "Egasi topilmadi", ru: "Владелец не найден" },
+    toastMaxDrivers: { uz: "Ko'pi bilan 5 ta haydovchi qo'shish mumkin", ru: "Можно добавить не более 5 водителей" },
+    toastSubmitError: { uz: "Xatolik yuz berdi. Qayta urinib ko'ring", ru: "Произошла ошибка. Попробуйте снова" },
+    successDefaultMessage: { uz: "So'rovingiz qabul qilindi.", ru: "Ваша заявка принята." },
+
+    errPlateIncomplete: { uz: "Davlat raqamini to'liq kiriting", ru: "Введите госномер полностью" },
+    errTechIncomplete: {
+      uz: "Seriya (3 harf) va raqam (7 raqam) to'liq kiritilishi kerak",
+      ru: "Серия (3 буквы) и номер (7 цифр) должны быть введены полностью",
+    },
+    errPassportIncomplete: { uz: "Passport ma'lumotlarini to'liq kiriting", ru: "Введите данные паспорта полностью" },
+    errInsuranceType: { uz: "Sug'urta turini tanlang", ru: "Выберите тип страхования" },
+    errPhoneIncomplete: { uz: "Telefon raqamini to'liq kiriting", ru: "Введите номер телефона полностью" },
+    errStartDate: { uz: "Boshlanish sanasini tanlang", ru: "Выберите дату начала" },
+    errDuration: { uz: "Muddatni tanlang", ru: "Выберите срок" },
+    errAtLeastOneDriver: { uz: "Kamida bitta haydovchi qo'shing", ru: "Добавьте хотя бы одного водителя" },
+    errDriversIncomplete: {
+      uz: "Barcha haydovchilar ma'lumotini to'liq va to'g'ri kiriting",
+      ru: "Введите данные всех водителей полностью и правильно",
+    },
+  };
+
+  // Display labels for RELATIONS/gateway values that are also submitted to the
+  // backend — the *value* (map key) always stays the Uzbek canonical string
+  // (WebAppController::RELATIVE_TYPES is keyed on it), only the shown label
+  // is translated.
+  var RELATION_LABELS = {
+    "Qarindosh emas": { uz: "Qarindosh emas", ru: "Не родственник" },
+    "Ota": { uz: "Ota", ru: "Отец" },
+    "Ona": { uz: "Ona", ru: "Мать" },
+    "Er": { uz: "Er", ru: "Муж" },
+    "Xotin": { uz: "Xotin", ru: "Жена" },
+    "O'g'li": { uz: "O'g'li", ru: "Сын" },
+    "Qizi": { uz: "Qizi", ru: "Дочь" },
+    "Aka": { uz: "Aka", ru: "Старший брат" },
+    "Uka": { uz: "Uka", ru: "Младший брат" },
+    "Opa": { uz: "Opa", ru: "Старшая сестра" },
+    "Singil": { uz: "Singil", ru: "Младшая сестра" },
+    "O'zi": { uz: "O'zi", ru: "Я" },
+  };
+
+  var DURATION_LABELS = {
+    '20d': { uz: '20 kun', ru: '20 дней' },
+    '6m': { uz: '6 oy', ru: '6 месяцев' },
+    '1y': { uz: '1 yil', ru: '1 год' },
+  };
+
   var RELATIONS = ["Qarindosh emas", 'Aka', 'Uka', 'Ota', 'Ona', 'Opa', 'Singil', 'Xotin', 'Er', "O'g'li", 'Qizi'];
   var DURATIONS = [
-    { key: '20d', label: '20 kun', days: 20 },
-    { key: '6m', label: '6 oy', days: 180 },
-    { key: '1y', label: '1 yil', days: 365 },
+    { key: '20d', days: 20 },
+    { key: '6m', days: 180 },
+    { key: '1y', days: 365 },
   ];
-  var STEP_TITLES = { 1: 'Transport', 2: 'Egasi', 3: "Sug'urta turi", 4: 'Haydovchilar', 5: 'Muddat', 6: 'Tasdiqlash' };
 
   var state = {
+    lang: 'uz',
     step: 1,
     plateNumber: '', techSeria: '', techNumber: '',
     checking: false,
@@ -26,6 +146,37 @@
     gateway: 'CLICK',
     submitting: false,
   };
+
+  function t(key) {
+    var entry = STRINGS[key];
+    if (!entry) return key;
+    return entry[state.lang] || entry.uz;
+  }
+
+  function relationLabel(value) {
+    var entry = RELATION_LABELS[value];
+    return entry ? (entry[state.lang] || entry.uz) : value;
+  }
+
+  function durationLabel(key) {
+    var entry = DURATION_LABELS[key];
+    return entry ? (entry[state.lang] || entry.uz) : key;
+  }
+
+  function applyStaticI18n() {
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = t(nodes[i].getAttribute('data-i18n'));
+    }
+    var placeholderNodes = document.querySelectorAll('[data-i18n-placeholder]');
+    for (var j = 0; j < placeholderNodes.length; j++) {
+      placeholderNodes[j].setAttribute('placeholder', t(placeholderNodes[j].getAttribute('data-i18n-placeholder')));
+    }
+    var ariaNodes = document.querySelectorAll('[data-i18n-aria]');
+    for (var k = 0; k < ariaNodes.length; k++) {
+      ariaNodes[k].setAttribute('aria-label', t(ariaNodes[k].getAttribute('data-i18n-aria')));
+    }
+  }
 
   function $(id) { return document.getElementById(id); }
 
@@ -184,12 +335,12 @@
       steps[i].classList.toggle('active', parseInt(steps[i].dataset.step, 10) === state.step);
     }
 
-    $('stepLabel').textContent = 'Qadam ' + state.step + '/6';
-    $('stepTitle').textContent = STEP_TITLES[state.step];
+    $('stepLabel').textContent = t('stepLabelPrefix') + ' ' + state.step + '/6';
+    $('stepTitle').textContent = stepTitle(state.step);
     $('progressBar').style.width = (state.step / 6 * 100) + '%';
 
     $('backBtn').classList.toggle('hidden', state.step === 1);
-    $('nextBtn').textContent = state.step === 6 ? "To'lovga o'tish" : 'Davom etish';
+    $('nextBtn').textContent = state.step === 6 ? t('nextBtnFinal') : t('nextBtn');
     $('nextBtn').disabled = state.checking || state.submitting;
 
     $('checkingIndicator').classList.toggle('hidden', !(state.step === 1 && state.checking));
@@ -201,11 +352,22 @@
     if (state.step === 6) renderStep6();
   }
 
+  function stepTitle(step) {
+    return {
+      1: t('step1Title'), 2: t('step2Title'), 3: t('step3Title'),
+      4: t('step4Title'), 5: t('step5Title'), 6: t('step6Title'),
+    }[step];
+  }
+
   function goToStep(n) { state.step = n; render(); }
+
+  function ownerTypeLabel(vt) {
+    return vt === 'ORGANIZATION' ? t('ownerTypeOrg') : t('ownerTypePerson');
+  }
 
   function renderStep2() {
     var vt = state.vehicleData.ownerType;
-    $('ownerTypeLabel').textContent = vt === 'ORGANIZATION' ? 'Yuridik shaxs' : 'Jismoniy shaxs';
+    $('ownerTypeLabel').textContent = ownerTypeLabel(vt);
     $('physFields').classList.toggle('hidden', vt !== 'PERSON');
     $('legalFields').classList.toggle('hidden', vt === 'PERSON');
     if (vt === 'ORGANIZATION') {
@@ -218,23 +380,23 @@
     var hasVehicleInfo = !!(state.vehicleData.model || state.vehicleData.vehicleTypeName);
     $('vehicleInfoCard').classList.toggle('hidden', !hasVehicleInfo);
     $('vehicleModelLine').innerHTML = state.vehicleData.model
-      ? 'Model: <strong>' + escapeHtml(state.vehicleData.model) + '</strong>' : '';
+      ? t('modelPrefix') + ' <strong>' + escapeHtml(state.vehicleData.model) + '</strong>' : '';
     $('vehicleTypeLine').innerHTML = state.vehicleData.vehicleTypeName
-      ? 'Turi: <strong>' + escapeHtml(state.vehicleData.vehicleTypeName) + '</strong>' : '';
+      ? t('typePrefix') + ' <strong>' + escapeHtml(state.vehicleData.vehicleTypeName) + '</strong>' : '';
   }
 
   function renderStep3() {
     var container = $('insuranceCards');
     container.innerHTML = '';
     var cards = [
-      { key: 'limited', title: 'Cheklangan', desc: "Faqat ro'yxatdagi haydovchilar transport vositasini boshqarishi mumkin" },
-      { key: 'unlimited', title: 'Cheklanmagan', desc: 'Har qanday shaxs transport vositasini boshqarishi mumkin' },
+      { key: 'limited', title: t('insuranceLimitedTitle'), desc: t('insuranceLimitedDesc') },
+      { key: 'unlimited', title: t('insuranceUnlimitedTitle'), desc: t('insuranceUnlimitedDesc') },
     ];
     cards.forEach(function (c) {
       var el = document.createElement('div');
       el.className = 'ins-card' + (state.insuranceType === c.key ? ' selected' : '');
-      el.innerHTML = '<div class="ins-top"><div class="ins-title">' + c.title + '</div><div class="ins-dot"></div></div>' +
-        '<div class="ins-desc">' + c.desc + '</div>';
+      el.innerHTML = '<div class="ins-top"><div class="ins-title">' + escapeHtml(c.title) + '</div><div class="ins-dot"></div></div>' +
+        '<div class="ins-desc">' + escapeHtml(c.desc) + '</div>';
       el.addEventListener('click', function () {
         state.insuranceType = c.key;
         setErr('insurance', '');
@@ -252,13 +414,13 @@
   }
   function statusText(d) {
     if (d.status === 'ok') return '✓ ' + d.name;
-    if (d.status === 'err') return d.statusMsg || 'Xato';
-    if (d.status === 'checking') return 'Tekshirilmoqda...';
+    if (d.status === 'err') return d.statusMsg || t('statusErrorDefault');
+    if (d.status === 'checking') return t('checkingText');
     return '';
   }
 
   function renderStep4() {
-    $('driversCountLabel').textContent = state.drivers.length + '/5 haydovchi';
+    $('driversCountLabel').textContent = state.drivers.length + '/5 ' + t('driversCountSuffix');
     $('addDriverBtn').classList.toggle('hidden', state.drivers.length >= 5);
     var toggle = $('ownerIsDriverToggle');
     toggle.classList.toggle('hidden', !state.vehicleData || state.vehicleData.ownerType !== 'PERSON');
@@ -272,24 +434,24 @@
     state.drivers.forEach(function (d, i) {
       var card = document.createElement('div');
       card.className = 'driver-card';
-      var label = d.isOwner ? 'Siz (avtomobil egasi)' : 'Haydovchi ' + (i + 1);
+      var label = d.isOwner ? t('driverSelfLabel') : t('driverLabelPrefix') + ' ' + (i + 1);
       var safeId = escapeHtml(d.id);
       card.innerHTML =
-        '<div class="driver-head"><div class="name">' + label + '</div>' +
+        '<div class="driver-head"><div class="name">' + escapeHtml(label) + '</div>' +
         (!d.isOwner ? '<div class="driver-remove" data-remove="' + safeId + '">✕</div>' : '') +
         '</div>' +
         '<div class="driver-row">' +
-        '<input type="text" placeholder="Seriya" maxlength="2" data-field="seria" data-id="' + safeId + '" value="' + escapeHtml(d.seria) + '">' +
-        '<input type="text" placeholder="Raqami" maxlength="7" data-field="number" data-id="' + safeId + '" value="' + escapeHtml(d.number) + '">' +
+        '<input type="text" placeholder="' + escapeHtml(t('placeholderSeria')) + '" maxlength="2" data-field="seria" data-id="' + safeId + '" value="' + escapeHtml(d.seria) + '">' +
+        '<input type="text" placeholder="' + escapeHtml(t('placeholderNumber')) + '" maxlength="7" data-field="number" data-id="' + safeId + '" value="' + escapeHtml(d.number) + '">' +
         '</div>' +
         '<div class="date-field">' +
-        '<input type="text" inputmode="numeric" placeholder="KK.OO.YYYY" maxlength="10" data-birth-text value="' + escapeHtml(fmtDate(d.birthDate)) + '">' +
-        '<button type="button" class="date-pick-btn" data-birth-pick aria-label="Sanani tanlash">📅</button>' +
+        '<input type="text" inputmode="numeric" placeholder="' + escapeHtml(t('dateMask')) + '" maxlength="10" data-birth-text value="' + escapeHtml(fmtDate(d.birthDate)) + '">' +
+        '<button type="button" class="date-pick-btn" data-birth-pick aria-label="' + escapeHtml(t('ariaDatePick')) + '">📅</button>' +
         '<input type="date" class="date-native" data-birth-native value="' + escapeHtml(d.birthDate) + '" max="' + todayYmd() + '">' +
         '</div>' +
         '<select data-field="relation" data-id="' + safeId + '">' +
-        (d.isOwner ? '<option value="O\'zi"' + (d.relation === "O'zi" ? ' selected' : '') + '>O\'zi</option>' : '') +
-        RELATIONS.map(function (r) { return '<option value="' + escapeHtml(r) + '"' + (r === d.relation ? ' selected' : '') + '>' + escapeHtml(r) + '</option>'; }).join('') +
+        (d.isOwner ? '<option value="O\'zi"' + (d.relation === "O'zi" ? ' selected' : '') + '>' + escapeHtml(relationLabel("O'zi")) + '</option>' : '') +
+        RELATIONS.map(function (r) { return '<option value="' + escapeHtml(r) + '"' + (r === d.relation ? ' selected' : '') + '>' + escapeHtml(relationLabel(r)) + '</option>'; }).join('') +
         '</select>' +
         '<div class="driver-status ' + statusClass(d.status) + '">' + escapeHtml(statusText(d)) + '</div>';
       container.appendChild(card);
@@ -377,13 +539,13 @@
             driver.name = [res.firstName, res.lastName].filter(Boolean).join(' ');
           } else {
             driver.status = 'err';
-            driver.statusMsg = res.message || 'Xato';
+            driver.statusMsg = res.message || t('statusErrorDefault');
           }
           updateDriverStatusDom(driver);
         })
         .catch(function () {
           driver.status = 'err';
-          driver.statusMsg = 'Xatolik yuz berdi';
+          driver.statusMsg = t('toastGenericError');
           updateDriverStatusDom(driver);
         });
     }
@@ -403,7 +565,7 @@
     DURATIONS.forEach(function (o) {
       var el = document.createElement('div');
       el.className = 'chip' + (state.duration === o.key ? ' selected' : '');
-      el.textContent = o.label;
+      el.textContent = durationLabel(o.key);
       el.addEventListener('click', function () {
         state.duration = o.key;
         setErr('duration', '');
@@ -426,19 +588,19 @@
 
   function renderStep6() {
     $('sumPhone').textContent = '+998 ' + state.phone;
-    $('sumPlate').innerHTML = 'Davlat raqami: <strong>' + escapeHtml(state.plateNumber) + '</strong>';
-    $('sumTech').innerHTML = 'Texpassport: <strong>' + escapeHtml(state.techSeria + state.techNumber) + '</strong>';
+    $('sumPlate').innerHTML = t('plateSummaryPrefix') + ' <strong>' + escapeHtml(state.plateNumber) + '</strong>';
+    $('sumTech').innerHTML = t('techSummaryPrefix') + ' <strong>' + escapeHtml(state.techSeria + state.techNumber) + '</strong>';
     var modelBits = [];
     if (state.vehicleData.model) modelBits.push(escapeHtml(state.vehicleData.model));
     if (state.vehicleData.vehicleTypeName) modelBits.push(escapeHtml(state.vehicleData.vehicleTypeName));
-    $('sumVehicleModel').innerHTML = modelBits.length ? 'Model: <strong>' + modelBits.join(' · ') + '</strong>' : '';
-    $('sumOwner').textContent = state.vehicleData.ownerType === 'ORGANIZATION' ? 'Yuridik shaxs' : 'Jismoniy shaxs';
+    $('sumVehicleModel').innerHTML = modelBits.length ? t('modelPrefix') + ' <strong>' + modelBits.join(' · ') + '</strong>' : '';
+    $('sumOwner').textContent = ownerTypeLabel(state.vehicleData.ownerType);
 
     var driversCard = $('sumDriversCard');
     if (state.insuranceType === 'limited') {
       driversCard.classList.remove('hidden');
       $('sumDrivers').innerHTML = state.drivers.map(function (d) {
-        return '<div class="driver-summary-row">' + escapeHtml(d.seria + d.number) + ' · ' + escapeHtml(d.relation) + '</div>';
+        return '<div class="driver-summary-row">' + escapeHtml(d.seria + d.number) + ' · ' + escapeHtml(relationLabel(d.relation)) + '</div>';
       }).join('');
     } else {
       driversCard.classList.add('hidden');
@@ -460,7 +622,7 @@
       gw.appendChild(el);
     });
 
-    $('priceDisplay').textContent = state.premium != null ? Math.round(state.premium).toLocaleString('ru-RU') + " so'm" : '—';
+    $('priceDisplay').textContent = state.premium != null ? Math.round(state.premium).toLocaleString('ru-RU') + ' ' + t('priceCurrency') : '—';
   }
 
   // ---------------------------------------------------------------------
@@ -472,13 +634,13 @@
       var ok = true;
       var plate = state.plateNumber.replace(/\s/g, '');
       if (!plate || plate.length < 6) {
-        setErr('plate', "Davlat raqamini to'liq kiriting");
+        setErr('plate', t('errPlateIncomplete'));
         markInvalid('plateNumber', true);
         ok = false;
       } else { setErr('plate', ''); markInvalid('plateNumber', false); }
 
       if (state.techSeria.length < 3 || state.techNumber.length < 7) {
-        setErr('tech', "Seriya (3 harf) va raqam (7 raqam) to'liq kiritilishi kerak");
+        setErr('tech', t('errTechIncomplete'));
         markInvalid('techSeria', true); markInvalid('techNumber', true);
         ok = false;
       } else { setErr('tech', ''); markInvalid('techSeria', false); markInvalid('techNumber', false); }
@@ -488,7 +650,7 @@
     if (step === 2) {
       if (state.vehicleData.ownerType === 'PERSON') {
         if (state.physSeries.length < 2 || state.physNumber.length < 7) {
-          setErr('physPass', "Passport ma'lumotlarini to'liq kiriting");
+          setErr('physPass', t('errPassportIncomplete'));
           markInvalid('physSeries', true); markInvalid('physNumber', true);
           return false;
         }
@@ -499,18 +661,18 @@
 
     if (step === 3) {
       var ok3 = true;
-      if (!state.insuranceType) { setErr('insurance', "Sug'urta turini tanlang"); ok3 = false; }
+      if (!state.insuranceType) { setErr('insurance', t('errInsuranceType')); ok3 = false; }
       else setErr('insurance', '');
-      if (!state.phone || state.phone.length < 9) { setErr('phone', "Telefon raqamini to'liq kiriting"); ok3 = false; }
+      if (!state.phone || state.phone.length < 9) { setErr('phone', t('errPhoneIncomplete')); ok3 = false; }
       else setErr('phone', '');
       return ok3;
     }
 
     if (step === 5) {
       var ok5 = true;
-      if (!state.startDate) { setErr('startDate', "Boshlanish sanasini tanlang"); ok5 = false; }
+      if (!state.startDate) { setErr('startDate', t('errStartDate')); ok5 = false; }
       else setErr('startDate', '');
-      if (!state.duration) { setErr('duration', "Muddatni tanlang"); ok5 = false; }
+      if (!state.duration) { setErr('duration', t('errDuration')); ok5 = false; }
       else setErr('duration', '');
       return ok5;
     }
@@ -532,11 +694,11 @@
       api('vehicle', { plateNumber: state.plateNumber, techSeria: state.techSeria, techNumber: state.techNumber })
         .then(function (res) {
           state.checking = false;
-          if (!res.success) { showToast(res.message || "Transport topilmadi"); render(); return; }
+          if (!res.success) { showToast(res.message || t('toastVehicleNotFound')); render(); return; }
           state.vehicleData = res;
           goToStep(2);
         })
-        .catch(function () { state.checking = false; showToast('Xatolik yuz berdi'); render(); });
+        .catch(function () { state.checking = false; showToast(t('toastGenericError')); render(); });
       return;
     }
 
@@ -546,11 +708,11 @@
         api('owner', { seria: state.physSeries, number: state.physNumber, pinfl: state.vehicleData.pinfl })
           .then(function (res) {
             state.checking = false;
-            if (!res.success) { showToast(res.message || 'Egasi topilmadi'); render(); return; }
+            if (!res.success) { showToast(res.message || t('toastOwnerNotFound')); render(); return; }
             state.ownerData = res;
             goToStep(3);
           })
-          .catch(function () { state.checking = false; showToast('Xatolik yuz berdi'); render(); });
+          .catch(function () { state.checking = false; showToast(t('toastGenericError')); render(); });
         return;
       }
       goToStep(3);
@@ -563,9 +725,9 @@
     }
 
     if (step === 4) {
-      if (state.drivers.length === 0) { setErr('drivers', "Kamida bitta haydovchi qo'shing"); return; }
+      if (state.drivers.length === 0) { setErr('drivers', t('errAtLeastOneDriver')); return; }
       var allOk = state.drivers.every(function (d) { return d.status === 'ok'; });
-      if (!allOk) { setErr('drivers', "Barcha haydovchilar ma'lumotini to'liq va to'g'ri kiriting"); return; }
+      if (!allOk) { setErr('drivers', t('errDriversIncomplete')); return; }
       setErr('drivers', '');
       goToStep(5);
       return;
@@ -635,12 +797,12 @@
     api('submit', payload)
       .then(function (res) {
         state.submitting = false;
-        if (!res.success) { showToast(res.message || 'Xatolik yuz berdi'); render(); return; }
+        if (!res.success) { showToast(res.message || t('toastGenericError')); render(); return; }
         showSuccess(res);
       })
       .catch(function () {
         state.submitting = false;
-        showToast("Xatolik yuz berdi. Qayta urinib ko'ring");
+        showToast(t('toastSubmitError'));
         render();
       });
   }
@@ -648,7 +810,7 @@
   function showSuccess(res) {
     $('formScreen').classList.add('hidden');
     $('successScreen').classList.remove('hidden');
-    $('successText').textContent = res.message || "So'rovingiz qabul qilindi.";
+    $('successText').textContent = res.message || t('successDefaultMessage');
     if (res.paymentLink) {
       $('paymentLinkBtn').href = res.paymentLink;
       $('paymentLinkBtn').classList.remove('hidden');
@@ -695,7 +857,7 @@
     });
 
     $('addDriverBtn').addEventListener('click', function () {
-      if (state.drivers.length >= 5) { showToast("Ko'pi bilan 5 ta haydovchi qo'shish mumkin"); return; }
+      if (state.drivers.length >= 5) { showToast(t('toastMaxDrivers')); return; }
       state.drivers.push({
         id: 'd' + Date.now() + Math.random(), isOwner: false,
         seria: '', number: '', birthDate: '', relation: RELATIONS[0],
@@ -744,8 +906,19 @@
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
     }
-    wireStatic();
-    render();
+
+    api('init', {})
+      .then(function (res) {
+        state.lang = (res && res.lang === 'ru') ? 'ru' : 'uz';
+      })
+      .catch(function () {
+        state.lang = 'uz';
+      })
+      .then(function () {
+        wireStatic();
+        applyStaticI18n();
+        render();
+      });
   }
 
   document.addEventListener('DOMContentLoaded', init);

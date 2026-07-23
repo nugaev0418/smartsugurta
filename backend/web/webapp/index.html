@@ -16,10 +16,10 @@
 
   <section id="successScreen" class="screen hidden">
     <div class="success-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    <div class="success-title">Ariza qabul qilindi</div>
+    <div class="success-title" data-i18n="successTitle">Ariza qabul qilindi</div>
     <div class="success-highlight"><span class="success-highlight-icon">⏳</span><span id="successText"></span></div>
-    <a id="paymentLinkBtn" class="btn btn-primary hidden" target="_blank" rel="noopener">To'lovni amalga oshirish</a>
-    <button id="closeBtn" class="btn-close">✕ Yopish</button>
+    <a id="paymentLinkBtn" class="btn btn-primary hidden" target="_blank" rel="noopener" data-i18n="paymentLinkBtn">To'lovni amalga oshirish</a>
+    <button id="closeBtn" class="btn-close" data-i18n="closeBtn">✕ Yopish</button>
   </section>
 
   <section id="formScreen" class="screen">
@@ -37,18 +37,18 @@
       <!-- Step 1: Transport -->
       <div class="step" data-step="1">
         <div class="step-head">
-          <div class="step-title">Transport ma'lumotlari</div>
-          <div class="step-sub">Avtomobilingiz haqidagi ma'lumotlarni kiriting</div>
+          <div class="step-title" data-i18n="step1Title">Transport ma'lumotlari</div>
+          <div class="step-sub" data-i18n="step1Sub">Avtomobilingiz haqidagi ma'lumotlarni kiriting</div>
         </div>
 
         <div class="field">
-          <label>Davlat raqami</label>
+          <label data-i18n="labelPlate">Davlat raqami</label>
           <input type="text" id="plateNumber" placeholder="01 A 123 BB" maxlength="9">
           <div class="error" id="err-plate"></div>
         </div>
 
         <div class="field">
-          <label>Texpassport seriya va raqami</label>
+          <label data-i18n="labelTech">Texpassport seriya va raqami</label>
           <div class="row">
             <input type="text" id="techSeria" placeholder="AAG" maxlength="3" style="flex:0.9">
             <input type="text" id="techNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
@@ -57,15 +57,15 @@
         </div>
 
         <div class="checking hidden" id="checkingIndicator">
-          <span class="spinner"></span> Tekshirilmoqda...
+          <span class="spinner"></span> <span data-i18n="checkingText">Tekshirilmoqda...</span>
         </div>
       </div>
 
       <!-- Step 2: Owner -->
       <div class="step" data-step="2">
         <div class="step-head">
-          <div class="step-title">Avtomobil egasi</div>
-          <div class="step-sub">Avtomobil egasi ma'lumotlarini kiriting</div>
+          <div class="step-title" data-i18n="step2Title">Avtomobil egasi</div>
+          <div class="step-sub" data-i18n="step2Sub">Avtomobil egasi ma'lumotlarini kiriting</div>
         </div>
 
         <div class="owner-card">
@@ -79,7 +79,7 @@
         </div>
 
         <div class="field" id="physFields">
-          <label>Passport seriya va raqami</label>
+          <label data-i18n="labelPassport">Passport seriya va raqami</label>
           <div class="row">
             <input type="text" id="physSeries" placeholder="AD" maxlength="2" style="flex:0.7">
             <input type="text" id="physNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
@@ -88,7 +88,7 @@
         </div>
 
         <div class="field hidden" id="legalFields">
-          <label>Tashkilot nomi</label>
+          <label data-i18n="labelOrgName">Tashkilot nomi</label>
           <input type="text" id="orgNameView" disabled>
         </div>
       </div>
@@ -96,15 +96,15 @@
       <!-- Step 3: Insurance type + phone -->
       <div class="step" data-step="3">
         <div class="step-head">
-          <div class="step-title">Sug'urta turi</div>
-          <div class="step-sub">Sizga mos variantni tanlang</div>
+          <div class="step-title" data-i18n="step3Title">Sug'urta turi</div>
+          <div class="step-sub" data-i18n="step3Sub">Sizga mos variantni tanlang</div>
         </div>
 
         <div id="insuranceCards"></div>
         <div class="error" id="err-insurance"></div>
 
         <div class="field">
-          <label>Sug'urtalovchi telefon raqami</label>
+          <label data-i18n="labelInsurerPhone">Sug'urtalovchi telefon raqami</label>
           <div class="phone-row">
             <div class="phone-prefix">+998</div>
             <input type="tel" id="phoneInput" placeholder="90 123 45 67" maxlength="9">
@@ -117,42 +117,42 @@
       <div class="step" data-step="4">
         <div class="step-head-row">
           <div>
-            <div class="step-title">Haydovchilar</div>
-            <div class="step-sub">Ro'yxatga haydovchilarni qo'shing</div>
+            <div class="step-title" data-i18n="step4Title">Haydovchilar</div>
+            <div class="step-sub" data-i18n="step4Sub">Ro'yxatga haydovchilarni qo'shing</div>
           </div>
           <div class="drivers-count" id="driversCountLabel"></div>
         </div>
 
         <div class="toggle-row hidden" id="ownerIsDriverToggle">
           <div class="checkbox" id="ownerCheckbox"></div>
-          <div class="toggle-text">Avtomobil egasi ham haydovchimi?</div>
+          <div class="toggle-text" data-i18n="ownerIsDriverToggle">Avtomobil egasi ham haydovchimi?</div>
         </div>
 
         <div id="driversList"></div>
 
-        <div class="add-driver" id="addDriverBtn">+ Haydovchi qo'shish</div>
+        <div class="add-driver" id="addDriverBtn" data-i18n="addDriverBtn">+ Haydovchi qo'shish</div>
         <div class="error" id="err-drivers"></div>
       </div>
 
       <!-- Step 5: Duration -->
       <div class="step" data-step="5">
         <div class="step-head">
-          <div class="step-title">Sug'urta muddati</div>
-          <div class="step-sub">Boshlanish sanasi va muddatni tanlang</div>
+          <div class="step-title" data-i18n="step5Title">Sug'urta muddati</div>
+          <div class="step-sub" data-i18n="step5Sub">Boshlanish sanasi va muddatni tanlang</div>
         </div>
 
         <div class="field">
-          <label>Boshlanish sanasi</label>
+          <label data-i18n="labelStartDate">Boshlanish sanasi</label>
           <div class="date-field">
-            <input type="text" inputmode="numeric" id="startDateText" placeholder="KK.OO.YYYY" maxlength="10">
-            <button type="button" class="date-pick-btn" id="startDatePickBtn" aria-label="Sanani tanlash">📅</button>
+            <input type="text" inputmode="numeric" id="startDateText" placeholder="KK.OO.YYYY" maxlength="10" data-i18n-placeholder="dateMask">
+            <button type="button" class="date-pick-btn" id="startDatePickBtn" aria-label="Sanani tanlash" data-i18n-aria="ariaDatePick">📅</button>
             <input type="date" id="startDateInput" class="date-native">
           </div>
           <div class="error" id="err-startDate"></div>
         </div>
 
         <div class="field">
-          <label>Muddat</label>
+          <label data-i18n="labelDuration">Muddat</label>
           <div class="chips" id="durationChips"></div>
           <div class="error" id="err-duration"></div>
         </div>
@@ -161,44 +161,44 @@
       <!-- Step 6: Confirm -->
       <div class="step" data-step="6">
         <div class="step-head">
-          <div class="step-title">Ma'lumotlarni ko'rib chiqing</div>
-          <div class="step-sub">Yuborishdan oldin tekshirib chiqing</div>
+          <div class="step-title" data-i18n="step6Title">Ma'lumotlarni ko'rib chiqing</div>
+          <div class="step-sub" data-i18n="step6Sub">Yuborishdan oldin tekshirib chiqing</div>
         </div>
 
         <div class="summary-card">
-          <div class="summary-head"><span>Arizaberuvchi</span><a data-goto="3">tahrirlash</a></div>
+          <div class="summary-head"><span data-i18n="sumHeadApplicant">Arizaberuvchi</span><a data-goto="3" data-i18n="editLink">tahrirlash</a></div>
           <div id="sumPhone"></div>
         </div>
 
         <div class="summary-card">
-          <div class="summary-head"><span>Transport ma'lumotlari</span><a data-goto="1">tahrirlash</a></div>
+          <div class="summary-head"><span data-i18n="sumHeadTransport">Transport ma'lumotlari</span><a data-goto="1" data-i18n="editLink">tahrirlash</a></div>
           <div id="sumPlate"></div>
           <div id="sumTech"></div>
           <div id="sumVehicleModel"></div>
         </div>
 
         <div class="summary-card">
-          <div class="summary-head"><span>Avtomobil egasi</span><a data-goto="2">tahrirlash</a></div>
+          <div class="summary-head"><span data-i18n="sumHeadOwner">Avtomobil egasi</span><a data-goto="2" data-i18n="editLink">tahrirlash</a></div>
           <div id="sumOwner"></div>
         </div>
 
         <div class="summary-card hidden" id="sumDriversCard">
-          <div class="summary-head"><span>Haydovchilar</span><a data-goto="4">tahrirlash</a></div>
+          <div class="summary-head"><span data-i18n="sumHeadDrivers">Haydovchilar</span><a data-goto="4" data-i18n="editLink">tahrirlash</a></div>
           <div id="sumDrivers"></div>
         </div>
 
         <div class="summary-card">
-          <div class="summary-head"><span>Sug'urta muddati</span><a data-goto="5">tahrirlash</a></div>
+          <div class="summary-head"><span data-i18n="sumHeadDuration">Sug'urta muddati</span><a data-goto="5" data-i18n="editLink">tahrirlash</a></div>
           <div id="sumDuration"></div>
         </div>
 
         <div class="field">
-          <label>To'lov usuli</label>
+          <label data-i18n="labelGateway">To'lov usuli</label>
           <div class="gateway-row" id="gatewayChoice"></div>
         </div>
 
         <div class="price-box">
-          <div class="price-label">Sug'urta narxi</div>
+          <div class="price-label" data-i18n="labelPrice">Sug'urta narxi</div>
           <div class="price-value" id="priceDisplay">&mdash;</div>
         </div>
       </div>
@@ -206,8 +206,8 @@
     </div>
 
     <div class="footer">
-      <button id="backBtn" class="btn btn-secondary hidden">Orqaga</button>
-      <button id="nextBtn" class="btn btn-primary">Davom etish</button>
+      <button id="backBtn" class="btn btn-secondary hidden" data-i18n="backBtn">Orqaga</button>
+      <button id="nextBtn" class="btn btn-primary" data-i18n="nextBtn">Davom etish</button>
     </div>
 
   </section>
