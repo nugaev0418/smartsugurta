@@ -7,6 +7,7 @@ use backend\models\PaynetAPI2;
 
 use common\models\Botuser;
 use common\models\Payment;
+use common\models\Paynet;
 use Yii;
 use yii\base\BaseObject;
 use yii\queue\JobInterface;
@@ -23,7 +24,6 @@ class PaynetQueue extends BaseObject implements JobInterface
     public $paynet_id;
     public function __construct(array $data)
     {
-
         $this->user = Botuser::findOne($data['user_id']);
         $this->payment_order = Payment::findOne($data['payment_order_id']);
         $this->account_number = $data['account_number'];
@@ -37,13 +37,24 @@ class PaynetQueue extends BaseObject implements JobInterface
     {
         try {
             set_time_limit(600);
+
+            $paynetModel = Paynet::findOne(['paynet_id' => $this->paynet_id, 'is_active' => true]);
+
+            if (!$paynetModel) {
+                $this->cancelPayment(
+                    ['status' => false, 'message' => 'Faol Paynet token topilmadi!'],
+                    'Paynet'
+                );
+                return;
+            }
+
             $paynet = new PaynetAPI2();
 
             $isPhone = $this->payment_type == Payment::TO_PHONE;
 
             $payResult = $isPhone
-                ? $paynet->payPhone($this->account_number, $this->amount, $this->paynet_id)
-                : $paynet->payCard($this->account_number, $this->amount, $this->paynet_id);
+                ? $paynet->payPhone($this->account_number, $this->amount, $paynetModel->paynet_id, $paynetModel->api_token)
+                : $paynet->payCard($this->account_number, $this->amount, $paynetModel->paynet_id, $paynetModel->api_token);
 
             if ($payResult['status']) {
 

@@ -13,6 +13,7 @@ use backend\queue\PaynetQueue;
 use backend\queue\BroadcastSendJob;
 use common\models\Botuser;
 use common\models\Broadcast;
+use common\models\Paynet;
 use common\models\History;
 use common\models\Payment;
 use common\models\Police;
@@ -1614,6 +1615,12 @@ class BotController extends Controller
             if ($this->paymentStatus()){
                 if ($this->text <= $this->getUserBalance()){
                     $user = Botuser::findOne(['chat_id' => $this->chat_id]);
+                    $activePaynet = Paynet::getRandomActive();
+                    if (!$activePaynet) {
+                        $this->sendMessage($this->getMText('not working payment'));
+                        return;
+                    }
+
                     // User hisobidan pulni yechish
                     $this->minusBalance();
 
@@ -1633,7 +1640,7 @@ class BotController extends Controller
                         'account_number' => $payment->account,
                         'amount' => $payment->amount,
                         'payment_type' => $payment->type,
-                        'paynet_id' => 3,
+                        'paynet_id' => $activePaynet->paynet_id,
                     ];
 
                     $queue_name = "paynetQueue";

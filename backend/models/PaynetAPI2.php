@@ -5,14 +5,14 @@ use yii\base\ErrorException;
 
 class PaynetAPI2
 {
-    public function payPhone($phoneNumber, $amount, $paynetId)
+    public function payPhone($phoneNumber, $amount, $paynetId, $apiToken)
     {
         $curl = curl_init();
         $data = [
             'phoneNumber' => $phoneNumber,
             'amount' => $amount,
             'paynetId' => $paynetId,
-            'secret' => 'sarmin'
+            'secret' => $apiToken
         ];
 
 
@@ -43,14 +43,14 @@ class PaynetAPI2
         ];
     }
 
-    public function payCard($cardNumber, $amount, $paynetId)
+    public function payCard($cardNumber, $amount, $paynetId, $apiToken)
     {
         $curl = curl_init();
         $data = [
             'cardNumber' => $cardNumber,
             'amount' => $amount,
             'paynetId' => $paynetId,
-            'secret' => 'sarmin'
+            'secret' => $apiToken
         ];
 
 
