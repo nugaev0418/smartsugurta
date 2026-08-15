@@ -5,6 +5,7 @@ namespace backend\queue;
 use backend\component\EuroAsiaService;
 use backend\controllers\BotController;
 use backend\gross\GrossOsago;
+use backend\models\EuroAsia;
 use common\models\Botuser;
 use common\models\Police;
 use common\models\SeasonalInsurance;
@@ -122,7 +123,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
 
                 $text = $this->getInsuranceReadyPaymentText($botuser, $police, $result);
 
-                $this->sendMessage($this->chatId, $text);
+                $this->sendMessageWithPaymentButton($this->chatId, $text, $result['gateway'], $result['payment_url']);
 
 
                 return true;
@@ -210,7 +211,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                     $dto->paymentLink
                 );
 
-                $this->sendMessage($this->chatId, $text);
+                $this->sendMessageWithPaymentButton($this->chatId, $text, $this->policyDataEAI['billingGateway'], $dto->paymentLink);
 
                 return true;
 
@@ -269,6 +270,28 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 "ID: %s <b>Sug'urtangiz tayyor! Quyidagi havola orqali %s orqali to'lovni amalga oshiring.</b> \n<a href='%s'>👉 To'lov</a>",
                 $police->id, $gatewayName, $result['payment_url']
             );
+    }
+
+    private function paymentButtonLabel(string $gateway): string
+    {
+        return match (strtoupper($gateway)) {
+            EuroAsia::GATEWAY_PAYME => "💳 Payme bilan to'lash",
+            EuroAsia::GATEWAY_CLICK => "🙂 Click bilan to'lash",
+            default => "💳 " . ucfirst(strtolower($gateway)) . " bilan to'lash",
+        };
+    }
+
+    private function sendMessageWithPaymentButton(string $chatId, string $text, string $gateway, string $paymentUrl): void
+    {
+        $button   = Yii::$app->telegram->buildInlineKeyboardButton($this->paymentButtonLabel($gateway), $paymentUrl);
+        $keyboard = Yii::$app->telegram->buildInlineKeyBoard([[$button]]);
+
+        Yii::$app->telegram->sendMessage([
+            'chat_id'      => $chatId,
+            'text'         => $text,
+            'parse_mode'   => 'HTML',
+            'reply_markup' => $keyboard,
+        ]);
     }
 
     private function sendMessage(string $chatId, string $text): void
