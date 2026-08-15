@@ -50,18 +50,7 @@ class BotController extends Controller
 
     public function actionStart()
     {
-//        http_response_code(200);
-//        echo 'OK';
-//
-//        if (function_exists('fastcgi_finish_request')) {
-//            fastcgi_finish_request();
-//        }
-
-
         $this->telegram = Yii::$app->telegram;
-
-//        dd($this->setWebhook());
-
 
         $this->data = $this->telegram->getData();
         $this->text = $this->telegram->Text();
@@ -71,14 +60,23 @@ class BotController extends Controller
         $this->chat_id = isset($message['chat']['id']) ? $message['chat']['id'] : '';
         $this->chat_id = $this->telegram->ChatID();
 
+        $updateId = $this->telegram->UpdateID();
+        if ($updateId && !Yii::$app->cache->add("tg_update_{$updateId}", 1, 120)) {
+            // Telegram shu update'ni qayta yubordi (webhook javobi kechikkani uchun) — qayta ishlanmaydi
+            return 'ok';
+        }
 
+        $lockKey = "bot_busy_{$this->chat_id}";
+        $locked = is_numeric($this->chat_id) && Yii::$app->mutex->acquire($lockKey, 0);
 
-
-//        $this->sendMessage("Tuzatish ishlari amalga ochirilmoqda iltimos, birozdan keyin ishlatib ko'ring.");
-//        exit();
-
-
-
+        if (is_numeric($this->chat_id) && !$locked) {
+            try {
+                $this->sendMessage("So'rovingiz hali ishlanmoqda, iltimos biroz kuting...");
+            } catch (ErrorException $e) {
+                Yii::error($e->getMessage());
+            }
+            return 'ok';
+        }
 
         try {
             if (is_numeric($this->chat_id)) {
@@ -234,6 +232,10 @@ class BotController extends Controller
         }catch (ErrorException $e){
             Yii::error($e->getMessage());
             $this->response->statusCode = 200;
+        } finally {
+            if ($locked) {
+                Yii::$app->mutex->release($lockKey);
+            }
         }
         return 'ok';
     }
