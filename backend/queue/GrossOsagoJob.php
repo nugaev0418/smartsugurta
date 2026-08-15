@@ -275,9 +275,9 @@ class GrossOsagoJob extends BaseObject implements JobInterface
     private function paymentButtonLabel(string $gateway): string
     {
         return match (strtoupper($gateway)) {
-            EuroAsia::GATEWAY_PAYME => "💳 Payme bilan to'lash",
-            EuroAsia::GATEWAY_CLICK => "🙂 Click bilan to'lash",
-            default => "💳 " . ucfirst(strtolower($gateway)) . " bilan to'lash",
+            EuroAsia::GATEWAY_PAYME => "Payme bilan to'lash",
+            EuroAsia::GATEWAY_CLICK => "Click bilan to'lash",
+            default => ucfirst(strtolower($gateway)) . " bilan to'lash",
         };
     }
 
