@@ -13,7 +13,7 @@ class EuroAsia
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://erp.eai.uz/query',
+            CURLOPT_URL => 'https://erp.eai.uz/query1',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -323,10 +323,6 @@ class EuroAsia
             'query' => $query,
             'variables' => $variables
         ];
-
-
-//        return '{"data":{"createOsagoV2":{"contractId":"39db7471-fa97-4e15-8988-756be3bf3c79","policyId":"a6b1073f-d818-4d7b-932b-546865e962e7","paymentId":"0c69bc89-aa36-4a84-a150-ea04f24c1ece","paymentLink":"https://checkout.paycom.uz/Y3I9VVpTO2M9aHR0cHM6Ly9lcnAuZWFpLnV6L3BvcnRmb2xpby9jb250cmFjdHMvcG9saWN5L2E2YjEwNzNmLWQ4MTgtNGQ3Yi05MzJiLTU0Njg2NWU5NjJlNy9wZGY7bT02ODJhY2M2YzJjM2RkOGQ4MGJhMTFlYTY7YWMub3JkZXJfaWQ9cG9saWN5OmE2YjEwNzNmLWQ4MTgtNGQ3Yi05MzJiLTU0Njg2NWU5NjJlNzthPTE2MDAwMDAw","__typename":"CreateOsagoOutputV2"}}}';
-
 
         return $this->request($data);
 
