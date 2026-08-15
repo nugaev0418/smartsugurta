@@ -20,6 +20,8 @@ class GrossOsagoJob extends BaseObject implements JobInterface
     public int    $chatId          = 0;
     public int    $maxAttempts     = 3;
     public int    $retryDelay      = 10;
+    public int    $maxRounds       = 2;
+    public int    $roundDelay      = 40;
 
     public function __construct(array $data)
     {
@@ -30,16 +32,32 @@ class GrossOsagoJob extends BaseObject implements JobInterface
 
     public function execute($queue): void
     {
-        Yii::info("GrossOsagoJob (pid: " . getmypid() . ") - Started", 'gross');
+        for ($round = 1; $round <= $this->maxRounds; $round++) {
+            Yii::info("GrossOsagoJob (pid: " . getmypid() . ") - {$round}/{$this->maxRounds}-tsikl boshlandi", 'gross');
 
-        if ($this->tryGross()) {
-            return;
+            if ($this->tryGross()) {
+                return;
+            }
+
+            $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz ({$round}/{$this->maxRounds}-tsikl). EuroAsia orqali urinilmoqda...");
+
+            if ($this->tryEuroAsia()) {
+                return;
+            }
+
+            if ($round < $this->maxRounds) {
+                $this->sendMessageAdmin("🔁 {$round}/{$this->maxRounds}-tsikl: Gross va EuroAsia ikkalasi ham muvaffaqiyatsiz. {$this->roundDelay}s dan keyin butun tsikl qayta boshlanadi...");
+                sleep($this->roundDelay);
+            }
         }
 
-        $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz. EuroAsia orqali urinilmoqda...");
+        Yii::error("GrossOsagoJob: {$this->maxRounds} to'liq tsikldan so'ng ham muvaffaqiyatsiz (chatId: {$this->chatId})", 'gross');
+        $this->sendMessageAdmin("🆘 GrossOsagoJob: {$this->maxRounds} to'liq tsikldan so'ng ham muvaffaqiyatsiz! Qo'lda tekshiruv talab qilinadi.");
 
-
-        $this->tryEuroAsia();
+        $this->sendMessage(
+            $this->chatId,
+            "Sug'urta kompaniyasi xizmatlarida uzilish bo'lmoqda, iltimos keyinroq qayta urinib ko'ring, noqulaylik uchun uzur so'raymiz!"
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -138,7 +156,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
     // EUROASIA FALLBACK
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function tryEuroAsia(): void
+    private function tryEuroAsia(): bool
     {
         $lastException = null;
 
@@ -194,7 +212,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
 
                 $this->sendMessage($this->chatId, $text);
 
-                return;
+                return true;
 
             } catch (\Throwable $e) {
                 $lastException = $e;
@@ -216,8 +234,9 @@ class GrossOsagoJob extends BaseObject implements JobInterface
         $this->sendMessageAdmin(
             "❌ EuroAsia ham {$this->maxAttempts} urinishdan so'ng muvaffaqiyatsiz:\n"
             . $lastException->getMessage()
-            . "\n\n🆘 Qo'lda tekshiruv talab qilinadi!"
         );
+
+        return false;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
