@@ -160,6 +160,9 @@ class BotController extends Controller
                 case $this->getMText("Referral system"):
                     $this->showReferralPage();
                     break;
+                case $this->getMText("Prices"):
+                    $this->showPricesPage();
+                    break;
                 case "⚙️ Admin panel":
                     if ($this->isAdmin()) $this->showAdminPage();
                     break;
@@ -262,6 +265,7 @@ class BotController extends Controller
                 ],
                 [
                     $this->telegram->buildKeyboardButton($this->getMText('Referral system')),
+                    $this->telegram->buildKeyboardButton($this->getMText('Prices')),
                 ],
                 [
                     $this->telegram->buildKeyboardButton($this->getMText('Language selection')),
@@ -738,6 +742,13 @@ class BotController extends Controller
     public function showSupportPage(){
 
         $text = $this->getMText('support page message');
+
+        $this->sendMessage($text);
+    }
+
+    public function showPricesPage(){
+
+        $text = $this->getMText('prices page message');
 
         $this->sendMessage($text);
     }
