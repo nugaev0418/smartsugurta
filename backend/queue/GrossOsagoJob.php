@@ -40,14 +40,14 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 return;
             }
 
-            $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz ({$round}/{$this->maxRounds}-tsikl). EuroAsia orqali urinilmoqda...");
+            $this->sendMessageAdmin("⚠️ Gross {$this->maxAttempts} marta muvaffaqiyatsiz ({$round}/{$this->maxRounds}-tsikl).");
 
-            if ($this->tryEuroAsia()) {
-                return;
-            }
+//            if ($this->tryEuroAsia()) {
+//                return;
+//            }
 
             if ($round < $this->maxRounds) {
-                $this->sendMessageAdmin("🔁 {$round}/{$this->maxRounds}-tsikl: Gross va EuroAsia ikkalasi ham muvaffaqiyatsiz. {$this->roundDelay}s dan keyin butun tsikl qayta boshlanadi...");
+                $this->sendMessageAdmin("🔁 {$round}/{$this->maxRounds}-tsikl: Gross muvaffaqiyatsiz. {$this->roundDelay}s dan keyin butun tsikl qayta boshlanadi...");
                 sleep($this->roundDelay);
             }
         }

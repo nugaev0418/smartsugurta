@@ -1312,9 +1312,7 @@ class BotController extends Controller
 // GROSS SUGURTAGA YUBORISH
             $prefix = substr($this->police_data['vehicle']['gov_number'], 0, 2);
 
-            if (!in_array($prefix, ['01', '10'])) {
-
-                $this->sendMessageAdmin('Toshkent Avtomobili emas');
+            if (true) {
 
                 /***** CREATE EAI DATA ****/
 
@@ -1450,13 +1448,11 @@ class BotController extends Controller
                 }
 
 
-
                 $vehicle = [
                     'licenseNumber' => $this->lisenceNumber,
                     'techPassportNumber' => $this->texPassNumber,
                     'techPassportSeria' => $this->texPassSeria
                 ];
-
 
 
 
@@ -1499,10 +1495,6 @@ class BotController extends Controller
                         ],
                     ];
                 }
-
-
-
-
 
 
                 $seasonalInsuranceId = $this->policeSeason['id'];
