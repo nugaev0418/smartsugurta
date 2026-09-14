@@ -3,12 +3,15 @@
 namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
-use backend\component\RelativeType;
+use backend\component\insurance\DriverLookupService;
+use backend\component\insurance\OsagoApplicationData;
+use backend\component\insurance\OsagoSubmissionService;
+use backend\component\insurance\OwnerLookupService;
+use backend\component\insurance\SeasonalInsuranceCatalog;
+use backend\component\insurance\VehicleLookupService;
 use common\models\Botuser;
 use common\models\Police;
-use common\models\SeasonalInsurance;
 use common\models\Text;
-use backend\queue\GrossOsagoJob;
 use DateTime;
 use Yii;
 use yii\web\Controller;
@@ -17,19 +20,14 @@ use yii\web\Response;
 /**
  * JSON API backing the Telegram Mini App (backend/web/webapp).
  *
- * Reuses EuroAsiaService/Botuser/Police/SeasonalInsurance/GrossOsagoJob exactly the
- * way BotController's chat-based flow does, without modifying BotController.php
- * or backend\models\EuroAsia at all.
+ * Reuses EuroAsiaService/Botuser/Police plus the shared
+ * backend\component\insurance\* services (also used by BotController's
+ * chat-based flow) for vehicle/owner/driver lookups and OSAGO submission,
+ * without modifying BotController.php or backend\models\EuroAsia at all.
  */
 class WebAppController extends Controller
 {
     public $enableCsrfValidation = false;
-
-    private const SEASONS = [
-        '1y' => ['id' => '8465a831-850f-4445-a995-ef71195094ab', 'days' => 365, 'period_type' => 7],
-        '6m' => ['id' => '9848096e-cc12-4dbd-893b-41f2cdfc9a0e', 'days' => 180, 'period_type' => 1],
-        '20d' => ['id' => '0d546748-0ba6-43bc-9ce2-1b977ad9e494', 'days' => 20, 'period_type' => 8],
-    ];
 
     // Gross relative_type codes, per BotController.php's own documented mapping
     // (0=qarindosh emas, 1=ota, 2=ona, 3=er, 4=xotin, 5=o'g'il, 6=qiz, 7=aka, 8=uka, 9=opa, 10=singlisi).
@@ -233,7 +231,7 @@ class WebAppController extends Controller
         }
 
         try {
-            $dto = (new EuroAsiaService())->getVehicleOwnerDTO($techSeria, $techNumber, $plateNumber);
+            $dto = (new VehicleLookupService())->lookup($techSeria, $techNumber, $plateNumber);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('vehicle_fetch_error', $lang));
@@ -282,7 +280,7 @@ class WebAppController extends Controller
         }
 
         try {
-            $dto = (new EuroAsiaService())->getPersonByPinflDTO($seria, $number, $pinfl);
+            $dto = (new OwnerLookupService())->lookupByPinfl($seria, $number, $pinfl);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('owner_fetch_error', $lang));
@@ -332,7 +330,7 @@ class WebAppController extends Controller
         }
 
         try {
-            $dto = (new EuroAsiaService())->getPersonByBirthdateDTO($seria, $number, $isoBirthdate);
+            $dto = (new DriverLookupService())->lookup($seria, $number, $isoBirthdate);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('driver_fetch_error', $lang));
@@ -368,10 +366,10 @@ class WebAppController extends Controller
         }
 
         $seasonKey = (string)($input['duration'] ?? '');
-        if (!isset(self::SEASONS[$seasonKey])) {
+        $season = (new SeasonalInsuranceCatalog())->byKey($seasonKey);
+        if ($season === null) {
             return $this->fail($this->msg('duration_invalid', $lang));
         }
-        $season = self::SEASONS[$seasonKey];
 
         $driverRestriction = (bool)($input['driverRestriction'] ?? false);
         $useTerritoryRegionId = (string)($input['useTerritoryRegionId'] ?? '');
@@ -451,7 +449,8 @@ class WebAppController extends Controller
         if (strlen($phoneDigits) < 9) {
             return $this->fail($this->msg('phone_incomplete', $lang));
         }
-        if (!isset(self::SEASONS[$durationKey])) {
+        $season = (new SeasonalInsuranceCatalog())->byKey($durationKey);
+        if ($season === null) {
             return $this->fail($this->msg('duration_invalid', $lang));
         }
         if (!in_array($gateway, ['CLICK', 'PAYME'], true)) {
@@ -468,8 +467,7 @@ class WebAppController extends Controller
             return $this->fail($this->msg('add_at_least_one_driver', $lang));
         }
 
-        $eaiDrivers = [];
-        $grossDrivers = [];
+        $drivers = [];
         foreach ($driversInput as $driver) {
             $dSeria = strtoupper(trim((string)($driver['seria'] ?? '')));
             $dNumber = trim((string)($driver['number'] ?? ''));
@@ -482,108 +480,48 @@ class WebAppController extends Controller
                 return $this->fail($this->msg('driver_birthdate_invalid', $lang));
             }
             $relation = (string)($driver['relation'] ?? '');
-            $relativeType = self::RELATIVE_TYPES[$relation] ?? 0;
-            $eaiDrivers[] = [
-                'passportBirthdate' => $dBirthIso,
-                'passportNumber' => $dNumber,
-                'passportSeria' => $dSeria,
-                'relativeId' => RelativeType::eaiId($relativeType),
-            ];
-            $grossDrivers[] = [
-                'document' => $dSeria . $dNumber,
-                'birth_date' => $dBirth,
-                'relative_type' => $relativeType,
+            $drivers[] = [
+                'seria' => $dSeria,
+                'number' => $dNumber,
+                'birthDateIso' => $dBirthIso,
+                'relativeType' => self::RELATIVE_TYPES[$relation] ?? 0,
             ];
         }
-
-        $season = self::SEASONS[$durationKey];
-        $fullPhone = '998' . substr($phoneDigits, -9);
-
-        $vehicle = [
-            'licenseNumber' => $plateNumber,
-            'techPassportNumber' => $techNumber,
-            'techPassportSeria' => $techSeria,
-        ];
 
         $isOrg = $vehicleData['ownerType'] === 'ORGANIZATION';
 
-        if ($isOrg) {
-            $owner = [
-                'isInsurant' => true,
-                'type' => 'ORGANIZATION',
-                'organization' => ['inn' => $vehicleData['inn'] ?? ''],
-            ];
-            $insurant = [
-                'type' => 'ORGANIZATION',
-                'phoneNumber' => $fullPhone,
-                'organization' => ['inn' => $vehicleData['inn'] ?? ''],
-            ];
-        } else {
-            if (empty($ownerData['seria']) || empty($ownerData['number'])) {
-                return $this->fail($this->msg('owner_data_incomplete', $lang));
-            }
-            $owner = [
-                'isInsurant' => false,
-                'type' => 'PERSON',
-                'person' => [
-                    'passportNumber' => $ownerData['number'],
-                    'passportSeria' => $ownerData['seria'],
-                ],
-            ];
-            $insurant = [
-                'type' => 'PERSON',
-                'phoneNumber' => $fullPhone,
-                'person' => [
-                    'passportNumber' => $ownerData['number'],
-                    'passportSeria' => $ownerData['seria'],
-                    'passportBirthdate' => $ownerData['birthDate'] ?? null,
-                ],
-                'districtId' => $ownerData['districtId'] ?? null,
-            ];
+        if (!$isOrg && (empty($ownerData['seria']) || empty($ownerData['number']))) {
+            return $this->fail($this->msg('owner_data_incomplete', $lang));
         }
 
-        $eaiData = [
-            'vehicle' => $vehicle,
-            'owner' => $owner,
-            'insurant' => $insurant,
-            'drivers' => $eaiDrivers,
-            'billingGateway' => $gateway,
-            'driverRestriction' => $driverRestriction,
-            'seasonalInsuranceId' => $season['id'],
-            'startAt' => $startIso,
-        ];
-
-        $prefix = substr($plateNumber, 0, 2);
-        $isTashkent = in_array($prefix, ['01', '10'], true);
+        $data = new OsagoApplicationData();
+        $data->plateNumber = $plateNumber;
+        $data->techSeria = $techSeria;
+        $data->techNumber = $techNumber;
+        $data->isOrganization = $isOrg;
+        $data->organizationInn = $vehicleData['inn'] ?? '';
+        if (!$isOrg) {
+            $data->ownerSeria = $ownerData['seria'];
+            $data->ownerNumber = $ownerData['number'];
+            $data->ownerBirthDateIso = $ownerData['birthDate'] ?? null;
+            $data->districtId = $ownerData['districtId'] ?? null;
+        }
+        $data->grossPhoneDigits9 = substr($phoneDigits, -9);
+        $data->eaiPhoneNumber = '998' . substr($phoneDigits, -9);
+        $data->driverRestriction = $driverRestriction;
+        $data->startAtIso = $startIso;
+        $data->seasonalInsuranceId = $season['id'];
+        $data->periodType = $season['period_type'];
+        $data->gateway = $gateway;
+        $data->drivers = $drivers;
 
         try {
-            if (!$isTashkent) {
-                $grossOwner = ['is_org' => $isOrg];
-                if (!$isOrg) {
-                    $grossOwner['passport'] = $ownerData['seria'] . $ownerData['number'];
-                }
+            // true: unlike the bot, the Mini App's Tashkent-plate direct-EAI path is
+            // already live and correct in production — see OsagoSubmissionService's
+            // own docblock for why the two callers pass different values here.
+            $result = Yii::createObject(OsagoSubmissionService::class)->submit($data, $botuser, true);
 
-                $policyDataGross = [
-                    'phone' => substr($phoneDigits, -9),
-                    'vehicle' => [
-                        'gov_number' => $plateNumber,
-                        'seria' => $techSeria,
-                        'number' => $techNumber,
-                    ],
-                    'owner' => $grossOwner,
-                    'policy_type' => $driverRestriction ? 'limited' : 'unlimited',
-                    'start_date' => $startDate,
-                    'period_type' => $season['period_type'],
-                    'drivers' => $grossDrivers,
-                    'payment_gateway' => $gateway,
-                ];
-
-                Yii::$app->grossQueue->push(new GrossOsagoJob([
-                    'policyDataGross' => $policyDataGross,
-                    'policyDataEAI' => $eaiData,
-                    'chat_id' => $botuser->chat_id,
-                ]));
-
+            if ($result->mode === 'gross') {
                 return [
                     'success' => true,
                     'mode' => 'gross',
@@ -591,34 +529,18 @@ class WebAppController extends Controller
                 ];
             }
 
-            $dto = (new EuroAsiaService())->createOsagoDTO($eaiData);
-            if (!$dto->success) {
-                return $this->fail($this->msg('create_insurance_error', $lang));
+            if ($result->mode === 'eai') {
+                $this->notifyUser($botuser, $result->police, $result->paymentLink);
+
+                return [
+                    'success' => true,
+                    'mode' => 'eai',
+                    'message' => $this->msg('submitted_eai', $lang),
+                    'policeId' => $result->police->id,
+                ];
             }
 
-            $seasonModel = SeasonalInsurance::find()->where(['seasonId' => $season['id']])->one();
-
-            $police = new Police();
-            $police->policeId = $dto->policyId;
-            $police->user_id = $botuser->id;
-            $police->startAt = date('Y-m-d', strtotime($startDate));
-            $police->paymentLink = $dto->paymentLink;
-            $police->paymentId = $dto->paymentId;
-            $police->gateway = $gateway;
-            $police->amount = 0;
-            $police->driverRestriction = $driverRestriction ? 1 : 0;
-            $police->season_id = $seasonModel->id ?? null;
-            $police->provider_id = Police::PROVIDER_EAI;
-            $police->save(false);
-
-            $this->notifyUser($botuser, $police, $dto->paymentLink);
-
-            return [
-                'success' => true,
-                'mode' => 'eai',
-                'message' => $this->msg('submitted_eai', $lang),
-                'policeId' => $police->id,
-            ];
+            return $this->fail($this->msg('create_insurance_error', $lang));
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('submit_error', $lang));

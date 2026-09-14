@@ -7,4 +7,13 @@ $localParams = file_exists(__DIR__ . '/params-local.php')
 return array_merge([
     'adminEmail' => 'admin@example.com',
     // boshqa umumiy params...
+    'osago' => [
+        // Toshkent (01/10) davlat raqamlarini to'g'ridan-to'g'ri EuroAsia'ga yuborish —
+        // hozircha o'chirilgan: bot hech qachon bu yo'lni ishlatmagan (eski kodda
+        // "if (true)" bilan doim Gross navbatiga yuborilardi), shuning uchun ishga
+        // tushirishdan oldin staging'da alohida sinovdan o'tkazish kerak. WebApp bu
+        // bayroqdan qat'i nazar har doim to'g'ri (Toshkent -> EAI) branch qiladi —
+        // bu uning productionda allaqachon ishlab turgan xatti-harakati.
+        'enableDirectEaiForTashkent' => false,
+    ],
 ], $localParams);
