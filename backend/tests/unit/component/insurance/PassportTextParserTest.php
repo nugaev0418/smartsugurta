@@ -55,4 +55,35 @@ class PassportTextParserTest extends \Codeception\Test\Unit
 
         $this->assertFalse($result['success']);
     }
+
+    public function testLooksLikePersonPassportAcceptsValidSplitFields()
+    {
+        $this->assertTrue($this->parser->looksLikePersonPassport('AD', '6970989'));
+        $this->assertTrue($this->parser->looksLikePersonPassport(' ad ', ' 6970989 '));
+    }
+
+    public function testLooksLikePersonPassportRejectsWrongLengthOrNonDigits()
+    {
+        $this->assertFalse($this->parser->looksLikePersonPassport('ADD', '6970989'));
+        $this->assertFalse($this->parser->looksLikePersonPassport('AD', '697098'));
+        $this->assertFalse($this->parser->looksLikePersonPassport('AD', '69709899'));
+        $this->assertFalse($this->parser->looksLikePersonPassport('AD', '697098X'));
+        $this->assertFalse($this->parser->looksLikePersonPassport('A1', '6970989'));
+        $this->assertFalse($this->parser->looksLikePersonPassport('', ''));
+    }
+
+    public function testLooksLikeTechPassportAcceptsValidSplitFields()
+    {
+        $this->assertTrue($this->parser->looksLikeTechPassport('AAF', '2998242'));
+        $this->assertTrue($this->parser->looksLikeTechPassport(' aaf ', ' 2998242 '));
+    }
+
+    public function testLooksLikeTechPassportRejectsWrongLengthOrNonDigits()
+    {
+        $this->assertFalse($this->parser->looksLikeTechPassport('AA', '2998242'));
+        $this->assertFalse($this->parser->looksLikeTechPassport('AAFF', '2998242'));
+        $this->assertFalse($this->parser->looksLikeTechPassport('AAF', '299824'));
+        $this->assertFalse($this->parser->looksLikeTechPassport('AAF', '29982422'));
+        $this->assertFalse($this->parser->looksLikeTechPassport('AAF', '299824X'));
+    }
 }

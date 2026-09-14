@@ -7,6 +7,7 @@ use backend\component\insurance\DriverLookupService;
 use backend\component\insurance\OsagoApplicationData;
 use backend\component\insurance\OsagoSubmissionService;
 use backend\component\insurance\OwnerLookupService;
+use backend\component\insurance\PassportTextParser;
 use backend\component\insurance\SeasonalInsuranceCatalog;
 use backend\component\insurance\VehicleLookupService;
 use common\models\Botuser;
@@ -28,6 +29,9 @@ use yii\web\Response;
 class WebAppController extends Controller
 {
     public $enableCsrfValidation = false;
+
+    /** Raw request body cap — largest legitimate payload (vehicle+owner+drivers) is well under this. */
+    private const MAX_BODY_BYTES = 65536;
 
     // Gross relative_type codes, per BotController.php's own documented mapping
     // (0=qarindosh emas, 1=ota, 2=ona, 3=er, 4=xotin, 5=o'g'il, 6=qiz, 7=aka, 8=uka, 9=opa, 10=singlisi).
@@ -167,6 +171,14 @@ class WebAppController extends Controller
             'uz' => "Ariza yuborishda xatolik yuz berdi. Iltimos qayta urinib ko'ring",
             'ru' => "Ошибка при отправке заявки. Пожалуйста, попробуйте снова",
         ],
+        'invalid_format' => [
+            'uz' => "Ma'lumot formati noto'g'ri",
+            'ru' => "Неверный формат данных",
+        ],
+        'too_many_drivers' => [
+            'uz' => "Ko'pi bilan 5 ta haydovchi qo'shishingiz mumkin",
+            'ru' => "Можно добавить не более 5 водителей",
+        ],
     ];
 
     /** @var array|null the input() call for the current action, kept for the admin audit log */
@@ -177,6 +189,16 @@ class WebAppController extends Controller
     public function beforeAction($action)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
+
+        // Manual check (not VerbFilter): this controller always answers in JSON,
+        // and a VerbFilter-thrown MethodNotAllowedHttpException would go through
+        // Yii's generic error handler instead of this JSON contract.
+        if (!Yii::$app->request->isPost) {
+            Yii::$app->response->statusCode = 405;
+            Yii::$app->response->data = ['success' => false, 'message' => 'Method not allowed'];
+            return false;
+        }
+
         return parent::beforeAction($action);
     }
 
@@ -229,6 +251,9 @@ class WebAppController extends Controller
         if ($techSeria === '' || $techNumber === '' || $plateNumber === '') {
             return $this->fail($this->msg('fill_all_fields', $lang));
         }
+        if (!(new PassportTextParser())->looksLikeTechPassport($techSeria, $techNumber)) {
+            return $this->fail($this->msg('invalid_format', $lang));
+        }
 
         try {
             $dto = (new VehicleLookupService())->lookup($techSeria, $techNumber, $plateNumber);
@@ -278,6 +303,9 @@ class WebAppController extends Controller
         if ($seria === '' || $number === '' || $pinfl === '') {
             return $this->fail($this->msg('fill_all_fields', $lang));
         }
+        if (!(new PassportTextParser())->looksLikePersonPassport($seria, $number)) {
+            return $this->fail($this->msg('invalid_format', $lang));
+        }
 
         try {
             $dto = (new OwnerLookupService())->lookupByPinfl($seria, $number, $pinfl);
@@ -322,6 +350,9 @@ class WebAppController extends Controller
 
         if ($seria === '' || $number === '' || $birthDate === '') {
             return $this->fail($this->msg('fill_all_fields', $lang));
+        }
+        if (!(new PassportTextParser())->looksLikePersonPassport($seria, $number)) {
+            return $this->fail($this->msg('invalid_format', $lang));
         }
 
         $isoBirthdate = $this->ymdToIso($birthDate);
@@ -407,13 +438,20 @@ class WebAppController extends Controller
         $input = $this->input();
 
         if (!empty($input['clientDebug'])) {
-            Yii::warning('clientDebug: ' . json_encode($input['clientDebug'], JSON_UNESCAPED_UNICODE), 'webapp');
+            $debugJson = json_encode($input['clientDebug'], JSON_UNESCAPED_UNICODE);
+            if (mb_strlen($debugJson) > 2000) {
+                $debugJson = mb_substr($debugJson, 0, 2000) . '...(qisqartirildi)';
+            }
+            Yii::warning('clientDebug: ' . $debugJson, 'webapp');
         }
 
         $telegramUser = $this->requireTelegramUser($input);
         $lang = $this->lang($telegramUser);
         if (!$telegramUser) {
             return $this->fail($this->msg('telegram_verify_failed', $lang));
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail($this->msg('rate_limited', $lang));
         }
 
         // A captured/replayed request (e.g. resent from Postman) carries the exact same
@@ -443,6 +481,9 @@ class WebAppController extends Controller
         if ($plateNumber === '' || $techSeria === '' || $techNumber === '' || empty($vehicleData['ownerType'])) {
             return $this->fail($this->msg('vehicle_data_incomplete', $lang));
         }
+        if (!(new PassportTextParser())->looksLikeTechPassport($techSeria, $techNumber)) {
+            return $this->fail($this->msg('invalid_format', $lang));
+        }
         if (!in_array($insuranceType, ['limited', 'unlimited'], true)) {
             return $this->fail($this->msg('insurance_type_choose', $lang));
         }
@@ -466,6 +507,9 @@ class WebAppController extends Controller
         if ($driverRestriction && empty($driversInput)) {
             return $this->fail($this->msg('add_at_least_one_driver', $lang));
         }
+        if (count($driversInput) > 5) {
+            return $this->fail($this->msg('too_many_drivers', $lang));
+        }
 
         $drivers = [];
         foreach ($driversInput as $driver) {
@@ -474,6 +518,9 @@ class WebAppController extends Controller
             $dBirth = trim((string)($driver['birthDate'] ?? ''));
             if ($dSeria === '' || $dNumber === '' || $dBirth === '') {
                 return $this->fail($this->msg('drivers_data_incomplete', $lang));
+            }
+            if (!(new PassportTextParser())->looksLikePersonPassport($dSeria, $dNumber)) {
+                return $this->fail($this->msg('invalid_format', $lang));
             }
             $dBirthIso = $this->ymdToIso($dBirth);
             if (!$dBirthIso) {
@@ -492,6 +539,9 @@ class WebAppController extends Controller
 
         if (!$isOrg && (empty($ownerData['seria']) || empty($ownerData['number']))) {
             return $this->fail($this->msg('owner_data_incomplete', $lang));
+        }
+        if (!$isOrg && !(new PassportTextParser())->looksLikePersonPassport($ownerData['seria'], $ownerData['number'])) {
+            return $this->fail($this->msg('invalid_format', $lang));
         }
 
         $data = new OsagoApplicationData();
@@ -722,6 +772,13 @@ class WebAppController extends Controller
     private function input(): array
     {
         $raw = Yii::$app->request->getRawBody();
+        if (strlen($raw) > self::MAX_BODY_BYTES) {
+            // Oversized body: treat as empty rather than throw — each action's
+            // existing "field is missing" checks already reject this cleanly,
+            // keeping every response inside the same JSON contract.
+            $this->lastInput = [];
+            return [];
+        }
         $decoded = $raw !== '' ? json_decode($raw, true) : null;
         $input = is_array($decoded) ? $decoded : (array)Yii::$app->request->post();
         $this->lastInput = $input;

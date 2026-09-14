@@ -3,10 +3,12 @@
 namespace backend\component\insurance;
 
 /**
- * Free-text passport parsing rules, extracted verbatim from
- * BotController::checkPassport()/parsePassportData(). Only the bot's
- * chat-based flow needs this — the Mini App collects seria/number/birthDate
- * as separate form fields already.
+ * Passport/tech-passport format rules shared by both surfaces: the bot's
+ * free-text chat flow (looksLikePassport()/splitPassport()/parse(), extracted
+ * verbatim from BotController::checkPassport()/parsePassportData()) and the
+ * Mini App's already-split form fields (looksLikePersonPassport()/
+ * looksLikeTechPassport()), which previously only checked for non-empty
+ * values with no format/length validation.
  */
 class PassportTextParser
 {
@@ -15,6 +17,28 @@ class PassportTextParser
         $value = strtoupper(trim($value));
 
         return (bool) preg_match('/^[A-Z]{2}\d{7}$/', $value);
+    }
+
+    /**
+     * Same shape as looksLikePassport() (2 letters + 7 digits) but for
+     * seria/number already split into separate fields, as the Mini App's
+     * JSON API receives them.
+     */
+    public function looksLikePersonPassport(string $seria, string $number): bool
+    {
+        return (bool) preg_match('/^[A-Z]{2}$/', strtoupper(trim($seria)))
+            && (bool) preg_match('/^\d{7}$/', trim($number));
+    }
+
+    /**
+     * Vehicle tech-passport shape (3 letters + 7 digits), matching
+     * BotController::handleTexPassPage()'s combined regex
+     * (/^([A-Z]{3})(\d{7})$/), split into separate seria/number fields.
+     */
+    public function looksLikeTechPassport(string $seria, string $number): bool
+    {
+        return (bool) preg_match('/^[A-Z]{3}$/', strtoupper(trim($seria)))
+            && (bool) preg_match('/^\d{7}$/', trim($number));
     }
 
     /**
