@@ -106,11 +106,12 @@ yoki Gross navbatiga qo'yish qarori + `Police` yozuvini saqlash). WebApp o'zinin
 
 **Muhim**: `OsagoSubmissionService::submit()` Toshkent (`01`/`10`) davlat raqamlarini EAI'ga to'g'ridan-
 to'g'ri yuborish-yubormaslikni CHAQIRUVCHIDAN oladi (`$allowDirectEaiForTashkent` parametri, ichki flag
-emas) — WebApp bu yerda har doim `true` beradi (uning productionda ishlab turgan, to'g'ri xatti-harakati),
-`ConfirmStageHandler` esa `Yii::$app->params['osago']['enableDirectEaiForTashkent']`ni o'qiydi
-(`backend/config/params.php`da, **standart `false`** — bot hech qachon bu yo'lni ishlatmagan, shuning
-uchun ishga tushirish alohida qaror). Ikkalasi ham "flag `false` bo'lsa har doim Gross"ni bir xil
-`isTashkentPlate()` tekshiruvi orqali amalga oshiradi.
+emas) — hozir **ikkala chaqiruvchi ham har doim `false` beradi**: `ConfirmStageHandler`
+`Yii::$app->params['osago']['enableDirectEaiForTashkent']`ni o'qiydi (`backend/config/params.php`da,
+standart `false`), `WebAppController::actionSubmit()` esa endi `false`ni to'g'ridan-to'g'ri beradi (ilgari
+har doim `true` bergan, ya'ni Toshkent raqamlarini to'g'ridan-to'g'ri EAI'ga yuborgan — bu endi kerak
+emas deb qaror qilindi, EAI muammolari tufayli). Demak amaliyotda barcha polisalar — Toshkent ham —
+Gross navbatiga boradi; ikkalasi ham buni bir xil `isTashkentPlate()` tekshiruvi orqali amalga oshiradi.
 
 Root darajadagi `web-app/` papka — bu Mini App'ning Claude Design orqali chizilgan maketi
 (`Avtosugurta MiniApp.dc.html` + `support.js`), ishlab turgan kod emas.

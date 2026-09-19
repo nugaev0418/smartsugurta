@@ -566,10 +566,10 @@ class WebAppController extends Controller
         $data->drivers = $drivers;
 
         try {
-            // true: unlike the bot, the Mini App's Tashkent-plate direct-EAI path is
-            // already live and correct in production — see OsagoSubmissionService's
-            // own docblock for why the two callers pass different values here.
-            $result = Yii::createObject(OsagoSubmissionService::class)->submit($data, $botuser, true);
+            // false: all submissions, Tashkent plates included, go through the Gross
+            // queue — the Mini App used to take a direct-EAI path for Tashkent plates,
+            // but that's no longer wanted; now it matches the bot's own behavior.
+            $result = Yii::createObject(OsagoSubmissionService::class)->submit($data, $botuser, false);
 
             if ($result->mode === 'gross') {
                 return [

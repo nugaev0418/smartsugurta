@@ -17,12 +17,14 @@ use Yii;
  * and the Police-creation shape are written once.
  *
  * $allowDirectEaiForTashkent is an explicit parameter, not a value this
- * class reads for itself, because the two callers currently need different
- * answers: WebAppController's Tashkent-plate direct-EAI path is already
- * live and correct in production (always true there); BotController's chat
- * flow never took that path before this refactor (always false by default,
- * see params.php 'osago.enableDirectEaiForTashkent') and its rollout is a
- * separate decision.
+ * class reads for itself. Both current callers (BotController's
+ * ConfirmStageHandler and WebAppController::actionSubmit()) pass false —
+ * all submissions, Tashkent plates included, go through the Gross queue.
+ * WebApp used to pass true for a Tashkent-plate direct-EAI path, but that
+ * behavior is no longer wanted (see params.php
+ * 'osago.enableDirectEaiForTashkent'). The parameter stays explicit rather
+ * than being read internally so a future caller can still opt back in
+ * independently, once EAI is reliable again.
  */
 class OsagoSubmissionService
 {
