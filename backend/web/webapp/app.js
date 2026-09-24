@@ -103,7 +103,7 @@
     mvCheckBtn: { uz: "✅ Tekshirish", ru: "✅ Проверить" },
     mvCheckingBtn: { uz: "🔎 Tekshirilmoqda...", ru: "🔎 Проверка..." },
     mvNewInsuranceBtn: { uz: "➕ Yangi sug'urta qilish", ru: "➕ Оформить новую страховку" },
-    mvBackToList: { uz: "⬅️ Ro'yxatga qaytish", ru: "⬅️ Назад к списку" },
+    mvBackToList: { uz: "‹ Ro'yxatga qaytish", ru: "‹ Назад к списку" },
     mvEmptyList: { uz: "Hali avtomobil saqlanmagan", ru: "Пока нет сохранённых автомобилей" },
     mvNoPolicies: { uz: "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan", ru: "Действующая страховка не найдена или ещё не проверялась" },
     mvChecking: { uz: "🔎 Tekshirilmoqda, natija tez orada shu yerga chiqadi...", ru: "🔎 Идёт проверка, результат скоро появится здесь..." },
@@ -977,10 +977,9 @@
     state.mv.vehicles.forEach(function (vehicle) {
       var row = document.createElement('div');
       row.className = 'mv-vehicle-row';
-      var subBits = [vehicle.model, vehicle.vehicleTypeName].filter(Boolean);
       row.innerHTML =
         '<div><div class="mv-gov">' + escapeHtml(vehicle.govNumber) + '</div>' +
-        (subBits.length ? '<div class="mv-sub">' + escapeHtml(subBits.join(' · ')) + '</div>' : '') + '</div>' +
+        (vehicle.model ? '<div class="mv-sub">' + escapeHtml(vehicle.model) + '</div>' : '') + '</div>' +
         '<div class="mv-chevron">›</div>';
       row.addEventListener('click', function () { openVehicleDetail(vehicle); });
       container.appendChild(row);

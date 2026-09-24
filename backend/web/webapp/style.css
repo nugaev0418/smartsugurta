@@ -160,8 +160,8 @@ input.date-native {
 /* Footer */
 .footer { display: flex; gap: 12px; padding: 14px 18px; border-top: 1px solid #ECECEE; background: #fff; }
 .btn { flex: 1; padding: 15px; border-radius: 8px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: block; }
+.btn:disabled { opacity: .55; cursor: default; }
 .btn-primary { background: #3390EC; color: #fff; }
-.btn-primary:disabled { opacity: .55; }
 .btn-secondary { background: #fff; color: #0b0b0c; border: 1px solid #E4E4E7; flex: 0.7; }
 
 /* Success screen */
@@ -206,6 +206,8 @@ input.date-native {
 .mv-vehicle-row .mv-chevron { color: #C7C7CC; font-size: 18px; }
 .mv-empty { color: #707579; font-size: 14px; text-align: center; padding: 24px 0; }
 .mv-link { text-align: center; color: #3390EC; font-size: 14.5px; font-weight: 600; cursor: pointer; padding: 6px; }
+.mv-back-link { text-align: left; color: #3390EC; font-size: 14px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+.mv-detail-actions { display: flex; gap: 10px; }
 .mv-policy-row { border: 1px solid #ECECEE; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
 .mv-policy-row .mv-policy-company { font-size: 14.5px; font-weight: 700; }
 .mv-policy-row .mv-policy-series { font-size: 13px; color: #707579; margin-top: 2px; }
