@@ -96,6 +96,8 @@
     },
 
     mvHeaderTitle: { uz: "Mening avtolarim", ru: "Мои автомобили" },
+    openMyVehiclesBtn: { uz: "🚗 Mening avtolarim", ru: "🚗 Мои автомобили" },
+    mvGoToFormBtn: { uz: "➕ Yangi ariza", ru: "➕ Новая заявка" },
     mvAddBtn: { uz: "+ Avtomobil qo'shish", ru: "+ Добавить автомобиль" },
     mvAddSubmitBtn: { uz: "Qo'shish", ru: "Добавить" },
     mvCheckBtn: { uz: "✅ Tekshirish", ru: "✅ Проверить" },
@@ -1049,6 +1051,17 @@
   }
 
   function wireMyVehicles() {
+    $('openMyVehiclesBtn').addEventListener('click', function () {
+      showScreen('myVehiclesScreen');
+      mvGoToView('list');
+      loadMyVehicles();
+    });
+    $('mvGoToFormBtn').addEventListener('click', function () {
+      stopMvPolling();
+      showScreen('formScreen');
+      render();
+    });
+
     $('mvAddBtn').addEventListener('click', function () { mvGoToView('add'); });
     $('mvAddCancelBtn').addEventListener('click', function () { mvGoToView('list'); });
     $('mvBackToListBtn').addEventListener('click', function () { mvGoToView('list'); loadMyVehicles(); });
