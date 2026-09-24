@@ -186,6 +186,10 @@ class WebAppController extends Controller
             'uz' => "Bu bo'lim hozircha faqat administratorlar uchun",
             'ru' => "Этот раздел пока доступен только администраторам",
         ],
+        'check_cooldown' => [
+            'uz' => "Keyingi tekshirish %d daqiqadan keyin mumkin",
+            'ru' => "Следующая проверка возможна через %d минут",
+        ],
     ];
 
     /** @var array|null the input() call for the current action, kept for the admin audit log */
@@ -728,6 +732,8 @@ class WebAppController extends Controller
             'vehicle' => $this->vehicleSummary($vehicle),
             'checkStatus' => $vehicle->ersp_check_status,
             'checkedAt' => $vehicle->ersp_checked_at,
+            'canCheck' => $vehicle->canCheckNow(),
+            'nextCheckInSeconds' => $vehicle->secondsUntilNextCheck(),
             'policies' => array_map(function (array $policy) use ($client) {
                 return [
                     'company' => $policy['Sug‘urta kompaniya'] ?? null,
@@ -759,7 +765,13 @@ class WebAppController extends Controller
             return $this->fail($this->msg('vehicle_not_found', $lang));
         }
 
+        if (!$vehicle->canCheckNow()) {
+            $minutes = (int) ceil($vehicle->secondsUntilNextCheck() / 60);
+            return $this->fail(sprintf($this->msg('check_cooldown', $lang), max(1, $minutes)));
+        }
+
         $vehicle->ersp_check_status = SavedVehicle::ERSP_STATUS_CHECKING;
+        $vehicle->ersp_checked_at = date('Y-m-d H:i:s');
         $vehicle->save(false);
 
         Yii::$app->erspQueue->push(new ErspLookupJob([

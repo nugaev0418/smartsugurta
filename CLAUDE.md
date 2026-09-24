@@ -132,17 +132,28 @@ Root darajadagi `web-app/` papka — bu Mini App'ning Claude Design orqali chizi
 
 ### Queue'lar (yii2-queue, DB drayver)
 
-Uchta alohida DB-navbat kanali bor, har biri `console/config/main.php` va `backend/config/main.php` da
+To'rtta alohida DB-navbat kanali bor, har biri `console/config/main.php` va `backend/config/main.php` da
 komponent sifatida e'lon qilingan va `bootstrap`da ishga tushiriladi:
 
 - `paynetQueue` → `backend/queue/PaynetQueue.php` — Paynet orqali to'lovni amalga oshiradi.
 - `grossQueue` → `backend/queue/GrossOsagoJob.php` — Gross Insurance orqali polisa yaratadi.
 - `broadcastQueue` → `backend/queue/BroadcastSendJob.php` / `BroadcastDeleteJob.php` — botdan ommaviy
   xabar yuborish/o'chirish.
+- `erspQueue` → `backend/queue/ErspLookupJob.php` — "Mening avtolarim" bo'limidagi "✅ Tekshirish"
+  bosilganda ersp.e-osgo.uz'dan (captcha+AI, `backend/ersp/ErspVehicleClient.php`) avtomobilning
+  amaldagi sug'urta polisalarini olib, `SavedVehicle` (`common/models/SavedVehicle.php`) jadvaliga
+  keshlaydi. Bitta avtomobil uchun ketma-ket tekshiruvlar orasida kamida
+  `SavedVehicle::CHECK_COOLDOWN_SECONDS` (10 daqiqa) o'tishi shart — bu ersp.e-osgo.uz'ga ortiqcha
+  so'rov yubormaslik uchun; cheklov `SavedVehicle::canCheckNow()`/`secondsUntilNextCheck()` orqali
+  bot (`MyVehiclesStageHandler::triggerCheck()`) va Web App (`WebAppController::actionMyVehicleCheck()`)
+  ikkalasida ham serverda tekshiriladi (faqat "✅ Tekshirish" tugmasini yashirish yetarli emas).
 
 Navbat workerlari alohida process sifatida ishga tushiriladi (`php yii <kanal>/listen`), veb-so'rov ichida
 emas — shuning uchun to'lov/polisa natijasi bot foydalanuvchisiga **keyinroq**, worker ishini tugatgach
 yuboriladi (odatda `Yii::$app->telegram->sendMessage()` to'g'ridan-to'g'ri yoki `BotMessenger` orqali).
+Productionda `erspQueue` uchun tayyor systemd xizmat fayli bor: `deploy/systemd/ersp-queue.service`
+(o'rnatish/boshqarish buyruqlari fayl ichidagi izohlarda) — kodni serverga deploy qilgandan keyin
+`systemctl restart ersp-queue` bilan workerni qayta ishga tushirish kerak.
 
 ### Paynet to'lov integratsiyasi
 

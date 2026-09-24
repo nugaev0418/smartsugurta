@@ -31,6 +31,12 @@ class SavedVehicle extends \yii\db\ActiveRecord
     const ERSP_STATUS_FAILED   = 'failed';
 
     /**
+     * Bir avtomobilni ketma-ket ikki tekshiruvi orasidagi minimal oraliq —
+     * ersp.e-osgo.uz'ga (captcha+AI orqali) ortiqcha so'rov yubormaslik uchun.
+     */
+    const CHECK_COOLDOWN_SECONDS = 600; // 10 daqiqa
+
+    /**
      * {@inheritdoc}
      */
     public static function tableName()
@@ -101,5 +107,37 @@ class SavedVehicle extends \yii\db\ActiveRecord
         $decoded = json_decode($this->ersp_policies_json, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Hozir yangi ERSP tekshiruvi so'ralishi mumkinmi — tekshiruv allaqachon
+     * ketayotgan bo'lsa yoki oxirgi so'rovdan beri CHECK_COOLDOWN_SECONDS
+     * o'tmagan bo'lsa false. `ersp_checked_at` "oxirgi so'ralgan vaqt"
+     * ma'nosida ishlatiladi (trigger vaqtida yoziladi — natija muvaffaqiyatli/
+     * muvaffaqiyatsiz bo'lishidan qat'i nazar, shu bilan spam-urinishlarning
+     * oldi olinadi).
+     */
+    public function canCheckNow(): bool
+    {
+        if ($this->ersp_check_status === self::ERSP_STATUS_CHECKING) {
+            return false;
+        }
+
+        return $this->secondsUntilNextCheck() <= 0;
+    }
+
+    /**
+     * Keyingi tekshiruvgacha necha soniya qolganini qaytaradi (0 — hozir
+     * so'rasa bo'ladi).
+     */
+    public function secondsUntilNextCheck(): int
+    {
+        if (!$this->ersp_checked_at) {
+            return 0;
+        }
+
+        $elapsed = time() - strtotime($this->ersp_checked_at);
+
+        return max(0, self::CHECK_COOLDOWN_SECONDS - $elapsed);
     }
 }

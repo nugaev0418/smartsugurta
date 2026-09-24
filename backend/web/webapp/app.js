@@ -115,6 +115,7 @@
     },
     quickPickLabel: { uz: "🚗 Saqlangan avtomobilni tanlang", ru: "🚗 Выберите сохранённый автомобиль" },
     quickPickDivider: { uz: "yoki qo'lda kiriting", ru: "или введите вручную" },
+    mvCooldownNote: { uz: "⏳ Keyingi tekshirish %d daqiqadan keyin mumkin", ru: "⏳ Следующая проверка возможна через %d минут" },
   };
 
   // Display labels for RELATIONS/gateway values that are also submitted to the
@@ -1074,9 +1075,12 @@
     var policiesEl = $('mvDetailPolicies');
     var checkBtn = $('mvCheckBtn');
 
+    var cooldownEl = $('mvCooldownNote');
+
     if (!detail) {
       policiesEl.innerHTML = '';
       checkBtn.disabled = true;
+      cooldownEl.classList.add('hidden');
       return;
     }
 
@@ -1084,9 +1088,19 @@
       policiesEl.innerHTML = '<div class="checking"><span class="spinner"></span> ' + escapeHtml(t('mvChecking')) + '</div>';
       checkBtn.disabled = true;
       checkBtn.textContent = t('mvCheckingBtn');
+      cooldownEl.classList.add('hidden');
     } else {
-      checkBtn.disabled = false;
+      var canCheck = detail.canCheck !== false;
+      checkBtn.disabled = !canCheck;
       checkBtn.textContent = t('mvCheckBtn');
+
+      if (!canCheck && detail.nextCheckInSeconds > 0) {
+        var minutes = Math.max(1, Math.ceil(detail.nextCheckInSeconds / 60));
+        cooldownEl.textContent = t('mvCooldownNote').replace('%d', minutes);
+        cooldownEl.classList.remove('hidden');
+      } else {
+        cooldownEl.classList.add('hidden');
+      }
 
       if (detail.policies && detail.policies.length) {
         policiesEl.innerHTML = detail.policies.map(function (p) {

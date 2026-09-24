@@ -232,8 +232,15 @@ class MyVehiclesStageHandler implements BotStageInterface
             $lines[] = "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan.";
         }
 
+        if (!$vehicle->canCheckNow()) {
+            $minutes = (int) ceil($vehicle->secondsUntilNextCheck() / 60);
+            if ($minutes > 0) {
+                $lines[] = "⏳ Keyingi tekshirish {$minutes} daqiqadan keyin mumkin.";
+            }
+        }
+
         $option = [];
-        if ($vehicle->ersp_check_status !== SavedVehicle::ERSP_STATUS_CHECKING) {
+        if ($vehicle->canCheckNow()) {
             $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_CHECK)];
         }
         $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_NEW_INSURANCE)];
@@ -318,7 +325,15 @@ class MyVehiclesStageHandler implements BotStageInterface
 
     private function triggerCheck(BotContext $ctx, SavedVehicle $vehicle): void
     {
+        // BTN_CHECK cooldown paytida showDetail()da ko'rsatilmaydi — bu shunchaki
+        // qo'shimcha himoya (masalan eski klaviatura orqali qayta bosilsa).
+        if (!$vehicle->canCheckNow()) {
+            $this->showDetail($ctx);
+            return;
+        }
+
         $vehicle->ersp_check_status = SavedVehicle::ERSP_STATUS_CHECKING;
+        $vehicle->ersp_checked_at   = date('Y-m-d H:i:s');
         $vehicle->save(false);
 
         Yii::$app->erspQueue->push(new ErspLookupJob([

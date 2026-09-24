@@ -1,0 +1,44 @@
+# "Mening avtolarim" bo'limidagi ERSP (ersp.e-osgo.uz) sug'urta tekshiruvi
+# navbatini (erspQueue, console/config/main.php) doimiy tinglaydigan systemd
+# xizmati.
+#
+# O'rnatish (production serverda, root sifatida):
+#   1. Kerak bo'lsa User=/Group=/WorkingDirectory=/ExecStart= yo'llarini real
+#      deploy yo'liga va php-fpm ishlaydigan foydalanuvchiga moslang
+#      (quyidagi qiymatlar odatiy Debian/Ubuntu nginx+php-fpm sozlamasiga mos).
+#   2. cp deploy/systemd/ersp-queue.service /etc/systemd/system/ersp-queue.service
+#   3. systemctl daemon-reload
+#   4. systemctl enable --now ersp-queue
+#
+# Boshqarish:
+#   systemctl status ersp-queue        # holatini ko'rish
+#   systemctl restart ersp-queue       # kodni deploy qilgandan keyin qayta ishga tushirish
+#   journalctl -u ersp-queue -f        # jonli loglarni kuzatish
+#
+# CLAUDE.md dagi "Ishlab chiqish buyruqlari"da `php yii erspQueue/listen`
+# qo'lda ishga tushirish uchun ko'rsatilgan — bu fayl production'da xuddi shu
+# buyruqni doimiy (avtomatik qayta ishga tushadigan) jarayon sifatida
+# ishlatadi.
+
+[Unit]
+Description=Smart Sug'urta - ERSP sug'urta tekshiruvi navbati (erspQueue)
+After=network.target mysql.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/smart
+ExecStart=/usr/bin/php /var/www/smart/yii erspQueue/listen --verbose=1
+
+# ErspLookupJob captcha+AI orqali sinaydi (ErspVehicleClient::lookupVehiclePolicies()
+# ichida captcha noto'g'ri chiqsa maxAttempts=5 gachа qayta uradi) — bitta ish
+# bir necha o'n soniya davom etishi mumkin, shuning uchun to'xtatishga vaqt beriladi.
+TimeoutStopSec=90
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
