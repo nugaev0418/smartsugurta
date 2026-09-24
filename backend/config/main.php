@@ -67,6 +67,11 @@ return [
             'channel' => 'broadcast',
             'mutexTimeout' => 60
         ],
+        'erspQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'ersp',
+            'mutexTimeout' => 120
+        ],
         'telegram' => [
             'class' => '\common\eleirbag\Telegram',
             'bot_token' => getenv('TELEGRAM_BOT_TOKEN'),

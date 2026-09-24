@@ -97,6 +97,16 @@ class Botuser extends \yii\db\ActiveRecord
         return $this->hasMany(static::class, ['referred_by' => 'id']);
     }
 
+    /**
+     * Gets query for [[SavedVehicles]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSavedVehicles()
+    {
+        return $this->hasMany(SavedVehicle::class, ['botuser_id' => 'id']);
+    }
+
     public static function generateReferralCode(): string
     {
         do {

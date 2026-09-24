@@ -10,8 +10,11 @@ use backend\component\insurance\OwnerLookupService;
 use backend\component\insurance\PassportTextParser;
 use backend\component\insurance\SeasonalInsuranceCatalog;
 use backend\component\insurance\VehicleLookupService;
+use backend\ersp\ErspVehicleClient;
+use backend\queue\ErspLookupJob;
 use common\models\Botuser;
 use common\models\Police;
+use common\models\SavedVehicle;
 use common\models\Text;
 use DateTime;
 use Yii;
@@ -178,6 +181,10 @@ class WebAppController extends Controller
         'too_many_drivers' => [
             'uz' => "Ko'pi bilan 5 ta haydovchi qo'shishingiz mumkin",
             'ru' => "Можно добавить не более 5 водителей",
+        ],
+        'admin_only' => [
+            'uz' => "Bu bo'lim hozircha faqat administratorlar uchun",
+            'ru' => "Этот раздел пока доступен только администраторам",
         ],
     ];
 
@@ -595,6 +602,214 @@ class WebAppController extends Controller
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('submit_error', $lang));
         }
+    }
+
+    // ── "MENING AVTOLARIM" (hozircha faqat admin) ───────────────────────
+    //
+    // Bu to'rtta action ataylab requireTelegramUser()'dan tashqari
+    // isAdminTelegramUser()ni ham tekshiradi — actionVehicle()/actionOwner()/
+    // actionDriver()/actionCalculate()/actionSubmit()dan farqli o'laroq (ular
+    // ataylab har qanday tasdiqlangan Telegram foydalanuvchisiga ochiq, chunki
+    // bular umumiy OSAGO oqimining o'zi). "Mening avtolarim" esa hozircha
+    // faqat adminlarga mo'ljallangan real ruxsat chegarasi (havola oshkor
+    // bo'lib qolsa ham begona odam avtomobil saqlay olmasligi va ERSP/OpenAI
+    // xarajatiga sabab bo'lmasligi uchun), shuning uchun serverda ham
+    // tekshiriladi — faqat interfeysda yashirish yetarli emas.
+
+    public function actionMyVehiclesList()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
+        if (!$telegramUser) {
+            return $this->fail($this->msg('no_access', $lang));
+        }
+        if (!$this->isAdminTelegramUser($telegramUser)) {
+            return $this->fail($this->msg('admin_only', $lang));
+        }
+
+        $botuser = Botuser::findOne(['chat_id' => $telegramUser['id']]);
+        $vehicles = $botuser ? $botuser->getSavedVehicles()->orderBy(['id' => SORT_DESC])->all() : [];
+
+        return [
+            'success' => true,
+            'vehicles' => array_map([$this, 'vehicleSummary'], $vehicles),
+        ];
+    }
+
+    public function actionMyVehiclesAdd()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
+        if (!$telegramUser) {
+            return $this->fail($this->msg('no_access', $lang));
+        }
+        if (!$this->isAdminTelegramUser($telegramUser)) {
+            return $this->fail($this->msg('admin_only', $lang));
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail($this->msg('rate_limited', $lang));
+        }
+
+        $techSeria = strtoupper(trim((string)($input['techSeria'] ?? '')));
+        $techNumber = trim((string)($input['techNumber'] ?? ''));
+        $govNumber = str_replace(' ', '', strtoupper(trim((string)($input['govNumber'] ?? ''))));
+
+        if ($techSeria === '' || $techNumber === '' || $govNumber === '') {
+            return $this->fail($this->msg('fill_all_fields', $lang));
+        }
+        if (!(new PassportTextParser())->looksLikeTechPassport($techSeria, $techNumber)) {
+            return $this->fail($this->msg('invalid_format', $lang));
+        }
+
+        try {
+            $dto = (new VehicleLookupService())->lookup($techSeria, $techNumber, $govNumber);
+        } catch (\Throwable $e) {
+            Yii::error($e->getMessage(), 'webapp');
+            return $this->fail($this->msg('vehicle_fetch_error', $lang));
+        }
+
+        if (!$dto->success) {
+            return $this->fail($this->msg('vehicle_not_found', $lang));
+        }
+
+        $botuser = Botuser::findOne(['chat_id' => $telegramUser['id']]);
+        if (!$botuser) {
+            return $this->fail($this->msg('start_bot_first', $lang));
+        }
+
+        $vehicle = SavedVehicle::find()
+            ->where(['botuser_id' => $botuser->id, 'gov_number' => $govNumber])
+            ->one() ?: new SavedVehicle([
+                'botuser_id' => $botuser->id,
+                'gov_number' => $govNumber,
+            ]);
+
+        $vehicle->tech_passport_seria = $techSeria;
+        $vehicle->tech_passport_number = $techNumber;
+        $vehicle->owner_type = $dto->ownerType;
+        $vehicle->model = $dto->model;
+        $vehicle->vehicle_type_name = $dto->vehicleTypeName;
+        $vehicle->save(false);
+
+        return [
+            'success' => true,
+            'vehicle' => $this->vehicleSummary($vehicle),
+        ];
+    }
+
+    /**
+     * ERSP'ga so'rov YUBORMAYDI — faqat `saved_vehicle` jadvalidagi oxirgi
+     * "✅ Tekshirish"dan qolgan keshni o'qiydi (§4/§5 rejasidagi kabi).
+     */
+    public function actionMyVehicleDetail()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
+        if (!$telegramUser) {
+            return $this->fail($this->msg('no_access', $lang));
+        }
+        if (!$this->isAdminTelegramUser($telegramUser)) {
+            return $this->fail($this->msg('admin_only', $lang));
+        }
+
+        $vehicle = $this->findOwnSavedVehicle($input, $telegramUser);
+        if (!$vehicle) {
+            return $this->fail($this->msg('vehicle_not_found', $lang));
+        }
+
+        $client = new ErspVehicleClient();
+        $activePolicies = $client->filterActivePolicies($vehicle->getCachedPolicies());
+
+        return [
+            'success' => true,
+            'vehicle' => $this->vehicleSummary($vehicle),
+            'checkStatus' => $vehicle->ersp_check_status,
+            'checkedAt' => $vehicle->ersp_checked_at,
+            'policies' => array_map(function (array $policy) use ($client) {
+                return [
+                    'company' => $policy['Sug‘urta kompaniya'] ?? null,
+                    'seriesNumber' => $policy['Polis seriyasi va raqami'] ?? null,
+                    'expiresAt' => $client->endDateLabel($policy),
+                    'remainingLabel' => $client->remainingLabel($policy),
+                ];
+            }, $activePolicies),
+        ];
+    }
+
+    public function actionMyVehicleCheck()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
+        if (!$telegramUser) {
+            return $this->fail($this->msg('no_access', $lang));
+        }
+        if (!$this->isAdminTelegramUser($telegramUser)) {
+            return $this->fail($this->msg('admin_only', $lang));
+        }
+        if (!$this->rateLimitOk($telegramUser['id'])) {
+            return $this->fail($this->msg('rate_limited', $lang));
+        }
+
+        $vehicle = $this->findOwnSavedVehicle($input, $telegramUser);
+        if (!$vehicle) {
+            return $this->fail($this->msg('vehicle_not_found', $lang));
+        }
+
+        $vehicle->ersp_check_status = SavedVehicle::ERSP_STATUS_CHECKING;
+        $vehicle->save(false);
+
+        Yii::$app->erspQueue->push(new ErspLookupJob([
+            'savedVehicleId' => $vehicle->id,
+            'chatId' => (string) $telegramUser['id'],
+        ]));
+
+        return ['success' => true, 'checking' => true];
+    }
+
+    private function vehicleSummary(SavedVehicle $vehicle): array
+    {
+        return [
+            'id' => $vehicle->id,
+            'govNumber' => $vehicle->gov_number,
+            'techPassportSeria' => $vehicle->tech_passport_seria,
+            'techPassportNumber' => $vehicle->tech_passport_number,
+            'model' => $vehicle->model,
+            'vehicleTypeName' => $vehicle->vehicle_type_name,
+        ];
+    }
+
+    /** Faqat chaqiruvchi Telegram foydalanuvchisiga tegishli saqlangan avtomobilni qaytaradi (boshqa botuserning yozuviga id orqali kirib bo'lmaydi). */
+    private function findOwnSavedVehicle(array $input, array $telegramUser): ?SavedVehicle
+    {
+        $vehicleId = (int)($input['vehicleId'] ?? 0);
+        if ($vehicleId <= 0) {
+            return null;
+        }
+
+        $botuser = Botuser::findOne(['chat_id' => $telegramUser['id']]);
+        if (!$botuser) {
+            return null;
+        }
+
+        return SavedVehicle::find()
+            ->where(['id' => $vehicleId, 'botuser_id' => $botuser->id])
+            ->one();
+    }
+
+    private function isAdminTelegramUser(array $telegramUser): bool
+    {
+        if ((string)($telegramUser['id'] ?? '') === (string) BotController::ADMIN_ID) {
+            return true;
+        }
+
+        return (bool) Botuser::find()
+            ->select(['is_admin'])
+            ->where(['chat_id' => $telegramUser['id'] ?? null])
+            ->scalar();
     }
 
     private function notifyUser(Botuser $botuser, Police $police, string $paymentLink): void

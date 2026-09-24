@@ -27,6 +27,7 @@ php yii queue/listen                  # default queue kanalini tinglash (agar ke
 php yii paynetQueue/listen             # Paynet to'lov navbatini ishga tushirish
 php yii grossQueue/listen              # Gross Insurance polisa navbatini ishga tushirish
 php yii broadcastQueue/listen          # bot orqali ommaviy xabar yuborish navbati
+php yii erspQueue/listen               # "Mening avtolarim" ERSP sug'urta tekshiruvi navbati
 ```
 
 ### Testlar (Codeception + PHPUnit)

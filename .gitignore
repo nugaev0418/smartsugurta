@@ -51,3 +51,6 @@ backend/config/params-local.php
 
 backend/gross/gross_cookie.txt
 backend/gross/captcha.jpg
+
+backend/ersp/cookie/
+backend/ersp/captcha/

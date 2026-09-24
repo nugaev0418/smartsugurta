@@ -47,6 +47,7 @@ class MainMenuStageHandler implements BotStageInterface
                 ],
             ];
             if ($ctx->isAdmin()) {
+                $option[] = [$ctx->telegram->buildKeyboardButton("🚗 Mening avtolarim")];
                 $option[] = [$ctx->telegram->buildKeyboardButton("⚙️ Admin panel")];
             }
             $ctx->sendMessageWithKeyborad($text, $option);
@@ -58,6 +59,7 @@ class MainMenuStageHandler implements BotStageInterface
                     "🌐 Web App orqali sug'urta rasmiylashtirish",
                     [[
                         ['text' => '🌐 Web App', 'web_app' => ['url' => Url::base('https') . '/webapp/index.html']],
+                        ['text' => '🚗 Mening avtolarim', 'web_app' => ['url' => Url::base('https') . '/webapp/index.html?screen=my-vehicles']],
                     ]]
                 );
             }

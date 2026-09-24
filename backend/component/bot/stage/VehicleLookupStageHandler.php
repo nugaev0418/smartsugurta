@@ -120,20 +120,32 @@ class VehicleLookupStageHandler implements BotStageInterface
         $ctx->police_data = $police_data;
         $ctx->sendMessageAdmin(json_encode($police_data));
 
-        $dto = (new VehicleLookupService())->lookup(
-            $ctx->texPassSeria,
-            $ctx->texPassNumber,
-            $ctx->lisenceNumber
-        );
+        $this->lookupAndProceed($ctx, $ctx->texPassSeria, $ctx->texPassNumber, $ctx->lisenceNumber);
+    }
+
+    /**
+     * VehicleLookupService orqali EAI'dan avtomobil/egasini so'rab, muvaffaqiyatli
+     * bo'lsa keyingi bosqichga (egasi yoki haydovchi cheklovi) o'tkazadi. Qo'lda
+     * kiritilgan (handleTexPass) va "Mening avtolarim"dan saqlangan avtomobil bilan
+     * boshlangan ("Yangi sug'urta qilish") oqimlarning ikkalasi ham shu metoddan
+     * foydalanadi.
+     */
+    public function lookupAndProceed(BotContext $ctx, string $seria, string $number, string $govNumber): bool
+    {
+        $ctx->lisenceNumber = $govNumber;
+        $ctx->texPassSeria  = $seria;
+        $ctx->texPassNumber = $number;
+
+        $dto = (new VehicleLookupService())->lookup($seria, $number, $govNumber);
         $ctx->logApiCall('VehicleLookupService::lookup', [
-            'techPassportSeria' => $ctx->texPassSeria,
-            'techPassportNumber' => $ctx->texPassNumber,
-            'licenseNumber' => $ctx->lisenceNumber,
+            'techPassportSeria' => $seria,
+            'techPassportNumber' => $number,
+            'licenseNumber' => $govNumber,
         ], $dto);
 
         if (!$dto->success) {
             $this->mainMenu->show($ctx, ['text' => $ctx->getMText('Not found transport')]);
-            return;
+            return false;
         }
 
         $ctx->vehicleData = $dto;
@@ -155,6 +167,8 @@ class VehicleLookupStageHandler implements BotStageInterface
 
             $this->driverRestrictionStage->showDriverRestriction($ctx);
         }
+
+        return true;
     }
 
     public function showTexPassNumber(BotContext $ctx): void

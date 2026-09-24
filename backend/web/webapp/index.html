@@ -212,6 +212,52 @@
 
   </section>
 
+  <section id="myVehiclesScreen" class="screen hidden">
+    <div class="header">
+      <div class="header-top">
+        <span data-i18n="mvHeaderTitle">Mening avtolarim</span>
+        <span></span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div id="mvListView">
+        <div id="mvVehiclesList"></div>
+        <div class="add-driver" id="mvAddBtn" data-i18n="mvAddBtn">+ Avtomobil qo'shish</div>
+      </div>
+
+      <div id="mvAddView" class="hidden" style="display:flex;flex-direction:column;gap:18px;">
+        <div class="field">
+          <label data-i18n="labelPlate">Davlat raqami</label>
+          <input type="text" id="mvGovNumber" placeholder="01 A 123 BB" maxlength="9">
+        </div>
+        <div class="field">
+          <label data-i18n="labelTech">Texpassport seriya va raqami</label>
+          <div class="row">
+            <input type="text" id="mvTechSeria" placeholder="AAG" maxlength="3" style="flex:0.9">
+            <input type="text" id="mvTechNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
+          </div>
+        </div>
+        <div class="error" id="mvAddErr"></div>
+        <button type="button" class="btn btn-primary" id="mvAddSubmitBtn" data-i18n="mvAddSubmitBtn">Qo'shish</button>
+        <div class="mv-link" id="mvAddCancelBtn" data-i18n="backBtn">Orqaga</div>
+      </div>
+
+      <div id="mvDetailView" class="hidden" style="display:flex;flex-direction:column;gap:18px;">
+        <div class="owner-card">
+          <div class="owner-icon">🚗</div>
+          <div id="mvDetailGovNumber" class="owner-label"></div>
+        </div>
+        <div id="mvDetailPolicies"></div>
+        <button type="button" class="btn btn-primary" id="mvCheckBtn" data-i18n="mvCheckBtn">Tekshirish</button>
+        <button type="button" class="btn btn-primary" id="mvNewInsuranceBtn" data-i18n="mvNewInsuranceBtn">Yangi sug'urta qilish</button>
+        <div class="mv-link" id="mvBackToListBtn" data-i18n="mvBackToList">Ro'yxatga qaytish</div>
+      </div>
+
+    </div>
+  </section>
+
 </div>
 
 <script src="app.js"></script>

@@ -15,6 +15,7 @@ class BotUserState
 {
     private string $chatId;
     private ?array $dataCache = null;
+    private ?bool $isAdminCache = null;
 
     public function __construct(string $chatId)
     {
@@ -25,6 +26,18 @@ class BotUserState
     {
         $data = $this->getDataArray();
         return $data[$key] ?? $default;
+    }
+
+    public function isAdmin(): bool
+    {
+        if ($this->isAdminCache === null) {
+            $this->isAdminCache = (bool) Botuser::find()
+                ->select(['is_admin'])
+                ->where(['chat_id' => $this->chatId])
+                ->scalar();
+        }
+
+        return $this->isAdminCache;
     }
 
     public function set(string $key, $value): void

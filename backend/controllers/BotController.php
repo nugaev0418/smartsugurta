@@ -15,6 +15,7 @@ use backend\component\bot\stage\DriverRestrictionStageHandler;
 use backend\component\bot\stage\DriverStageHandler;
 use backend\component\bot\stage\LangStageHandler;
 use backend\component\bot\stage\MainMenuStageHandler;
+use backend\component\bot\stage\MyVehiclesStageHandler;
 use backend\component\bot\stage\OwnerStageHandler;
 use backend\component\bot\stage\PhoneStageHandler;
 use backend\component\bot\stage\PoliceSeasonStageHandler;
@@ -187,6 +188,12 @@ class BotController extends Controller
         $admin = Yii::createObject(AdminStageHandler::class);
         $registry->register(Pages::ADMIN_PAGE, $admin);
         $registry->register(Pages::BROADCAST_PAGE, $admin);
+
+        $myVehicles = Yii::createObject(MyVehiclesStageHandler::class);
+        $registry->register(Pages::MY_VEHICLES, $myVehicles);
+        $registry->register(Pages::MY_VEHICLE_ADD_GOV_NUMBER, $myVehicles);
+        $registry->register(Pages::MY_VEHICLE_ADD_TEXPASS, $myVehicles);
+        $registry->register(Pages::MY_VEHICLE_DETAIL, $myVehicles);
 
         return $registry;
     }

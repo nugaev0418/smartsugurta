@@ -15,6 +15,7 @@ return [
         'paynetQueue',
         'grossQueue',
         'broadcastQueue',
+        'erspQueue',
     ],
     'controllerNamespace' => 'console\controllers',
     'aliases' => [
@@ -47,6 +48,10 @@ return [
         'broadcastQueue' => [
             'class' => \yii\queue\db\Queue::class,
             'channel' => 'broadcast',
+        ],
+        'erspQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'ersp',
         ],
         'log' => [
             'targets' => [

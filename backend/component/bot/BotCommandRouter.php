@@ -5,6 +5,7 @@ namespace backend\component\bot;
 use backend\component\bot\stage\AdminStageHandler;
 use backend\component\bot\stage\LangStageHandler;
 use backend\component\bot\stage\MainMenuStageHandler;
+use backend\component\bot\stage\MyVehiclesStageHandler;
 use backend\component\bot\stage\PhoneStageHandler;
 use backend\component\bot\stage\WalletStageHandler;
 use common\models\Setting;
@@ -26,7 +27,8 @@ class BotCommandRouter
         private MainMenuStageHandler $mainMenu,
         private PhoneStageHandler $phoneStage,
         private WalletStageHandler $walletStage,
-        private AdminStageHandler $adminStage
+        private AdminStageHandler $adminStage,
+        private MyVehiclesStageHandler $myVehiclesStage
     ) {
     }
 
@@ -82,6 +84,9 @@ class BotCommandRouter
                 return true;
             case "📢 Xabar yuborish":
                 if ($ctx->isAdmin()) $this->adminStage->showBroadcastWait($ctx);
+                return true;
+            case "🚗 Mening avtolarim":
+                if ($ctx->isAdmin()) $this->myVehiclesStage->show($ctx);
                 return true;
             default:
                 return false;

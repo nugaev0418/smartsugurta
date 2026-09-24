@@ -27,5 +27,10 @@ class Pages
 
         ADMIN_PAGE     = 'admin_page',
         BROADCAST_PAGE = 'broadcast_page',
-        MAIN           = 'main_page';
+        MAIN           = 'main_page',
+
+        MY_VEHICLES               = 'my_vehicles_page',
+        MY_VEHICLE_ADD_GOV_NUMBER = 'my_vehicle_add_gov_number_page',
+        MY_VEHICLE_ADD_TEXPASS    = 'my_vehicle_add_texpass_page',
+        MY_VEHICLE_DETAIL         = 'my_vehicle_detail_page';
 }

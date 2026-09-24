@@ -94,6 +94,18 @@
       uz: "Barcha haydovchilar ma'lumotini to'liq va to'g'ri kiriting",
       ru: "Введите данные всех водителей полностью и правильно",
     },
+
+    mvHeaderTitle: { uz: "Mening avtolarim", ru: "Мои автомобили" },
+    mvAddBtn: { uz: "+ Avtomobil qo'shish", ru: "+ Добавить автомобиль" },
+    mvAddSubmitBtn: { uz: "Qo'shish", ru: "Добавить" },
+    mvCheckBtn: { uz: "✅ Tekshirish", ru: "✅ Проверить" },
+    mvCheckingBtn: { uz: "🔎 Tekshirilmoqda...", ru: "🔎 Проверка..." },
+    mvNewInsuranceBtn: { uz: "➕ Yangi sug'urta qilish", ru: "➕ Оформить новую страховку" },
+    mvBackToList: { uz: "⬅️ Ro'yxatga qaytish", ru: "⬅️ Назад к списку" },
+    mvEmptyList: { uz: "Hali avtomobil saqlanmagan", ru: "Пока нет сохранённых автомобилей" },
+    mvNoPolicies: { uz: "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan", ru: "Действующая страховка не найдена или ещё не проверялась" },
+    mvChecking: { uz: "🔎 Tekshirilmoqda, natija tez orada shu yerga chiqadi...", ru: "🔎 Идёт проверка, результат скоро появится здесь..." },
+    mvExpiresPrefix: { uz: "Tugash sanasi:", ru: "Дата окончания:" },
   };
 
   // Display labels for RELATIONS/gateway values that are also submitted to the
@@ -145,6 +157,16 @@
     premium: null,
     gateway: 'CLICK',
     submitting: false,
+
+    mv: {
+      view: 'list', // 'list' | 'add' | 'detail'
+      loading: false,
+      vehicles: [],
+      addGovNumber: '', addTechSeria: '', addTechNumber: '',
+      selected: null, // {id, govNumber, techPassportSeria, techPassportNumber, model, vehicleTypeName}
+      detail: null, // {checkStatus, checkedAt, policies}
+      pollTimer: null,
+    },
   };
 
   function t(key) {
@@ -818,6 +840,246 @@
   }
 
   // ---------------------------------------------------------------------
+  // "Mening avtolarim" — saqlangan avtomobillar (admin-only, ?screen=my-vehicles
+  // orqali ochiladi). Sug'urtalar ro'yxati doim `saved_vehicle` jadvalidagi
+  // keshdan o'qiladi (actionMyVehicleDetail ERSP'ga so'rov yubormaydi) — qayta
+  // tekshirish faqat "✅ Tekshirish" tugmasi orqali qo'lda so'raladi.
+  // ---------------------------------------------------------------------
+
+  function isMyVehiclesMode() {
+    return new URLSearchParams(location.search).get('screen') === 'my-vehicles';
+  }
+
+  function showScreen(id) {
+    ['successScreen', 'formScreen', 'myVehiclesScreen'].forEach(function (s) {
+      var el = $(s);
+      if (el) el.classList.toggle('hidden', s !== id);
+    });
+  }
+
+  function mvGoToView(view) {
+    stopMvPolling();
+    state.mv.view = view;
+    renderMv();
+  }
+
+  function loadMyVehicles() {
+    state.mv.loading = true;
+    renderMv();
+    return api('my-vehicles-list', {})
+      .then(function (res) {
+        state.mv.loading = false;
+        if (!res.success) { showToast(res.message || t('toastGenericError')); renderMv(); return; }
+        state.mv.vehicles = res.vehicles || [];
+        renderMv();
+      })
+      .catch(function () {
+        state.mv.loading = false;
+        showToast(t('toastGenericError'));
+        renderMv();
+      });
+  }
+
+  function openVehicleDetail(vehicle) {
+    state.mv.selected = vehicle;
+    state.mv.detail = null;
+    mvGoToView('detail');
+    loadVehicleDetail();
+  }
+
+  function loadVehicleDetail() {
+    return api('my-vehicle-detail', { vehicleId: state.mv.selected.id })
+      .then(function (res) {
+        if (!res.success) { showToast(res.message || t('toastGenericError')); mvGoToView('list'); return; }
+        state.mv.detail = res;
+        if (res.checkStatus === 'checking') {
+          startMvPolling();
+        } else {
+          stopMvPolling();
+        }
+        renderMv();
+      })
+      .catch(function () { showToast(t('toastGenericError')); });
+  }
+
+  function startMvPolling() {
+    stopMvPolling();
+    var elapsed = 0;
+    state.mv.pollTimer = setInterval(function () {
+      elapsed += 3000;
+      if (elapsed >= 60000 || state.mv.view !== 'detail') { stopMvPolling(); return; }
+      loadVehicleDetail();
+    }, 3000);
+  }
+
+  function stopMvPolling() {
+    if (state.mv.pollTimer) {
+      clearInterval(state.mv.pollTimer);
+      state.mv.pollTimer = null;
+    }
+  }
+
+  function renderMv() {
+    $('mvListView').classList.toggle('hidden', state.mv.view !== 'list');
+    $('mvAddView').classList.toggle('hidden', state.mv.view !== 'add');
+    $('mvDetailView').classList.toggle('hidden', state.mv.view !== 'detail');
+
+    if (state.mv.view === 'list') renderMvList();
+    if (state.mv.view === 'add') renderMvAdd();
+    if (state.mv.view === 'detail') renderMvDetail();
+  }
+
+  function renderMvList() {
+    var container = $('mvVehiclesList');
+    container.innerHTML = '';
+
+    if (state.mv.loading) {
+      container.innerHTML = '<div class="mv-empty">' + escapeHtml(t('checkingText')) + '</div>';
+      return;
+    }
+
+    if (!state.mv.vehicles.length) {
+      container.innerHTML = '<div class="mv-empty">' + escapeHtml(t('mvEmptyList')) + '</div>';
+      return;
+    }
+
+    state.mv.vehicles.forEach(function (vehicle) {
+      var row = document.createElement('div');
+      row.className = 'mv-vehicle-row';
+      var subBits = [vehicle.model, vehicle.vehicleTypeName].filter(Boolean);
+      row.innerHTML =
+        '<div><div class="mv-gov">' + escapeHtml(vehicle.govNumber) + '</div>' +
+        (subBits.length ? '<div class="mv-sub">' + escapeHtml(subBits.join(' · ')) + '</div>' : '') + '</div>' +
+        '<div class="mv-chevron">›</div>';
+      row.addEventListener('click', function () { openVehicleDetail(vehicle); });
+      container.appendChild(row);
+    });
+  }
+
+  function renderMvAdd() {
+    $('mvGovNumber').value = state.mv.addGovNumber;
+    $('mvTechSeria').value = state.mv.addTechSeria;
+    $('mvTechNumber').value = state.mv.addTechNumber;
+    $('mvAddErr').textContent = '';
+  }
+
+  function renderMvDetail() {
+    var vehicle = state.mv.selected;
+    var detail = state.mv.detail;
+    if (!vehicle) return;
+
+    $('mvDetailGovNumber').textContent = vehicle.govNumber;
+
+    var policiesEl = $('mvDetailPolicies');
+    var checkBtn = $('mvCheckBtn');
+
+    if (!detail) {
+      policiesEl.innerHTML = '';
+      checkBtn.disabled = true;
+      return;
+    }
+
+    if (detail.checkStatus === 'checking') {
+      policiesEl.innerHTML = '<div class="checking"><span class="spinner"></span> ' + escapeHtml(t('mvChecking')) + '</div>';
+      checkBtn.disabled = true;
+      checkBtn.textContent = t('mvCheckingBtn');
+    } else {
+      checkBtn.disabled = false;
+      checkBtn.textContent = t('mvCheckBtn');
+
+      if (detail.policies && detail.policies.length) {
+        policiesEl.innerHTML = detail.policies.map(function (p) {
+          return '<div class="mv-policy-row">' +
+            '<div class="mv-policy-company">' + escapeHtml(p.company || '') + '</div>' +
+            '<div class="mv-policy-series">' + escapeHtml(p.seriesNumber || '') + '</div>' +
+            (p.remainingLabel ? '<div class="mv-policy-remaining">' + escapeHtml(p.remainingLabel) + '</div>' : '') +
+            (p.expiresAt ? '<div class="mv-policy-expires">' + escapeHtml(t('mvExpiresPrefix')) + ' ' + escapeHtml(fmtDate(p.expiresAt)) + '</div>' : '') +
+            '</div>';
+        }).join('');
+      } else {
+        policiesEl.innerHTML = '<div class="mv-empty">' + escapeHtml(t('mvNoPolicies')) + '</div>';
+      }
+    }
+  }
+
+  function submitAddVehicle() {
+    var govNumber = state.mv.addGovNumber.replace(/\s/g, '');
+    if (!govNumber || govNumber.length < 6 || state.mv.addTechSeria.length < 3 || state.mv.addTechNumber.length < 7) {
+      $('mvAddErr').textContent = t('errTechIncomplete');
+      return;
+    }
+
+    api('my-vehicles-add', {
+      govNumber: govNumber,
+      techSeria: state.mv.addTechSeria,
+      techNumber: state.mv.addTechNumber,
+    }).then(function (res) {
+      if (!res.success) { $('mvAddErr').textContent = res.message || t('toastGenericError'); return; }
+      state.mv.addGovNumber = ''; state.mv.addTechSeria = ''; state.mv.addTechNumber = '';
+      mvGoToView('list');
+      loadMyVehicles();
+    }).catch(function () {
+      $('mvAddErr').textContent = t('toastGenericError');
+    });
+  }
+
+  function startNewInsuranceForSavedVehicle(vehicle) {
+    state.checking = true;
+    api('vehicle', {
+      plateNumber: vehicle.govNumber,
+      techSeria: vehicle.techPassportSeria,
+      techNumber: vehicle.techPassportNumber,
+    }).then(function (res) {
+      state.checking = false;
+      if (!res.success) { showToast(res.message || t('toastVehicleNotFound')); return; }
+
+      state.plateNumber = vehicle.govNumber;
+      state.techSeria = vehicle.techPassportSeria;
+      state.techNumber = vehicle.techPassportNumber;
+      state.vehicleData = res;
+      state.step = 2;
+
+      stopMvPolling();
+      showScreen('formScreen');
+      render();
+    }).catch(function () {
+      state.checking = false;
+      showToast(t('toastGenericError'));
+    });
+  }
+
+  function wireMyVehicles() {
+    $('mvAddBtn').addEventListener('click', function () { mvGoToView('add'); });
+    $('mvAddCancelBtn').addEventListener('click', function () { mvGoToView('list'); });
+    $('mvBackToListBtn').addEventListener('click', function () { mvGoToView('list'); loadMyVehicles(); });
+
+    $('mvGovNumber').addEventListener('input', function (e) {
+      state.mv.addGovNumber = e.target.value.toUpperCase();
+      e.target.value = state.mv.addGovNumber;
+    });
+    $('mvTechSeria').addEventListener('input', function (e) {
+      state.mv.addTechSeria = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+      e.target.value = state.mv.addTechSeria;
+    });
+    $('mvTechNumber').addEventListener('input', function (e) {
+      state.mv.addTechNumber = e.target.value.replace(/[^0-9]/g, '');
+      e.target.value = state.mv.addTechNumber;
+    });
+    $('mvAddSubmitBtn').addEventListener('click', submitAddVehicle);
+
+    $('mvCheckBtn').addEventListener('click', function () {
+      api('my-vehicle-check', { vehicleId: state.mv.selected.id }).then(function (res) {
+        if (!res.success) { showToast(res.message || t('toastGenericError')); return; }
+        loadVehicleDetail();
+      }).catch(function () { showToast(t('toastGenericError')); });
+    });
+
+    $('mvNewInsuranceBtn').addEventListener('click', function () {
+      startNewInsuranceForSavedVehicle(state.mv.selected);
+    });
+  }
+
+  // ---------------------------------------------------------------------
   // Static wiring
   // ---------------------------------------------------------------------
 
@@ -916,8 +1178,15 @@
       })
       .then(function () {
         wireStatic();
+        wireMyVehicles();
         applyStaticI18n();
-        render();
+
+        if (isMyVehiclesMode()) {
+          showScreen('myVehiclesScreen');
+          loadMyVehicles();
+        } else {
+          render();
+        }
       });
   }
 

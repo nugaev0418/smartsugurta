@@ -58,7 +58,7 @@ class BotContext
 
     public function isAdmin(): bool
     {
-        return (string)$this->chat_id === (string)$this->adminId;
+        return (string)$this->chat_id === (string)$this->adminId || $this->state->isAdmin();
     }
 
     public function getMText($keyword)
