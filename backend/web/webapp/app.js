@@ -108,6 +108,7 @@
     mvNoPolicies: { uz: "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan", ru: "Действующая страховка не найдена или ещё не проверялась" },
     mvChecking: { uz: "🔎 Tekshirilmoqda, natija tez orada shu yerga chiqadi...", ru: "🔎 Идёт проверка, результат скоро появится здесь..." },
     mvExpiresPrefix: { uz: "Tugash sanasi:", ru: "Дата окончания:" },
+    mvViewPolicyLink: { uz: "Polisni ko'rish →", ru: "Посмотреть полис →" },
     mvDeleteBtn: { uz: "🗑 O'chirish", ru: "🗑 Удалить" },
     mvDeleteConfirm: {
       uz: "Rostdan ham bu avtomobilni ro'yxatdan o'chirmoqchimisiz?",
@@ -1111,6 +1112,7 @@
             '<div class="mv-policy-series">' + escapeHtml(p.seriesNumber || '') + '</div>' +
             (p.remainingLabel ? '<div class="mv-policy-remaining">' + escapeHtml(p.remainingLabel) + '</div>' : '') +
             (p.expiresAt ? '<div class="mv-policy-expires">' + escapeHtml(t('mvExpiresPrefix')) + ' ' + escapeHtml(fmtDate(p.expiresAt)) + '</div>' : '') +
+            (p.pdfLink ? '<a class="mv-policy-link" href="' + escapeHtml(p.pdfLink) + '" target="_blank" rel="noopener">' + escapeHtml(t('mvViewPolicyLink')) + '</a>' : '') +
             '</div>';
         }).join('');
       } else {

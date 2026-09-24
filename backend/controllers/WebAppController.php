@@ -740,6 +740,7 @@ class WebAppController extends Controller
                     'seriesNumber' => $policy['Polis seriyasi va raqami'] ?? null,
                     'expiresAt' => $client->endDateLabel($policy),
                     'remainingLabel' => $client->remainingLabel($policy),
+                    'pdfLink' => $policy['pdf_link'] ?? null,
                 ];
             }, $activePolicies),
         ];
