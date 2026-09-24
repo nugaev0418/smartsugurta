@@ -15,13 +15,16 @@ use Exception;
 class ErspVehicleClient
 {
     private string $baseUrl = 'https://ersp.e-osgo.uz';
-    private string $cookieDir = __DIR__ . '/cookie';
-    private string $captchaDir = __DIR__ . '/captcha';
+    private string $cookieDir;
+    private string $captchaDir;
     private string $cookieFile;
     private string $userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36';
 
     public function __construct(?string $cookieFile = null)
     {
+        $this->cookieDir  = $this->resolveRuntimeDir('cookie');
+        $this->captchaDir = $this->resolveRuntimeDir('captcha');
+
         if (!is_dir($this->cookieDir)) {
             mkdir($this->cookieDir, 0777, true);
         }
@@ -39,6 +42,27 @@ class ErspVehicleClient
         if (!file_exists($this->cookieFile)) {
             file_put_contents($this->cookieFile, '');
         }
+    }
+
+    ////////////////////////////////////////////////////////
+    // COOKIE/CAPTCHA FAYLLARI QAYERGA YOZILADI
+    //
+    // Production'da `backend/ersp/` ilova kodi bilan birga deploy qilinadi
+    // va odatda faqat deploy foydalanuvchisiga yozish huquqi beriladi — veb-
+    // server (php-fpm) foydalanuvchisi u yerga mkdir/yoza olmaydi. Shuning
+    // uchun Yii ilovasi ichida ishlaganda (BotController/WebAppController/
+    // queue job — bularning barchasi shunday) har doim yozish huquqi
+    // bo'ladigan `@runtime` (backend/runtime/) ostiga yoziladi. Yii
+    // bootstrap qilinmagan holatda (masalan qo'lda `php -r`/test skripti
+    // orqali sinovda) esa __DIR__ga qaytadi.
+    ////////////////////////////////////////////////////////
+    private function resolveRuntimeDir(string $sub): string
+    {
+        if (class_exists(\Yii::class) && \Yii::$app !== null) {
+            return \Yii::getAlias("@runtime/ersp/{$sub}");
+        }
+
+        return __DIR__ . '/' . $sub;
     }
 
     ////////////////////////////////////////////////////////
