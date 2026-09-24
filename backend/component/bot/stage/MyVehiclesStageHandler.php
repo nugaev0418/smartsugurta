@@ -24,8 +24,8 @@ class MyVehiclesStageHandler implements BotStageInterface
 {
     private const BTN_ADD           = "➕ Avtomobil qo'shish";
     private const BTN_BACK_TO_LIST  = "⬅️ Ro'yxatga qaytish";
-    private const BTN_CHECK         = "✅ Tekshirish";
-    private const BTN_NEW_INSURANCE = "➕ Yangi sug'urta qilish";
+    private const BTN_CHECK         = "Tekshirish";
+    private const BTN_NEW_INSURANCE = "Yangi sug'urta qilish";
 
     public function __construct(
         private PhoneStageHandler $phoneStage
