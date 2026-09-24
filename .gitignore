@@ -54,3 +54,6 @@ backend/gross/captcha.jpg
 
 backend/ersp/cookie/
 backend/ersp/captcha/
+
+/police.php
+/police_result.html
