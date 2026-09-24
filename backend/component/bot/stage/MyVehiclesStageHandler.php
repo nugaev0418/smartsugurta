@@ -27,7 +27,7 @@ class MyVehiclesStageHandler implements BotStageInterface
     private const BTN_BACK_TO_LIST   = "⬅️ Ro'yxatga qaytish";
     private const BTN_CHECK          = "Tekshirish";
     private const BTN_NEW_INSURANCE  = "Yangi sug'urta qilish";
-    private const BTN_DELETE         = "🗑 O'chirish";
+    private const BTN_DELETE         = "🗑 Avtomobilni o'chirish";
     private const BTN_DELETE_CONFIRM = "✅ Ha, o'chirish";
     private const BTN_DELETE_CANCEL  = "❌ Yo'q, bekor qilish";
 
@@ -225,9 +225,10 @@ class MyVehiclesStageHandler implements BotStageInterface
             $lines[] = "🔎 Tekshirilmoqda, natija tez orada shu yerga yuboriladi...";
         } elseif ($activePolicies) {
             $lines[] = "Amaldagi sug'urtalar:";
-            foreach ($activePolicies as $policy) {
-                $lines[] = '• ' . ($client->remainingLabel($policy) ?? "muddat noma'lum");
-            }
+            $lines[] = implode("\n\n", array_map(
+                fn(array $policy) => $this->formatPolicy($client, $policy),
+                $activePolicies
+            ));
         } else {
             $lines[] = "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan.";
         }
@@ -239,15 +240,39 @@ class MyVehiclesStageHandler implements BotStageInterface
             }
         }
 
-        $option = [];
+        $firstRow = [];
         if ($vehicle->canCheckNow()) {
-            $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_CHECK)];
+            $firstRow[] = $ctx->telegram->buildKeyboardButton(self::BTN_CHECK);
         }
-        $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_NEW_INSURANCE)];
+        $firstRow[] = $ctx->telegram->buildKeyboardButton(self::BTN_NEW_INSURANCE);
+
+        $option   = [$firstRow];
         $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE)];
         $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_BACK_TO_LIST)];
 
         $ctx->sendMessageWithKeyborad(implode("\n", $lines), $option);
+    }
+
+    /**
+     * Bitta polis uchun ko'p qatorli xabar bloki: kompaniya, seria/raqam,
+     * qolgan muddat, tugash sanasi va PDF havolasi (sendWithKeyboard() HTML
+     * parse_mode bilan yuboradi, shuning uchun <a href> ishlaydi).
+     */
+    private function formatPolicy(ErspVehicleClient $client, array $policy): string
+    {
+        $company  = $policy['Sug‘urta kompaniya'] ?? "Noma'lum kompaniya";
+        $series   = $policy['Polis seriyasi va raqami'] ?? '';
+        $remaining = $client->remainingLabel($policy) ?? "muddat noma'lum";
+        $expiresAt = $client->endDateLabel($policy);
+        $expiresLabel = $expiresAt ? date('d.m.Y', strtotime($expiresAt)) : "noma'lum";
+
+        $block = "🏢 {$company}\n📄 {$series}\n⏳ {$remaining}\n📅 Tugash sanasi: {$expiresLabel}";
+
+        if (!empty($policy['pdf_link'])) {
+            $block .= "\n🔗 <a href=\"{$policy['pdf_link']}\">Polisni ko'rish</a>";
+        }
+
+        return $block;
     }
 
     private function handleDetail(BotContext $ctx): void
