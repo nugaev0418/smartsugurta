@@ -2,7 +2,9 @@
 
 namespace backend\queue;
 
+use backend\component\bot\BotTextService;
 use backend\ersp\ErspVehicleClient;
+use common\models\Botuser;
 use common\models\SavedVehicle;
 use Yii;
 use yii\base\BaseObject;
@@ -54,9 +56,10 @@ class ErspLookupJob extends BaseObject implements JobInterface
             Yii::error("ErspLookupJob xato (savedVehicleId: {$this->savedVehicleId}): " . $e->getMessage(), 'ersp');
 
             if ($this->chatId) {
+                $lang = $this->getUserLang($this->chatId);
                 $this->sendMessage(
                     $this->chatId,
-                    "⚠️ {$vehicle->gov_number} avtomobili bo'yicha sug'urta tekshiruvi muvaffaqiyatsiz bo'ldi, keyinroq qayta urinib ko'ring."
+                    sprintf($this->m($lang, 'my vehicles check failed'), $vehicle->gov_number)
                 );
             }
         }
@@ -68,20 +71,41 @@ class ErspLookupJob extends BaseObject implements JobInterface
             return;
         }
 
+        $lang = $this->getUserLang($this->chatId);
+
         if (!$activePolicies) {
             $this->sendMessage(
                 $this->chatId,
-                "🚗 {$vehicle->gov_number}: amaldagi sug'urta polisasi topilmadi."
+                sprintf($this->m($lang, 'my vehicles no active policies notify'), $vehicle->gov_number)
             );
             return;
         }
 
-        $lines = ["🚗 {$vehicle->gov_number} bo'yicha amaldagi sug'urtalar:"];
+        $unknownPeriod = $this->m($lang, 'my vehicles unknown period');
+        $lines = [sprintf($this->m($lang, 'my vehicles active policies notify title'), $vehicle->gov_number)];
         foreach ($activePolicies as $policy) {
-            $lines[] = '• ' . ($client->remainingLabel($policy) ?? "muddat noma'lum");
+            $lines[] = '• ' . ($client->remainingLabel($policy) ?? $unknownPeriod);
         }
 
         $this->sendMessage($this->chatId, implode("\n", $lines));
+    }
+
+    private function getUserLang(string $chatId): string
+    {
+        $botuser = Botuser::find()->select(['data'])->where(['chat_id' => $chatId])->one();
+        if ($botuser && $botuser->data) {
+            $data = json_decode($botuser->data, true);
+            if (($data['lang'] ?? null) === 'ru') {
+                return 'ru';
+            }
+        }
+
+        return 'uz';
+    }
+
+    private function m(string $lang, string $keyword): string
+    {
+        return (new BotTextService())->m($lang, $keyword);
     }
 
     private function sendMessage(string $chatId, string $text): void

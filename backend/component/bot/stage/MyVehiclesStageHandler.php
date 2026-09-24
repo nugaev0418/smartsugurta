@@ -20,17 +20,14 @@ use Yii;
  * qo'shish (EAI orqali tasdiqlab), avtomobil detali (keshlangan ERSP
  * sug'urta natijasi + qayta tekshirish/yangi sug'urta/o'chirish tugmalari,
  * o'chirish "Ha"/"Yo'q" tasdiqlovidan keyin bajariladi).
+ *
+ * Barcha matnlar `$ctx->getMText('keyword')`/`getKeywordText()` orqali
+ * uz/ru tarjima qilinadi (kalitlar `console/migrations/
+ * m260924_130000_insert_my_vehicles_text.php` orqali `text` jadvaliga
+ * qo'shilgan) — boshqa stage-handlerlar bilan bir xil naqsh.
  */
 class MyVehiclesStageHandler implements BotStageInterface
 {
-    private const BTN_ADD            = "➕ Avtomobil qo'shish";
-    private const BTN_BACK_TO_LIST   = "⬅️ Ro'yxatga qaytish";
-    private const BTN_CHECK          = "Tekshirish";
-    private const BTN_NEW_INSURANCE  = "Yangi sug'urta qilish";
-    private const BTN_DELETE         = "🗑 Avtomobilni o'chirish";
-    private const BTN_DELETE_CONFIRM = "✅ Ha, o'chirish";
-    private const BTN_DELETE_CANCEL  = "❌ Yo'q, bekor qilish";
-
     public function __construct(
         private PhoneStageHandler $phoneStage
     ) {
@@ -87,23 +84,34 @@ class MyVehiclesStageHandler implements BotStageInterface
         $botuser  = Botuser::findOne(['chat_id' => $ctx->chat_id]);
         $vehicles = $botuser ? $botuser->getSavedVehicles()->all() : [];
 
+        // Davlat raqamlari 2 tadan bir qatorda joylashadi (ro'yxat uzun
+        // bo'lganda klaviatura vertikal ravishda cho'zilib ketmasligi uchun).
         $option = [];
+        $row    = [];
         foreach ($vehicles as $vehicle) {
-            $option[] = [$ctx->telegram->buildKeyboardButton($vehicle->gov_number)];
+            $row[] = $ctx->telegram->buildKeyboardButton($vehicle->gov_number);
+            if (count($row) === 2) {
+                $option[] = $row;
+                $row = [];
+            }
         }
-        $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_ADD)];
+        if ($row) {
+            $option[] = $row;
+        }
+
+        $option[] = [$ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles add button'))];
         $option[] = [$ctx->telegram->buildKeyboardButton($ctx->getMText('Main menu'))];
 
         $text = $vehicles
-            ? "Saqlangan avtomobillaringiz:"
-            : "Hali avtomobil saqlanmagan. \"" . self::BTN_ADD . "\" orqali qo'shing.";
+            ? $ctx->getMText('my vehicles list title')
+            : sprintf($ctx->getMText('my vehicles list empty'), $ctx->getMText('my vehicles add button'));
 
         $ctx->sendMessageWithKeyborad($text, $option);
     }
 
     private function handleList(BotContext $ctx): void
     {
-        if ($ctx->text === self::BTN_ADD) {
+        if ($ctx->getKeywordText($ctx->text) === 'my vehicles add button') {
             $this->showAddGovNumber($ctx);
             return;
         }
@@ -175,7 +183,7 @@ class MyVehiclesStageHandler implements BotStageInterface
         $ctx->newVehicleGovNumber = '';
 
         if (!$dto->success) {
-            $ctx->sendMessage("Avtomobil topilmadi, ma'lumotlarni tekshirib qayta urinib ko'ring.");
+            $ctx->sendMessage($ctx->getMText('my vehicles not found'));
             $this->showList($ctx);
             return;
         }
@@ -200,7 +208,7 @@ class MyVehiclesStageHandler implements BotStageInterface
         $vehicle->vehicle_type_name    = $dto->vehicleTypeName;
         $vehicle->save(false);
 
-        $ctx->sendMessage("✅ {$govNumber} avtomobili saqlandi.");
+        $ctx->sendMessage(sprintf($ctx->getMText('my vehicles saved'), $govNumber));
         $this->showList($ctx);
     }
 
@@ -222,33 +230,33 @@ class MyVehiclesStageHandler implements BotStageInterface
         $lines = ["🚗 {$vehicle->gov_number}"];
 
         if ($vehicle->ersp_check_status === SavedVehicle::ERSP_STATUS_CHECKING) {
-            $lines[] = "🔎 Tekshirilmoqda, natija tez orada shu yerga yuboriladi...";
+            $lines[] = $ctx->getMText('my vehicles checking');
         } elseif ($activePolicies) {
-            $lines[] = "Amaldagi sug'urtalar:";
+            $lines[] = $ctx->getMText('my vehicles active policies title');
             $lines[] = implode("\n\n", array_map(
-                fn(array $policy) => $this->formatPolicy($client, $policy),
+                fn(array $policy) => $this->formatPolicy($ctx, $client, $policy),
                 $activePolicies
             ));
         } else {
-            $lines[] = "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan.";
+            $lines[] = $ctx->getMText('my vehicles no policies');
         }
 
         if (!$vehicle->canCheckNow()) {
             $minutes = (int) ceil($vehicle->secondsUntilNextCheck() / 60);
             if ($minutes > 0) {
-                $lines[] = "⏳ Keyingi tekshirish {$minutes} daqiqadan keyin mumkin.";
+                $lines[] = sprintf($ctx->getMText('my vehicles next check in'), $minutes);
             }
         }
 
         $firstRow = [];
         if ($vehicle->canCheckNow()) {
-            $firstRow[] = $ctx->telegram->buildKeyboardButton(self::BTN_CHECK);
+            $firstRow[] = $ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles check button'));
         }
-        $firstRow[] = $ctx->telegram->buildKeyboardButton(self::BTN_NEW_INSURANCE);
+        $firstRow[] = $ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles new insurance button'));
 
         $option   = [$firstRow];
-        $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE)];
-        $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_BACK_TO_LIST)];
+        $option[] = [$ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles delete button'))];
+        $option[] = [$ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles back to list button'))];
 
         $ctx->sendMessageWithKeyborad(implode("\n", $lines), $option);
     }
@@ -258,18 +266,20 @@ class MyVehiclesStageHandler implements BotStageInterface
      * qolgan muddat, tugash sanasi va PDF havolasi (sendWithKeyboard() HTML
      * parse_mode bilan yuboradi, shuning uchun <a href> ishlaydi).
      */
-    private function formatPolicy(ErspVehicleClient $client, array $policy): string
+    private function formatPolicy(BotContext $ctx, ErspVehicleClient $client, array $policy): string
     {
-        $company  = $policy['Sug‘urta kompaniya'] ?? "Noma'lum kompaniya";
-        $series   = $policy['Polis seriyasi va raqami'] ?? '';
-        $remaining = $client->remainingLabel($policy) ?? "muddat noma'lum";
-        $expiresAt = $client->endDateLabel($policy);
-        $expiresLabel = $expiresAt ? date('d.m.Y', strtotime($expiresAt)) : "noma'lum";
+        $company      = $policy['Sug‘urta kompaniya'] ?? $ctx->getMText('my vehicles unknown company');
+        $series       = $policy['Polis seriyasi va raqami'] ?? '';
+        $remaining    = $client->remainingLabel($policy) ?? $ctx->getMText('my vehicles unknown period');
+        $expiresAt    = $client->endDateLabel($policy);
+        $expiresLabel = $expiresAt ? date('d.m.Y', strtotime($expiresAt)) : $ctx->getMText('my vehicles unknown date');
+        $expiresText  = $ctx->getMText('my vehicles policy expires label');
 
-        $block = "🏢 {$company}\n📄 {$series}\n⏳ {$remaining}\n📅 Tugash sanasi: {$expiresLabel}";
+        $block = "🏢 {$company}\n📄 {$series}\n⏳ {$remaining}\n📅 {$expiresText} {$expiresLabel}";
 
         if (!empty($policy['pdf_link'])) {
-            $block .= "\n🔗 <a href=\"{$policy['pdf_link']}\">Polisni ko'rish</a>";
+            $linkText = $ctx->getMText('my vehicles view policy link');
+            $block .= "\n🔗 <a href=\"{$policy['pdf_link']}\">{$linkText}</a>";
         }
 
         return $block;
@@ -283,17 +293,17 @@ class MyVehiclesStageHandler implements BotStageInterface
             return;
         }
 
-        switch ($ctx->text) {
-            case self::BTN_CHECK:
+        switch ($ctx->getKeywordText($ctx->text)) {
+            case 'my vehicles check button':
                 $this->triggerCheck($ctx, $vehicle);
                 break;
-            case self::BTN_NEW_INSURANCE:
+            case 'my vehicles new insurance button':
                 $this->startNewInsurance($ctx, $vehicle);
                 break;
-            case self::BTN_DELETE:
+            case 'my vehicles delete button':
                 $this->showDeleteConfirm($ctx);
                 break;
-            case self::BTN_BACK_TO_LIST:
+            case 'my vehicles back to list button':
                 $this->showList($ctx);
                 break;
             default:
@@ -312,12 +322,12 @@ class MyVehiclesStageHandler implements BotStageInterface
         $ctx->page = Pages::MY_VEHICLE_DELETE_CONFIRM;
 
         $option = [
-            [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE_CONFIRM)],
-            [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE_CANCEL)],
+            [$ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles delete confirm button'))],
+            [$ctx->telegram->buildKeyboardButton($ctx->getMText('my vehicles delete cancel button'))],
         ];
 
         $ctx->sendMessageWithKeyborad(
-            "⚠️ Rostdan ham {$vehicle->gov_number} avtomobilini ro'yxatdan o'chirmoqchimisiz?",
+            sprintf($ctx->getMText('my vehicles delete confirm question'), $vehicle->gov_number),
             $option
         );
     }
@@ -330,17 +340,19 @@ class MyVehiclesStageHandler implements BotStageInterface
             return;
         }
 
-        if ($ctx->text === self::BTN_DELETE_CONFIRM) {
+        $keyword = $ctx->getKeywordText($ctx->text);
+
+        if ($keyword === 'my vehicles delete confirm button') {
             $govNumber = $vehicle->gov_number;
             $vehicle->delete();
             $ctx->selectedVehicleId = '';
 
-            $ctx->sendMessage("🗑 {$govNumber} avtomobili ro'yxatdan o'chirildi.");
+            $ctx->sendMessage(sprintf($ctx->getMText('my vehicles deleted'), $govNumber));
             $this->showList($ctx);
             return;
         }
 
-        if ($ctx->text === self::BTN_DELETE_CANCEL) {
+        if ($keyword === 'my vehicles delete cancel button') {
             $this->showDetail($ctx);
             return;
         }
@@ -350,8 +362,9 @@ class MyVehiclesStageHandler implements BotStageInterface
 
     private function triggerCheck(BotContext $ctx, SavedVehicle $vehicle): void
     {
-        // BTN_CHECK cooldown paytida showDetail()da ko'rsatilmaydi — bu shunchaki
-        // qo'shimcha himoya (masalan eski klaviatura orqali qayta bosilsa).
+        // "my vehicles check button" cooldown paytida showDetail()da
+        // ko'rsatilmaydi — bu shunchaki qo'shimcha himoya (masalan eski
+        // klaviatura orqali qayta bosilsa).
         if (!$vehicle->canCheckNow()) {
             $this->showDetail($ctx);
             return;
@@ -366,7 +379,7 @@ class MyVehiclesStageHandler implements BotStageInterface
             'chatId'         => (string) $ctx->chat_id,
         ]));
 
-        $ctx->sendMessage("🔎 Tekshirilmoqda, natija tez orada shu yerga yuboriladi...");
+        $ctx->sendMessage($ctx->getMText('my vehicles checking'));
         $this->showDetail($ctx);
     }
 
