@@ -14,6 +14,11 @@
 
 <div id="app">
 
+  <div id="topTabs" class="top-tabs">
+    <div class="top-tab" data-tab="form" data-i18n="tabInsurance">Sug'urta qilish</div>
+    <div class="top-tab" data-tab="my-vehicles" data-i18n="tabMyVehicles">Mening avto</div>
+  </div>
+
   <section id="successScreen" class="screen hidden">
     <div class="success-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="success-title" data-i18n="successTitle">Ariza qabul qilindi</div>
@@ -40,8 +45,6 @@
           <div class="step-title" data-i18n="step1Title">Transport ma'lumotlari</div>
           <div class="step-sub" data-i18n="step1Sub">Avtomobilingiz haqidagi ma'lumotlarni kiriting</div>
         </div>
-
-        <div class="mv-link" id="openMyVehiclesBtn" data-i18n="openMyVehiclesBtn">🚗 Mening avtolarim</div>
 
         <div class="field">
           <label data-i18n="labelPlate">Davlat raqami</label>
@@ -218,7 +221,7 @@
     <div class="header">
       <div class="header-top">
         <span data-i18n="mvHeaderTitle">Mening avtolarim</span>
-        <span class="mv-link" id="mvGoToFormBtn" style="padding:0;" data-i18n="mvGoToFormBtn">➕ Yangi ariza</span>
+        <span></span>
       </div>
     </div>
 

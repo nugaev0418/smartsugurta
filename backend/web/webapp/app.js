@@ -96,8 +96,8 @@
     },
 
     mvHeaderTitle: { uz: "Mening avtolarim", ru: "Мои автомобили" },
-    openMyVehiclesBtn: { uz: "🚗 Mening avtolarim", ru: "🚗 Мои автомобили" },
-    mvGoToFormBtn: { uz: "➕ Yangi ariza", ru: "➕ Новая заявка" },
+    tabInsurance: { uz: "Sug'urta qilish", ru: "Оформить страховку" },
+    tabMyVehicles: { uz: "Mening avto", ru: "Мои авто" },
     mvAddBtn: { uz: "+ Avtomobil qo'shish", ru: "+ Добавить автомобиль" },
     mvAddSubmitBtn: { uz: "Qo'shish", ru: "Добавить" },
     mvCheckBtn: { uz: "✅ Tekshirish", ru: "✅ Проверить" },
@@ -144,6 +144,7 @@
 
   var state = {
     lang: 'uz',
+    topTab: 'form', // 'form' | 'my-vehicles' — set from the ?screen= query in init()
     step: 1,
     plateNumber: '', techSeria: '', techNumber: '',
     checking: false,
@@ -832,8 +833,7 @@
   }
 
   function showSuccess(res) {
-    $('formScreen').classList.add('hidden');
-    $('successScreen').classList.remove('hidden');
+    showScreen('successScreen');
     $('successText').textContent = res.message || t('successDefaultMessage');
     if (res.paymentLink) {
       $('paymentLinkBtn').href = res.paymentLink;
@@ -857,6 +857,35 @@
       var el = $(s);
       if (el) el.classList.toggle('hidden', s !== id);
     });
+    $('topTabs').classList.toggle('hidden', id === 'successScreen');
+  }
+
+  function setTopTab(tab) {
+    state.topTab = tab;
+
+    var tabs = document.querySelectorAll('.top-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].dataset.tab === tab);
+    }
+
+    if (tab === 'my-vehicles') {
+      showScreen('myVehiclesScreen');
+      if (state.mv.view === 'list') loadMyVehicles();
+      else renderMv();
+    } else {
+      stopMvPolling();
+      showScreen('formScreen');
+      render();
+    }
+  }
+
+  function wireTopTabs() {
+    var tabs = document.querySelectorAll('.top-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function (e) {
+        setTopTab(e.currentTarget.dataset.tab);
+      });
+    }
   }
 
   function mvGoToView(view) {
@@ -1041,9 +1070,7 @@
       state.vehicleData = res;
       state.step = 2;
 
-      stopMvPolling();
-      showScreen('formScreen');
-      render();
+      setTopTab('form');
     }).catch(function () {
       state.checking = false;
       showToast(t('toastGenericError'));
@@ -1051,17 +1078,6 @@
   }
 
   function wireMyVehicles() {
-    $('openMyVehiclesBtn').addEventListener('click', function () {
-      showScreen('myVehiclesScreen');
-      mvGoToView('list');
-      loadMyVehicles();
-    });
-    $('mvGoToFormBtn').addEventListener('click', function () {
-      stopMvPolling();
-      showScreen('formScreen');
-      render();
-    });
-
     $('mvAddBtn').addEventListener('click', function () { mvGoToView('add'); });
     $('mvAddCancelBtn').addEventListener('click', function () { mvGoToView('list'); });
     $('mvBackToListBtn').addEventListener('click', function () { mvGoToView('list'); loadMyVehicles(); });
@@ -1192,14 +1208,10 @@
       .then(function () {
         wireStatic();
         wireMyVehicles();
+        wireTopTabs();
         applyStaticI18n();
 
-        if (isMyVehiclesMode()) {
-          showScreen('myVehiclesScreen');
-          loadMyVehicles();
-        } else {
-          render();
-        }
+        setTopTab(isMyVehiclesMode() ? 'my-vehicles' : 'form');
       });
   }
 

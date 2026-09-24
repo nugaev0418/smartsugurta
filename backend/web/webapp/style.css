@@ -187,6 +187,14 @@ input.date-native {
 
 #formScreen { flex: 1; display: flex; flex-direction: column; }
 
+/* Top nav tabs: Sug'urta qilish / Mening avto */
+.top-tabs { display: flex; gap: 8px; padding: 14px 18px 0; background: #fff; }
+.top-tab {
+  flex: 1; text-align: center; padding: 11px; border-radius: 8px;
+  font-size: 13.5px; font-weight: 700; color: #707579; background: #F4F4F5; cursor: pointer;
+}
+.top-tab.active { background: #3390EC; color: #fff; }
+
 /* "Mening avtolarim" (my vehicles) screen */
 #myVehiclesScreen { flex: 1; display: flex; flex-direction: column; }
 .mv-vehicle-row {
