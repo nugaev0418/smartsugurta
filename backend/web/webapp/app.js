@@ -113,6 +113,8 @@
       uz: "Rostdan ham bu avtomobilni ro'yxatdan o'chirmoqchimisiz?",
       ru: "Вы действительно хотите удалить этот автомобиль из списка?",
     },
+    quickPickLabel: { uz: "🚗 Saqlangan avtomobilni tanlang", ru: "🚗 Выберите сохранённый автомобиль" },
+    quickPickDivider: { uz: "yoki qo'lda kiriting", ru: "или введите вручную" },
   };
 
   // Display labels for RELATIONS/gateway values that are also submitted to the
@@ -165,6 +167,8 @@
     premium: null,
     gateway: 'CLICK',
     submitting: false,
+
+    quickPickVehicles: [], // saqlangan avtomobillar — 1-qadamdagi tezkor tanlash uchun
 
     mv: {
       view: 'list', // 'list' | 'add' | 'detail'
@@ -390,6 +394,40 @@
   }
 
   function goToStep(n) { state.step = n; render(); }
+
+  // Saqlangan avtomobillar ro'yxatini fon rejimida yuklaydi (1-qadamdagi
+  // tezkor tanlash uchun). Admin bo'lmagan yoki xato javobda jim ravishda
+  // bo'sh qoladi — bu foydalanuvchi harakati emas, toast ko'rsatilmaydi.
+  function loadQuickPickVehicles() {
+    return api('my-vehicles-list', {})
+      .then(function (res) {
+        state.quickPickVehicles = (res && res.success) ? (res.vehicles || []) : [];
+        renderQuickPickChips();
+      })
+      .catch(function () {
+        state.quickPickVehicles = [];
+        renderQuickPickChips();
+      });
+  }
+
+  function renderQuickPickChips() {
+    var section = $('quickPickSection');
+    if (!state.quickPickVehicles.length) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    var chips = $('quickPickChips');
+    chips.innerHTML = '';
+    state.quickPickVehicles.forEach(function (vehicle) {
+      var chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = vehicle.govNumber;
+      chip.addEventListener('click', function () { startNewInsuranceForSavedVehicle(vehicle); });
+      chips.appendChild(chip);
+    });
+  }
 
   function ownerTypeLabel(vt) {
     return vt === 'ORGANIZATION' ? t('ownerTypeOrg') : t('ownerTypePerson');
@@ -881,6 +919,7 @@
       stopMvPolling();
       showScreen('formScreen');
       render();
+      loadQuickPickVehicles();
     }
   }
 
