@@ -49,20 +49,25 @@ class ErspVehicleClient
     //
     // Production'da `backend/ersp/` ilova kodi bilan birga deploy qilinadi
     // va odatda faqat deploy foydalanuvchisiga yozish huquqi beriladi — veb-
-    // server (php-fpm) foydalanuvchisi u yerga mkdir/yoza olmaydi. Shuning
-    // uchun Yii ilovasi ichida ishlaganda (BotController/WebAppController/
-    // queue job — bularning barchasi shunday) har doim yozish huquqi
-    // bo'ladigan `@runtime` (backend/runtime/) ostiga yoziladi. Yii
-    // bootstrap qilinmagan holatda (masalan qo'lda `php -r`/test skripti
-    // orqali sinovda) esa __DIR__ga qaytadi.
+    // server (php-fpm) foydalanuvchisi u yerga mkdir/yoza olmaydi.
+    //
+    // DIQQAT: avval bu yerda `Yii::getAlias('@runtime/...')` ishlatilgan
+    // edi, lekin `@runtime` alias'i web (backend/config/main.php, basePath
+    // = backend/) va console (console/config/main.php, basePath = loyiha
+    // ildizi) ilovalarida IKKI XIL papkaga ko'rsatadi — backend/runtime/
+    // va loyiha ildizidagi runtime/. ErspLookupJob aynan konsol navbat
+    // workeri (`php yii erspQueue/listen`) ichida ishlagani uchun u holda
+    // yozish huquqi bo'lmagan loyiha ildizidagi runtime/ga urinib, xuddi
+    // shu "Permission denied" xatosini boshqa joyda takrorlagan edi.
+    // Shuning uchun endi Yii alias'iga emas, doim shu fayl joylashgan
+    // joyga nisbatan backend/runtime/ga (web-server uchun allaqachon
+    // yozish huquqi ochilgan, tasdiqlangan papka) ko'rsatiladi — qaysi
+    // ilova (web/console) yoki Yii bootstrap qilingan-qilinmaganidan
+    // qat'i nazar bir xil, ishonchli manzil.
     ////////////////////////////////////////////////////////
     private function resolveRuntimeDir(string $sub): string
     {
-        if (class_exists(\Yii::class) && \Yii::$app !== null) {
-            return \Yii::getAlias("@runtime/ersp/{$sub}");
-        }
-
-        return __DIR__ . '/' . $sub;
+        return dirname(__DIR__) . "/runtime/ersp/{$sub}";
     }
 
     ////////////////////////////////////////////////////////
