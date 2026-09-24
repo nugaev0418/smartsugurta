@@ -31,7 +31,7 @@ Type=simple
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/smart
-ExecStart=/usr/bin/php /var/www/smart/yii erspQueue/listen --verbose=1
+ExecStart=/usr/bin/php /var/www/smart/yii erspQueue/listen --verbose
 
 # ErspLookupJob captcha+AI orqali sinaydi (ErspVehicleClient::lookupVehiclePolicies()
 # ichida captcha noto'g'ri chiqsa maxAttempts=5 gachа qayta uradi) — bitta ish
