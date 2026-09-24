@@ -1071,6 +1071,8 @@
     if (!vehicle) return;
 
     $('mvDetailGovNumber').textContent = vehicle.govNumber;
+    $('mvDetailModel').textContent = vehicle.model || '';
+    $('mvDetailModel').classList.toggle('hidden', !vehicle.model);
 
     var policiesEl = $('mvDetailPolicies');
     var checkBtn = $('mvCheckBtn');

@@ -8,7 +8,7 @@
      o'zgartirganda oshiring — Telegram Desktop/Mobile'ning ichki webview'i
      bu fayllarni URL bo'yicha qattiq keshlaydi, versiya raqami o'zgarmasa
      mijoz eski nusxani ishlatishda davom etadi. -->
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -263,8 +263,10 @@
         <div class="mv-back-link" id="mvBackToListBtn" data-i18n="mvBackToList">‹ Ro'yxatga qaytish</div>
 
         <div class="owner-card">
-          <div class="owner-icon">🚗</div>
-          <div id="mvDetailGovNumber" class="owner-label"></div>
+          <div>
+            <div id="mvDetailGovNumber" class="owner-label"></div>
+            <div id="mvDetailModel" class="mv-detail-model"></div>
+          </div>
         </div>
         <div id="mvDetailPolicies"></div>
 
@@ -282,6 +284,6 @@
 
 </div>
 
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
