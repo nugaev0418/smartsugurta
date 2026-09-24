@@ -15,6 +15,7 @@ use backend\queue\ErspLookupJob;
 use common\models\Botuser;
 use common\models\Police;
 use common\models\SavedVehicle;
+use common\models\Setting;
 use common\models\Text;
 use DateTime;
 use Yii;
@@ -182,9 +183,9 @@ class WebAppController extends Controller
             'uz' => "Ko'pi bilan 5 ta haydovchi qo'shishingiz mumkin",
             'ru' => "Можно добавить не более 5 водителей",
         ],
-        'admin_only' => [
-            'uz' => "Bu bo'lim hozircha faqat administratorlar uchun",
-            'ru' => "Этот раздел пока доступен только администраторам",
+        'my_vehicles_disabled' => [
+            'uz' => "\"Mening avtolarim\" bo'limi hozircha o'chirilgan",
+            'ru' => "Раздел «Мои автомобили» пока отключён",
         ],
         'check_cooldown' => [
             'uz' => "Keyingi tekshirish %d daqiqadan keyin mumkin",
@@ -608,17 +609,16 @@ class WebAppController extends Controller
         }
     }
 
-    // ── "MENING AVTOLARIM" (hozircha faqat admin) ───────────────────────
+    // ── "MENING AVTOLARIM" ───────────────────────────────────────────────
     //
-    // Bu to'rtta action ataylab requireTelegramUser()'dan tashqari
-    // isAdminTelegramUser()ni ham tekshiradi — actionVehicle()/actionOwner()/
-    // actionDriver()/actionCalculate()/actionSubmit()dan farqli o'laroq (ular
-    // ataylab har qanday tasdiqlangan Telegram foydalanuvchisiga ochiq, chunki
-    // bular umumiy OSAGO oqimining o'zi). "Mening avtolarim" esa hozircha
-    // faqat adminlarga mo'ljallangan real ruxsat chegarasi (havola oshkor
-    // bo'lib qolsa ham begona odam avtomobil saqlay olmasligi va ERSP/OpenAI
-    // xarajatiga sabab bo'lmasligi uchun), shuning uchun serverda ham
-    // tekshiriladi — faqat interfeysda yashirish yetarli emas.
+    // Bu beshta action ataylab requireTelegramUser()'dan tashqari
+    // Setting::getMyVehiclesStatus()ni ham tekshiradi — global yoqilgan/
+    // o'chirilgan bayroq (Admin panel → Bot sozlamalari → "Mening avtolarim
+    // holati"), admin-only emas: yoqilganda HAR QANDAY tasdiqlangan Telegram
+    // foydalanuvchisi (actionVehicle()/actionOwner()/... bilan bir xil)
+    // foydalana oladi, o'chirilganda esa hech kimga (admin ham) ochiq emas.
+    // Serverda tekshiriladi — faqat interfeysda tugma/havolani yashirish
+    // yetarli emas (havola oshkor bo'lib qolsa ham).
 
     public function actionMyVehiclesList()
     {
@@ -628,8 +628,8 @@ class WebAppController extends Controller
         if (!$telegramUser) {
             return $this->fail($this->msg('no_access', $lang));
         }
-        if (!$this->isAdminTelegramUser($telegramUser)) {
-            return $this->fail($this->msg('admin_only', $lang));
+        if (!Setting::getMyVehiclesStatus()) {
+            return $this->fail($this->msg('my_vehicles_disabled', $lang));
         }
 
         $botuser = Botuser::findOne(['chat_id' => $telegramUser['id']]);
@@ -649,8 +649,8 @@ class WebAppController extends Controller
         if (!$telegramUser) {
             return $this->fail($this->msg('no_access', $lang));
         }
-        if (!$this->isAdminTelegramUser($telegramUser)) {
-            return $this->fail($this->msg('admin_only', $lang));
+        if (!Setting::getMyVehiclesStatus()) {
+            return $this->fail($this->msg('my_vehicles_disabled', $lang));
         }
         if (!$this->rateLimitOk($telegramUser['id'])) {
             return $this->fail($this->msg('rate_limited', $lang));
@@ -715,8 +715,8 @@ class WebAppController extends Controller
         if (!$telegramUser) {
             return $this->fail($this->msg('no_access', $lang));
         }
-        if (!$this->isAdminTelegramUser($telegramUser)) {
-            return $this->fail($this->msg('admin_only', $lang));
+        if (!Setting::getMyVehiclesStatus()) {
+            return $this->fail($this->msg('my_vehicles_disabled', $lang));
         }
 
         $vehicle = $this->findOwnSavedVehicle($input, $telegramUser);
@@ -754,8 +754,8 @@ class WebAppController extends Controller
         if (!$telegramUser) {
             return $this->fail($this->msg('no_access', $lang));
         }
-        if (!$this->isAdminTelegramUser($telegramUser)) {
-            return $this->fail($this->msg('admin_only', $lang));
+        if (!Setting::getMyVehiclesStatus()) {
+            return $this->fail($this->msg('my_vehicles_disabled', $lang));
         }
         if (!$this->rateLimitOk($telegramUser['id'])) {
             return $this->fail($this->msg('rate_limited', $lang));
@@ -796,8 +796,8 @@ class WebAppController extends Controller
         if (!$telegramUser) {
             return $this->fail($this->msg('no_access', $lang));
         }
-        if (!$this->isAdminTelegramUser($telegramUser)) {
-            return $this->fail($this->msg('admin_only', $lang));
+        if (!Setting::getMyVehiclesStatus()) {
+            return $this->fail($this->msg('my_vehicles_disabled', $lang));
         }
 
         $vehicle = $this->findOwnSavedVehicle($input, $telegramUser);
@@ -838,18 +838,6 @@ class WebAppController extends Controller
         return SavedVehicle::find()
             ->where(['id' => $vehicleId, 'botuser_id' => $botuser->id])
             ->one();
-    }
-
-    private function isAdminTelegramUser(array $telegramUser): bool
-    {
-        if ((string)($telegramUser['id'] ?? '') === (string) BotController::ADMIN_ID) {
-            return true;
-        }
-
-        return (bool) Botuser::find()
-            ->select(['is_admin'])
-            ->where(['chat_id' => $telegramUser['id'] ?? null])
-            ->scalar();
     }
 
     private function notifyUser(Botuser $botuser, Police $police, string $paymentLink): void

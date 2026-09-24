@@ -86,7 +86,7 @@ class BotCommandRouter
                 if ($ctx->isAdmin()) $this->adminStage->showBroadcastWait($ctx);
                 return true;
             case $ctx->getMText('My vehicles menu button'):
-                if ($ctx->isAdmin()) $this->myVehiclesStage->show($ctx);
+                if (Setting::getMyVehiclesStatus()) $this->myVehiclesStage->show($ctx);
                 return true;
             default:
                 return false;

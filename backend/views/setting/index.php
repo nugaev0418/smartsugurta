@@ -72,6 +72,21 @@ $this->params['breadcrumbs'][] = $this->title;
                             </label>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Mening avtolarim holati</label>
+                        <div>
+                            <?= Html::activeCheckbox($model, 'my_vehicles_status', [
+                                'class'   => 'form-check-input',
+                                'value'   => 1,
+                                'uncheck' => 0,
+                                'label'   => false,
+                                'id'      => 'my_vehicles_status',
+                            ]) ?>
+                            <label class="form-check-label ms-2" for="my_vehicles_status">
+                                <?= $model->my_vehicles_status ? '<span class="text-success">Yoqilgan</span>' : '<span class="text-danger">O\'chirilgan</span>' ?>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <h4 class="mb-3 text-secondary">Foiz sozlamalari</h4>

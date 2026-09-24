@@ -92,6 +92,9 @@ uzatadi. Bot logikasining o'zi `backend/component/bot/` papkasida, mas'uliyatlar
   filtrlanadi.
 - **Texnik ishlar rejimi**: `Setting::getBotStatus()`/`getPoliceStatus()`/`getPaymentStatus()` orqali bot,
   polisa yaratish va to'lov qismlarini alohida-alohida o'chirib qo'yish mumkin (admin paneldan).
+  `Setting::getMyVehiclesStatus()` esa "🚗 Mening avtolarim" bo'limini (bot va Web App'da) hamma
+  foydalanuvchi uchun yoqish/o'chirish uchun — standart holat o'chirilgan (0), admin panel →
+  "Bot sozlamalari"dan yoqiladi; o'chiq bo'lsa bo'lim hech kimga (admin ham) ko'rinmaydi.
 
 ### Telegram Mini App (WebApp) — botdan mustaqil, xizmatlarni qayta ishlatuvchi JSON API
 

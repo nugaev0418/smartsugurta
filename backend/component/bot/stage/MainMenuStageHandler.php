@@ -7,6 +7,7 @@ use backend\component\bot\BotStageInterface;
 use backend\component\ReferralService;
 use backend\controllers\BotController;
 use backend\models\Pages;
+use common\models\Setting;
 use Yii;
 use yii\base\ErrorException;
 use yii\helpers\Url;
@@ -46,8 +47,13 @@ class MainMenuStageHandler implements BotStageInterface
                     $ctx->telegram->buildKeyboardButton($ctx->getMText('Support')),
                 ],
             ];
-            if ($ctx->isAdmin()) {
+            // "Mening avtolarim" — admin-only emas, Setting::getMyVehiclesStatus()
+            // orqali hamma foydalanuvchi uchun yoqilishi/o'chirilishi mumkin
+            // (Admin panel → Bot sozlamalari).
+            if (Setting::getMyVehiclesStatus()) {
                 $option[] = [$ctx->telegram->buildKeyboardButton($ctx->getMText('My vehicles menu button'))];
+            }
+            if ($ctx->isAdmin()) {
                 $option[] = [$ctx->telegram->buildKeyboardButton("⚙️ Admin panel")];
             }
             $ctx->sendMessageWithKeyborad($text, $option);
@@ -59,6 +65,14 @@ class MainMenuStageHandler implements BotStageInterface
                     "🌐 Web App orqali sug'urta rasmiylashtirish",
                     [[
                         ['text' => '🌐 Web App', 'web_app' => ['url' => Url::base('https') . '/webapp/index.html']],
+                    ]]
+                );
+            }
+
+            if (Setting::getMyVehiclesStatus()) {
+                $ctx->sendMessageWithInlineKeyboard(
+                    $ctx->getMText('My vehicles menu button'),
+                    [[
                         ['text' => $ctx->getMText('My vehicles menu button'), 'web_app' => ['url' => Url::base('https') . '/webapp/index.html?screen=my-vehicles']],
                     ]]
                 );
