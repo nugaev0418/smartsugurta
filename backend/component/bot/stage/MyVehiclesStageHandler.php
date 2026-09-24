@@ -14,18 +14,22 @@ use Yii;
 
 /**
  * Pages::MY_VEHICLES, MY_VEHICLE_ADD_GOV_NUMBER, MY_VEHICLE_ADD_TEXPASS,
- * MY_VEHICLE_DETAIL — "🚗 Mening avtolarim" bo'limi (hozircha faqat
- * admin-only, BotCommandRouter/MainMenuStageHandler orqali ochiladi):
- * saqlangan avtomobillar ro'yxati, yangi avtomobil qo'shish (EAI orqali
- * tasdiqlab), avtomobil detali (keshlangan ERSP sug'urta natijasi + qayta
- * tekshirish/yangi sug'urta tugmalari).
+ * MY_VEHICLE_DETAIL, MY_VEHICLE_DELETE_CONFIRM — "🚗 Mening avtolarim"
+ * bo'limi (hozircha faqat admin-only, BotCommandRouter/MainMenuStageHandler
+ * orqali ochiladi): saqlangan avtomobillar ro'yxati, yangi avtomobil
+ * qo'shish (EAI orqali tasdiqlab), avtomobil detali (keshlangan ERSP
+ * sug'urta natijasi + qayta tekshirish/yangi sug'urta/o'chirish tugmalari,
+ * o'chirish "Ha"/"Yo'q" tasdiqlovidan keyin bajariladi).
  */
 class MyVehiclesStageHandler implements BotStageInterface
 {
-    private const BTN_ADD           = "➕ Avtomobil qo'shish";
-    private const BTN_BACK_TO_LIST  = "⬅️ Ro'yxatga qaytish";
-    private const BTN_CHECK         = "Tekshirish";
-    private const BTN_NEW_INSURANCE = "Yangi sug'urta qilish";
+    private const BTN_ADD            = "➕ Avtomobil qo'shish";
+    private const BTN_BACK_TO_LIST   = "⬅️ Ro'yxatga qaytish";
+    private const BTN_CHECK          = "Tekshirish";
+    private const BTN_NEW_INSURANCE  = "Yangi sug'urta qilish";
+    private const BTN_DELETE         = "🗑 O'chirish";
+    private const BTN_DELETE_CONFIRM = "✅ Ha, o'chirish";
+    private const BTN_DELETE_CANCEL  = "❌ Yo'q, bekor qilish";
 
     public function __construct(
         private PhoneStageHandler $phoneStage
@@ -45,6 +49,9 @@ class MyVehiclesStageHandler implements BotStageInterface
             case Pages::MY_VEHICLE_DETAIL:
                 $this->showDetail($ctx);
                 break;
+            case Pages::MY_VEHICLE_DELETE_CONFIRM:
+                $this->showDeleteConfirm($ctx);
+                break;
             default:
                 $this->showList($ctx);
         }
@@ -61,6 +68,9 @@ class MyVehiclesStageHandler implements BotStageInterface
                 break;
             case Pages::MY_VEHICLE_DETAIL:
                 $this->handleDetail($ctx);
+                break;
+            case Pages::MY_VEHICLE_DELETE_CONFIRM:
+                $this->handleDeleteConfirm($ctx);
                 break;
             case Pages::MY_VEHICLES:
                 $this->handleList($ctx);
@@ -227,6 +237,7 @@ class MyVehiclesStageHandler implements BotStageInterface
             $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_CHECK)];
         }
         $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_NEW_INSURANCE)];
+        $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE)];
         $option[] = [$ctx->telegram->buildKeyboardButton(self::BTN_BACK_TO_LIST)];
 
         $ctx->sendMessageWithKeyborad(implode("\n", $lines), $option);
@@ -247,12 +258,62 @@ class MyVehiclesStageHandler implements BotStageInterface
             case self::BTN_NEW_INSURANCE:
                 $this->startNewInsurance($ctx, $vehicle);
                 break;
+            case self::BTN_DELETE:
+                $this->showDeleteConfirm($ctx);
+                break;
             case self::BTN_BACK_TO_LIST:
                 $this->showList($ctx);
                 break;
             default:
                 $this->showDetail($ctx);
         }
+    }
+
+    private function showDeleteConfirm(BotContext $ctx): void
+    {
+        $vehicle = SavedVehicle::findOne($ctx->selectedVehicleId);
+        if (!$vehicle) {
+            $this->showList($ctx);
+            return;
+        }
+
+        $ctx->page = Pages::MY_VEHICLE_DELETE_CONFIRM;
+
+        $option = [
+            [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE_CONFIRM)],
+            [$ctx->telegram->buildKeyboardButton(self::BTN_DELETE_CANCEL)],
+        ];
+
+        $ctx->sendMessageWithKeyborad(
+            "⚠️ Rostdan ham {$vehicle->gov_number} avtomobilini ro'yxatdan o'chirmoqchimisiz?",
+            $option
+        );
+    }
+
+    private function handleDeleteConfirm(BotContext $ctx): void
+    {
+        $vehicle = SavedVehicle::findOne($ctx->selectedVehicleId);
+        if (!$vehicle) {
+            $this->showList($ctx);
+            return;
+        }
+
+        if ($ctx->text === self::BTN_DELETE_CONFIRM) {
+            $govNumber = $vehicle->gov_number;
+            $vehicle->delete();
+            $ctx->selectedVehicleId = '';
+
+            $ctx->sendMessage("🗑 {$govNumber} avtomobili ro'yxatdan o'chirildi.");
+            $this->showList($ctx);
+            return;
+        }
+
+        if ($ctx->text === self::BTN_DELETE_CANCEL) {
+            $this->showDetail($ctx);
+            return;
+        }
+
+        $this->showDeleteConfirm($ctx);
     }
 
     private function triggerCheck(BotContext $ctx, SavedVehicle $vehicle): void

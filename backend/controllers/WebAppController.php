@@ -770,6 +770,33 @@ class WebAppController extends Controller
         return ['success' => true, 'checking' => true];
     }
 
+    /**
+     * Tasdiqlash frontendda ("O'chirish" bosilganda Telegram showConfirm/
+     * window.confirm orqali so'raladi) — bu action shunchaki bajaradi,
+     * qayta so'ramaydi.
+     */
+    public function actionMyVehicleDelete()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
+        if (!$telegramUser) {
+            return $this->fail($this->msg('no_access', $lang));
+        }
+        if (!$this->isAdminTelegramUser($telegramUser)) {
+            return $this->fail($this->msg('admin_only', $lang));
+        }
+
+        $vehicle = $this->findOwnSavedVehicle($input, $telegramUser);
+        if (!$vehicle) {
+            return $this->fail($this->msg('vehicle_not_found', $lang));
+        }
+
+        $vehicle->delete();
+
+        return ['success' => true];
+    }
+
     private function vehicleSummary(SavedVehicle $vehicle): array
     {
         return [

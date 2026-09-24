@@ -108,6 +108,11 @@
     mvNoPolicies: { uz: "Amaldagi sug'urta topilmadi yoki hali tekshirilmagan", ru: "Действующая страховка не найдена или ещё не проверялась" },
     mvChecking: { uz: "🔎 Tekshirilmoqda, natija tez orada shu yerga chiqadi...", ru: "🔎 Идёт проверка, результат скоро появится здесь..." },
     mvExpiresPrefix: { uz: "Tugash sanasi:", ru: "Дата окончания:" },
+    mvDeleteBtn: { uz: "🗑 O'chirish", ru: "🗑 Удалить" },
+    mvDeleteConfirm: {
+      uz: "Rostdan ham bu avtomobilni ro'yxatdan o'chirmoqchimisiz?",
+      ru: "Вы действительно хотите удалить этот автомобиль из списка?",
+    },
   };
 
   // Display labels for RELATIONS/gateway values that are also submitted to the
@@ -911,6 +916,33 @@
       });
   }
 
+  // Telegram Mini App'ning o'z (native) tasdiqlash dialogi bor bo'lsa shundan
+  // foydalanadi (bloklamaydigan, ilova o'z uslubida chiqadi); bo'lmasa (masalan
+  // Telegram tashqarisida ochilganda) oddiy window.confirm()ga tushadi.
+  function confirmDialog(message, onConfirm) {
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if (tg && typeof tg.showConfirm === 'function') {
+      tg.showConfirm(message, function (confirmed) {
+        if (confirmed) onConfirm();
+      });
+    } else if (window.confirm(message)) {
+      onConfirm();
+    }
+  }
+
+  function deleteSelectedVehicle() {
+    if (!state.mv.selected) return;
+    confirmDialog(t('mvDeleteConfirm'), function () {
+      api('my-vehicle-delete', { vehicleId: state.mv.selected.id })
+        .then(function (res) {
+          if (!res.success) { showToast(res.message || t('toastGenericError')); return; }
+          mvGoToView('list');
+          loadMyVehicles();
+        })
+        .catch(function () { showToast(t('toastGenericError')); });
+    });
+  }
+
   function openVehicleDetail(vehicle) {
     state.mv.selected = vehicle;
     state.mv.detail = null;
@@ -1105,6 +1137,8 @@
     $('mvNewInsuranceBtn').addEventListener('click', function () {
       startNewInsuranceForSavedVehicle(state.mv.selected);
     });
+
+    $('mvDeleteBtn').addEventListener('click', deleteSelectedVehicle);
   }
 
   // ---------------------------------------------------------------------

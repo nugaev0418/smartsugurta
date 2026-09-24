@@ -194,6 +194,7 @@ class BotController extends Controller
         $registry->register(Pages::MY_VEHICLE_ADD_GOV_NUMBER, $myVehicles);
         $registry->register(Pages::MY_VEHICLE_ADD_TEXPASS, $myVehicles);
         $registry->register(Pages::MY_VEHICLE_DETAIL, $myVehicles);
+        $registry->register(Pages::MY_VEHICLE_DELETE_CONFIRM, $myVehicles);
 
         return $registry;
     }
