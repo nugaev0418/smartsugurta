@@ -656,6 +656,27 @@
     }).catch(function () { state.premium = null; });
   }
 
+  // 6-qadamga (ma'lumotlarni ko'rib chiqish) o'tilganda "orders" kanaliga
+  // fon rejimida bildirishnoma yuboradi — botning tasdiqlash ekrani
+  // ko'rsatilgandagi xatti-harakati bilan bir xil (submitApplication()da
+  // EMAS). Fire-and-forget: natijasi kutilmaydi, xatosi foydalanuvchiga
+  // hech qanday ta'sir qilmaydi.
+  function notifyReviewReached() {
+    api('review-notify', {
+      plateNumber: state.plateNumber,
+      techSeria: state.techSeria,
+      techNumber: state.techNumber,
+      vehicleData: state.vehicleData,
+      insuranceType: state.insuranceType,
+      phone: state.phone,
+      drivers: state.insuranceType === 'limited'
+        ? state.drivers.map(function (d) { return { seria: d.seria, number: d.number, birthDate: d.birthDate, relation: d.relation, name: d.name }; })
+        : [],
+      startDate: state.startDate,
+      duration: state.duration,
+    }).catch(function () { /* jim o'tkaziladi — fon bildirishnomasi, UI'ga ta'sir qilmaydi */ });
+  }
+
   function renderStep6() {
     $('sumPhone').textContent = '+998 ' + state.phone;
     $('sumPlate').innerHTML = t('plateSummaryPrefix') + ' <strong>' + escapeHtml(state.plateNumber) + '</strong>';
@@ -807,6 +828,7 @@
       state.checking = true; render();
       recomputePremium().then(function () {
         state.checking = false;
+        notifyReviewReached();
         goToStep(6);
       });
       return;

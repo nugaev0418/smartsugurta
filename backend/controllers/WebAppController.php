@@ -578,8 +578,6 @@ class WebAppController extends Controller
         $data->gateway = $gateway;
         $data->drivers = $drivers;
 
-        $this->notifyOrderChannel($lang, $plateNumber, $techSeria, $techNumber, $vehicleData, $data, $season, $driverRestriction, $startDate, $driversInput);
-
         try {
             // false: all submissions, Tashkent plates included, go through the Gross
             // queue — the Mini App used to take a direct-EAI path for Tashkent plates,
@@ -613,11 +611,65 @@ class WebAppController extends Controller
     }
 
     /**
+     * Foydalanuvchi 6-qadamga (ma'lumotlarni ko'rib chiqish) yetganda
+     * frontend shu action'ni fon rejimida ("fire and forget") chaqiradi —
+     * botning ConfirmStageHandler::show() bilan bir xil formatdagi xabarni
+     * "orders" kanaliga "🌐 Web App orqali" prefiksi bilan yuboradi
+     * (OrderChannelNotifier — "confirm texts" andozasi). Ataylab
+     * actionSubmit()da EMAS: bot ham xuddi shu bosqichda — tasdiqlash
+     * ekrani ko'rsatilganda, foydalanuvchi "Davom etish"ni bosishidan
+     * OLDIN — yuboradi, bu yerda ham shunga moslashtirilgan.
+     *
+     * Bu shunchaki bildirishnoma — ma'lumot to'liq/to'g'ri bo'lmasa yoki
+     * xato yuz bersa ham har doim `{success:true}` qaytaradi, frontendni
+     * hech qachon bloklamaydi/xato ko'rsatmaydi.
+     */
+    public function actionReviewNotify()
+    {
+        $input = $this->input();
+        $telegramUser = $this->requireTelegramUser($input);
+        $lang = $this->lang($telegramUser);
+        if (!$telegramUser || !$this->rateLimitOk($telegramUser['id'])) {
+            return ['success' => true];
+        }
+
+        try {
+            $plateNumber = str_replace(' ', '', strtoupper(trim((string)($input['plateNumber'] ?? ''))));
+            $techSeria = strtoupper(trim((string)($input['techSeria'] ?? '')));
+            $techNumber = trim((string)($input['techNumber'] ?? ''));
+            $vehicleData = (array)($input['vehicleData'] ?? []);
+            $phoneDigits = preg_replace('/\D/', '', (string)($input['phone'] ?? ''));
+            $driversInput = (array)($input['drivers'] ?? []);
+            $startDate = (string)($input['startDate'] ?? '');
+            $durationKey = (string)($input['duration'] ?? '');
+            $insuranceType = (string)($input['insuranceType'] ?? '');
+
+            if ($plateNumber === '' || $techSeria === '' || $techNumber === '' || empty($vehicleData['ownerType']) || $startDate === '') {
+                return ['success' => true];
+            }
+
+            $season = (new SeasonalInsuranceCatalog())->byKey($durationKey);
+            if ($season === null) {
+                return ['success' => true];
+            }
+
+            $driverRestriction = $insuranceType === 'limited';
+            $eaiPhone = '998' . substr($phoneDigits, -9);
+
+            $this->notifyOrderChannel($lang, $plateNumber, $techSeria, $techNumber, $vehicleData, $eaiPhone, $season, $driverRestriction, $startDate, $driversInput);
+        } catch (\Throwable $e) {
+            Yii::error('actionReviewNotify: ' . $e->getMessage(), 'webapp');
+        }
+
+        return ['success' => true];
+    }
+
+    /**
      * Botning ConfirmStageHandler::show() bilan bir xil formatdagi xabarni
      * "orders" kanaliga yuboradi (OrderChannelNotifier — "confirm texts"
-     * andozasi), "🌐 Web App orqali" prefiksi bilan. Haqiqiy arizani hech
-     * qachon to'xtatmasligi uchun o'z try/catch'iga o'ralgan — bu shunchaki
-     * bildirishnoma, submission oqimining bir qismi emas.
+     * andozasi), "🌐 Web App orqali" prefiksi bilan. Chaqiruvchi
+     * (actionReviewNotify()) o'z try/catch'ida chaqiradi — bu metod
+     * xatoni yutmaydi, faqat formatlash/yuborishni bajaradi.
      */
     private function notifyOrderChannel(
         string $lang,
@@ -625,60 +677,56 @@ class WebAppController extends Controller
         string $techSeria,
         string $techNumber,
         array $vehicleData,
-        OsagoApplicationData $data,
+        string $eaiPhone,
         array $season,
         bool $driverRestriction,
         string $startDate,
         array $driversInput
     ): void {
-        try {
-            $arizachi = $vehicleData['ownerType'] === 'ORGANIZATION'
-                ? (string)($vehicleData['name'] ?? '')
-                : trim(($vehicleData['firstName'] ?? '') . ' ' . ($vehicleData['lastName'] ?? '') . ' ' . ($vehicleData['middleName'] ?? ''));
+        $arizachi = $vehicleData['ownerType'] === 'ORGANIZATION'
+            ? (string)($vehicleData['name'] ?? '')
+            : trim(($vehicleData['firstName'] ?? '') . ' ' . ($vehicleData['lastName'] ?? '') . ' ' . ($vehicleData['middleName'] ?? ''));
 
-            $driversText = '';
-            foreach ($driversInput as $driver) {
-                $name = trim((string)($driver['name'] ?? ''));
-                $dSeria = strtoupper(trim((string)($driver['seria'] ?? '')));
-                $dNumber = trim((string)($driver['number'] ?? ''));
-                $driversText .= "{$name} - {$dSeria} {$dNumber}\n";
-            }
-
-            $premiumLabel = 'Aniqlanmadi!';
-            try {
-                $calcDto = (new EuroAsiaService())->getCalculateOsagoDTO(
-                    [],
-                    $season['id'],
-                    $driverRestriction,
-                    (string)($vehicleData['useTerritoryRegionId'] ?? ''),
-                    (string)($vehicleData['vehicleGroupId'] ?? '')
-                );
-                if ($calcDto->success) {
-                    $premiumLabel = number_format((float)$calcDto->premium / 100, 0, '.', ' ');
-                }
-            } catch (\Throwable $e) {
-                Yii::error('OrderChannelNotifier calculate: ' . $e->getMessage(), 'webapp');
-            }
-
-            $startDateLabel = date('d.m.Y', strtotime($startDate));
-            $endDateLabel = date('d.m.Y', strtotime($startDate . ' + ' . ($season['days'] - 1) . ' days'));
-
-            Yii::createObject(OrderChannelNotifier::class)->notify(
-                $lang,
-                $plateNumber,
-                $techSeria . $techNumber,
-                $arizachi,
-                $data->eaiPhoneNumber,
-                $startDateLabel,
-                $season['days'],
-                $endDateLabel,
-                $driversText,
-                $premiumLabel,
-                true
-            );
-        } catch (\Throwable $e) {
-            Yii::error('OrderChannelNotifier: ' . $e->getMessage(), 'webapp');
+        $driversText = '';
+        foreach ($driversInput as $driver) {
+            $name = trim((string)($driver['name'] ?? ''));
+            $dSeria = strtoupper(trim((string)($driver['seria'] ?? '')));
+            $dNumber = trim((string)($driver['number'] ?? ''));
+            $driversText .= "{$name} - {$dSeria} {$dNumber}\n";
         }
+
+        $premiumLabel = 'Aniqlanmadi!';
+        try {
+            $calcDto = (new EuroAsiaService())->getCalculateOsagoDTO(
+                [],
+                $season['id'],
+                $driverRestriction,
+                (string)($vehicleData['useTerritoryRegionId'] ?? ''),
+                (string)($vehicleData['vehicleGroupId'] ?? '')
+            );
+            if ($calcDto->success) {
+                $premiumLabel = number_format((float)$calcDto->premium / 100, 0, '.', ' ');
+            }
+        } catch (\Throwable $e) {
+            Yii::error('OrderChannelNotifier calculate: ' . $e->getMessage(), 'webapp');
+        }
+
+        $startDateLabel = date('d.m.Y', strtotime($startDate));
+        $endDateLabel = date('d.m.Y', strtotime($startDate . ' + ' . ($season['days'] - 1) . ' days'));
+
+        Yii::createObject(OrderChannelNotifier::class)->notify(
+            $lang,
+            $plateNumber,
+            $techSeria . $techNumber,
+            $arizachi,
+            $eaiPhone,
+            $startDateLabel,
+            $season['days'],
+            $endDateLabel,
+            $driversText,
+            $premiumLabel,
+            true
+        );
     }
 
     // ── "MENING AVTOLARIM" ───────────────────────────────────────────────
