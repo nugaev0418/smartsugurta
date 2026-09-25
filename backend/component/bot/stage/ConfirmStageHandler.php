@@ -5,10 +5,10 @@ namespace backend\component\bot\stage;
 use backend\component\bot\BotContext;
 use backend\component\bot\BotStageInterface;
 use backend\component\EuroAsiaService;
+use backend\component\insurance\OrderChannelNotifier;
 use backend\component\insurance\OsagoApplicationData;
 use backend\component\insurance\OsagoRequestBuilder;
 use backend\component\insurance\OsagoSubmissionService;
-use backend\models\EuroAsia;
 use backend\models\Pages;
 use common\models\Botuser;
 use Yii;
@@ -26,7 +26,8 @@ class ConfirmStageHandler implements BotStageInterface
     public function __construct(
         private MainMenuStageHandler $mainMenu,
         private OsagoRequestBuilder $requestBuilder,
-        private OsagoSubmissionService $submissionService
+        private OsagoSubmissionService $submissionService,
+        private OrderChannelNotifier $orderNotifier
     ) {
     }
 
@@ -100,7 +101,8 @@ class ConfirmStageHandler implements BotStageInterface
                 $jami_summa = 'Aniqlanmadi!';
             }
 
-            $text = sprintf($ctx->getMText("confirm texts"),
+            $text = $this->orderNotifier->notify(
+                $ctx->lang,
                 $autoNumber,
                 $texPass,
                 $arizachi,
@@ -109,11 +111,10 @@ class ConfirmStageHandler implements BotStageInterface
                 $sugurta_muddati,
                 $tugash_sanasi,
                 $haydovchilar,
-                $jami_summa
+                $jami_summa,
+                false
             );
             $ctx->sendMessageWithKeyborad($text, $option);
-
-            $ctx->sendMessageWithID(EuroAsia::ORDER_CHANNEL_ID, $text);
 
         }catch (\Exception $e){
             Yii::error($e->getMessage());

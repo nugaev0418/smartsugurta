@@ -857,7 +857,7 @@
       insuranceType: state.insuranceType,
       phone: state.phone,
       drivers: state.insuranceType === 'limited'
-        ? state.drivers.map(function (d) { return { seria: d.seria, number: d.number, birthDate: d.birthDate, relation: d.relation }; })
+        ? state.drivers.map(function (d) { return { seria: d.seria, number: d.number, birthDate: d.birthDate, relation: d.relation, name: d.name }; })
         : [],
       startDate: state.startDate,
       duration: state.duration,

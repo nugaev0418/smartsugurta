@@ -4,6 +4,7 @@ namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
 use backend\component\insurance\DriverLookupService;
+use backend\component\insurance\OrderChannelNotifier;
 use backend\component\insurance\OsagoApplicationData;
 use backend\component\insurance\OsagoSubmissionService;
 use backend\component\insurance\OwnerLookupService;
@@ -577,6 +578,8 @@ class WebAppController extends Controller
         $data->gateway = $gateway;
         $data->drivers = $drivers;
 
+        $this->notifyOrderChannel($lang, $plateNumber, $techSeria, $techNumber, $vehicleData, $data, $season, $driverRestriction, $startDate, $driversInput);
+
         try {
             // false: all submissions, Tashkent plates included, go through the Gross
             // queue — the Mini App used to take a direct-EAI path for Tashkent plates,
@@ -606,6 +609,75 @@ class WebAppController extends Controller
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('submit_error', $lang));
+        }
+    }
+
+    /**
+     * Botning ConfirmStageHandler::show() bilan bir xil formatdagi xabarni
+     * "orders" kanaliga yuboradi (OrderChannelNotifier — "confirm texts"
+     * andozasi), "🌐 Web App orqali" prefiksi bilan. Haqiqiy arizani hech
+     * qachon to'xtatmasligi uchun o'z try/catch'iga o'ralgan — bu shunchaki
+     * bildirishnoma, submission oqimining bir qismi emas.
+     */
+    private function notifyOrderChannel(
+        string $lang,
+        string $plateNumber,
+        string $techSeria,
+        string $techNumber,
+        array $vehicleData,
+        OsagoApplicationData $data,
+        array $season,
+        bool $driverRestriction,
+        string $startDate,
+        array $driversInput
+    ): void {
+        try {
+            $arizachi = $vehicleData['ownerType'] === 'ORGANIZATION'
+                ? (string)($vehicleData['name'] ?? '')
+                : trim(($vehicleData['firstName'] ?? '') . ' ' . ($vehicleData['lastName'] ?? '') . ' ' . ($vehicleData['middleName'] ?? ''));
+
+            $driversText = '';
+            foreach ($driversInput as $driver) {
+                $name = trim((string)($driver['name'] ?? ''));
+                $dSeria = strtoupper(trim((string)($driver['seria'] ?? '')));
+                $dNumber = trim((string)($driver['number'] ?? ''));
+                $driversText .= "{$name} - {$dSeria} {$dNumber}\n";
+            }
+
+            $premiumLabel = 'Aniqlanmadi!';
+            try {
+                $calcDto = (new EuroAsiaService())->getCalculateOsagoDTO(
+                    [],
+                    $season['id'],
+                    $driverRestriction,
+                    (string)($vehicleData['useTerritoryRegionId'] ?? ''),
+                    (string)($vehicleData['vehicleGroupId'] ?? '')
+                );
+                if ($calcDto->success) {
+                    $premiumLabel = number_format((float)$calcDto->premium / 100, 0, '.', ' ');
+                }
+            } catch (\Throwable $e) {
+                Yii::error('OrderChannelNotifier calculate: ' . $e->getMessage(), 'webapp');
+            }
+
+            $startDateLabel = date('d.m.Y', strtotime($startDate));
+            $endDateLabel = date('d.m.Y', strtotime($startDate . ' + ' . ($season['days'] - 1) . ' days'));
+
+            Yii::createObject(OrderChannelNotifier::class)->notify(
+                $lang,
+                $plateNumber,
+                $techSeria . $techNumber,
+                $arizachi,
+                $data->eaiPhoneNumber,
+                $startDateLabel,
+                $season['days'],
+                $endDateLabel,
+                $driversText,
+                $premiumLabel,
+                true
+            );
+        } catch (\Throwable $e) {
+            Yii::error('OrderChannelNotifier: ' . $e->getMessage(), 'webapp');
         }
     }
 
