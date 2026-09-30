@@ -143,7 +143,7 @@ class GrossOsago
         return $dir;
     }
 
-    private function ensureLoggedIn(int $maxAttempts = 3): void
+    private function ensureLoggedIn(int $maxAttempts = 10): void
     {
         if ($this->isSessionAlive()) {
             return;
@@ -167,7 +167,7 @@ class GrossOsago
             }
 
             if ($attempt < $maxAttempts) {
-                sleep(2);
+                sleep(random_int(2, 8));
             }
         }
 
@@ -196,10 +196,10 @@ class GrossOsago
     // PRIVATE — API CALL
     // ================================================================
 
-    private function call(string $label, callable $fn, string $sessionDir, int $tries = 3): ?array
+    private function call(string $label, callable $fn, string $sessionDir, int $tries = 10): ?array
     {
         for ($i = 1; $i <= $tries; $i++) {
-            if ($i > 1) sleep(1);
+            if ($i > 1) sleep(random_int(2, 8));
             $json = $fn();
             $this->save($label, $json, $i, $sessionDir);
             $data = json_decode($json, true);
