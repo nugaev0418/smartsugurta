@@ -3,6 +3,7 @@
 
 namespace backend\gross;
 use RuntimeException;
+use Yii;
 
 class GrossOsago
 {
@@ -44,7 +45,9 @@ class GrossOsago
 
         $vehicle = $this->call('vehicle',
             fn() => $this->http->getVehicle($seria, $number, $govNumber),
-            $sessionDir
+            $sessionDir,
+            10,
+            $this->cacheKey('gross_vehicle', $seria, $number, $govNumber)
         );
         if (!$vehicle) throw new RuntimeException("Vehicle ma'lumoti olinmadi");
         $vehicleResult = $vehicle['result'];
@@ -196,14 +199,37 @@ class GrossOsago
     // PRIVATE — API CALL
     // ================================================================
 
-    private function call(string $label, callable $fn, string $sessionDir, int $tries = 10): ?array
+    /**
+     * $cacheKey berilsa (vehicle/owner/company/pensioner/coefficient/driver
+     * qadamlari uchun — "PRIVATE — HELPERS"dagi cacheKey() ga qarang),
+     * avval Yii::$app->cache'dan tekshiriladi — bo'lsa API'ga umuman
+     * so'rov yuborilmaydi. Muvaffaqiyatli ($data['error']===0) natija
+     * 24 soatga shu kalit bilan keshlanadi — GrossOsagoJob qayta
+     * uringanda (tsikl/round) allaqachon olingan qadamlar darhol
+     * qaytadi, faqat haqiqatan muvaffaqiyatsiz bo'lgan qadam qayta
+     * so'raladi. 'phone-checker' va 'contract' (mutatsiya) uchun
+     * $cacheKey berilmaydi — ular hech qachon keshlanmaydi.
+     */
+    private function call(string $label, callable $fn, string $sessionDir, int $tries = 10, ?string $cacheKey = null): ?array
     {
+        if ($cacheKey !== null) {
+            $cached = Yii::$app->cache->get($cacheKey);
+            if ($cached !== false) {
+                return $cached;
+            }
+        }
+
         for ($i = 1; $i <= $tries; $i++) {
             if ($i > 1) sleep(random_int(2, 8));
             $json = $fn();
             $this->save($label, $json, $i, $sessionDir);
             $data = json_decode($json, true);
-            if (($data['error'] ?? -1) === 0) return $data;
+            if (($data['error'] ?? -1) === 0) {
+                if ($cacheKey !== null) {
+                    Yii::$app->cache->set($cacheKey, $data, 86400);
+                }
+                return $data;
+            }
         }
         return null;
     }
@@ -218,6 +244,17 @@ class GrossOsago
         file_put_contents("{$dir}/{$label}{$suffix}.json", $pretty !== false ? $pretty : $json);
     }
 
+    /**
+     * `call()`ga uzatiladigan kesh kalitini quradi — bir xil qadam
+     * (masalan 'gross_vehicle') uchun identifikatsiya parametrlari bir xil
+     * bo'lsa, bir xil kalit chiqadi (EAI kesh kalitlaridan alohida
+     * prefikslar bilan).
+     */
+    private function cacheKey(string $prefix, string ...$parts): string
+    {
+        return $prefix . '_' . md5(implode('|', $parts));
+    }
+
     // ================================================================
     // PRIVATE — OWNER
     // ================================================================
@@ -227,7 +264,7 @@ class GrossOsago
         $inn = $vehicleResult['inn'] ?? null;
         if (!$inn) throw new RuntimeException("Vehicle javobida INN topilmadi");
 
-        $resp = $this->call('company', fn() => $this->http->getCompanyByInn($inn), $sessionDir);
+        $resp = $this->call('company', fn() => $this->http->getCompanyByInn($inn), $sessionDir, 10, $this->cacheKey('gross_company', $inn));
         if (!$resp) throw new RuntimeException("Tashkilot ma'lumoti olinmadi");
 
         $company = $resp['result'] ?? [];
@@ -254,7 +291,7 @@ class GrossOsago
 
         $ownerResp = $this->call('owner', fn() => $this->http->getOwner(
             $passport, $pinfl, $this->senderPinfl, (string) round(microtime(true) * 1000)
-        ), $sessionDir);
+        ), $sessionDir, 10, $this->cacheKey('gross_owner', $passport, $pinfl));
         if (!$ownerResp) throw new RuntimeException("Owner ma'lumoti olinmadi");
 
         $data = $ownerResp['result'] ?? [];
@@ -263,7 +300,9 @@ class GrossOsago
 
         $this->call('pensioner',
             fn() => $this->http->getIsPensioner($num, $series, $pinfl),
-            $sessionDir
+            $sessionDir,
+            10,
+            $this->cacheKey('gross_pensioner', $num, $series, $pinfl)
         );
 
         $ownerSection = [
@@ -304,14 +343,14 @@ class GrossOsago
 
             $passportResp = $this->call("passport-{$n}", fn() => $this->http->getPassportByBirthDate(
                 $doc, $input['birth_date'], $this->senderPinfl, (string) round(microtime(true) * 1000)
-            ), $sessionDir);
+            ), $sessionDir, 10, $this->cacheKey('gross_passport', $doc, $input['birth_date']));
             if (!$passportResp) throw new RuntimeException("#{$n} haydovchi passport olinmadi");
 
             $pinfl = $passportResp['result']['currentPinfl'] ?? '';
 
             $summaryResp = $this->call("driver-summary-{$n}", fn() => $this->http->getDriverSummary(
                 $doc, $pinfl, $this->senderPinfl, (string) round(microtime(true) * 1000)
-            ), $sessionDir);
+            ), $sessionDir, 10, $this->cacheKey('gross_driver_summary', $doc, $pinfl));
             if (!$summaryResp) throw new RuntimeException("#{$n} haydovchi summary olinmadi");
 
             $s      = $summaryResp['result'] ?? [];
@@ -349,7 +388,9 @@ class GrossOsago
     {
         $resp = $this->call('coefficient',
             fn() => $this->http->getDriverCoefficient($pinfl),
-            $sessionDir
+            $sessionDir,
+            10,
+            $this->cacheKey('gross_coefficient', $pinfl)
         );
         return (float) ($resp['result']['coefficient'] ?? 1);
     }
