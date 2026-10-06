@@ -2,6 +2,7 @@
 
 namespace console\controllers;
 
+use backend\controllers\BotController;
 use backend\ersp\ErspVehicleClient;
 use common\models\OsagoExpiryReminder;
 use common\models\SavedVehicle;
@@ -102,6 +103,12 @@ class ReminderController extends Controller
         Yii::$app->telegram->sendMessage([
             'chat_id' => $botuser->chat_id,
             'text' => $text,
+            'parse_mode' => 'HTML',
+        ]);
+
+        Yii::$app->telegram->sendMessage([
+            'chat_id' => BotController::ADMIN_ID,
+            'text' => "🔔 Eslatma yuborildi (chat_id: {$botuser->chat_id}):\n\n{$text}",
             'parse_mode' => 'HTML',
         ]);
 
