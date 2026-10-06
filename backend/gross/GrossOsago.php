@@ -382,7 +382,14 @@ class GrossOsago
             if (!$summaryResp) throw new RuntimeException("#{$n} haydovchi summary olinmadi");
 
             $s      = $summaryResp['result'] ?? [];
-            $docs   = $s['documents'] ?? [];
+            // erspapiv2'ning driver-summary-v2 javobi ikki xil shaklda keladi:
+            // ba'zan F.I.Sh/litsenziya maydonlari result'ning o'zida (flat),
+            // ba'zan DriverPersonInfo/DriverInfo ichida (nested) — ikkalasini
+            // ham qo'llab-quvvatlash uchun o'ram mavjud bo'lsa shundan, aks
+            // holda result'ning o'zidan o'qiladi.
+            $person = $s['DriverPersonInfo'] ?? $s;
+            $license = $s['DriverInfo'] ?? $s;
+            $docs   = $person['documents'] ?? [];
             $active = current(array_filter($docs, fn($d) => $d['document'] === $doc)) ?: ($docs[0] ?? []);
 
             $drivers[] = [
@@ -391,13 +398,13 @@ class GrossOsago
                 "pinfl"                => $pinfl,
                 "passport_series"      => substr($doc, 0, 2),
                 "passport_number"      => substr($doc, 2),
-                "surname"              => $s['lastNameLatin']   ?? null,
-                "firstname"            => $s['firstNameLatin']  ?? null,
-                "patronym"             => $s['middleNameLatin'] ?? null,
-                "birthdate"            => $s['birthDate']       ?? null,
-                "license_sery"         => $s['licenseSeria']    ?? null,
-                "license_number"       => $s['licenseNumber']   ?? null,
-                "license_date"         => substr($s['issueDate'] ?? '', 0, 10),
+                "surname"              => $person['lastNameLatin']   ?? null,
+                "firstname"            => $person['firstNameLatin']  ?? null,
+                "patronym"             => $person['middleNameLatin'] ?? null,
+                "birthdate"            => $person['birthDate']       ?? null,
+                "license_sery"         => $license['licenseSeria']    ?? null,
+                "license_number"       => $license['licenseNumber']   ?? null,
+                "license_date"         => substr($license['issueDate'] ?? '', 0, 10),
                 "passport_given_place" => $active['docgiveplace'] ?? null,
                 "passport_given_date"  => $active['datebegin']    ?? null,
                 "relative_type"        => (int) ($input['relative_type'] ?? 0),
