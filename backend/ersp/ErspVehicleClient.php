@@ -490,6 +490,29 @@ class ErspVehicleClient
         return $endDate ? $endDate->format('Y-m-d') : null;
     }
 
+    ////////////////////////////////////////////////////////
+    // QOLGAN KUNLAR SONI (butun son) — muddat tugashi haqida
+    // eslatma yuborish uchun 7/3/1 kabi aniq milestone bilan
+    // solishtiriladi, shuning uchun remainingLabel()dagi
+    // "X yil Y oy Z kun" formati bu yerga mos emas.
+    ////////////////////////////////////////////////////////
+    public function daysRemaining(array $policy): ?int
+    {
+        $endDate = $this->extractEndDate($policy);
+
+        if ($endDate === null) {
+            return null;
+        }
+
+        $today = new \DateTimeImmutable('today');
+
+        if ($endDate < $today) {
+            return null;
+        }
+
+        return $today->diff($endDate)->days;
+    }
+
     private function extractEndDate(array $policy): ?\DateTimeImmutable
     {
         $range = $policy['Polisni amal qilish muddati'] ?? null;

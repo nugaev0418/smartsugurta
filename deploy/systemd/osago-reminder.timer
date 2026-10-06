@@ -1,0 +1,16 @@
+# osago-reminder.service'ni har kuni ertalab soat 09:00 (server mahalliy
+# vaqti) ishga tushiradi. O'rnatish/boshqarish buyruqlari
+# osago-reminder.service fayli ichidagi izohlarda.
+#
+# Boshqa vaqt kerak bo'lsa, shunchaki OnCalendar qiymatini o'zgartiring
+# (masalan "10:30:00") va: systemctl daemon-reload && systemctl restart osago-reminder.timer
+
+[Unit]
+Description=Smart Sug'urta - OSAGO eslatmasini kuniga bir marta ishga tushirish
+
+[Timer]
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,29 @@
+# "Mening avtolarim"dagi saqlangan avtomobillarning OSAGO polisasi muddati
+# tugashiga 7/3/1 kun qolganda foydalanuvchiga eslatma yuboruvchi buyruqni
+# BIR MARTA ishga tushiradi — doimiy jarayon emas, osago-reminder.timer
+# tomonidan kuniga bir marta chaqiriladi.
+#
+# O'rnatish (production serverda, root sifatida):
+#   1. Kerak bo'lsa User=/Group=/WorkingDirectory=/ExecStart= yo'llarini real
+#      deploy yo'liga moslang (quyidagi qiymatlar ersp-queue.service bilan bir xil).
+#   2. cp deploy/systemd/osago-reminder.service /etc/systemd/system/
+#      cp deploy/systemd/osago-reminder.timer /etc/systemd/system/
+#   3. systemctl daemon-reload
+#   4. systemctl enable --now osago-reminder.timer
+#
+# Boshqarish:
+#   systemctl list-timers | grep osago-reminder   # keyingi ishga tushish vaqtini ko'rish
+#   systemctl start osago-reminder.service         # qo'lda, navbatdan tashqari ishga tushirish
+#   journalctl -u osago-reminder -f                # jonli loglarni kuzatish
+
+[Unit]
+Description=Smart Sug'urta - OSAGO muddati tugashi haqida eslatma
+After=network.target mysql.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/smart
+ExecStart=/usr/bin/php /var/www/smart/yii reminder/expiry-check
+TimeoutStartSec=300
