@@ -8,6 +8,7 @@ class GrossOsagoClient
 {
     private string $baseUrl = 'https://osago.gross.uz';
     private string $cookieFile;
+    private ?string $lastRequestBody = null;
 
     public function __construct()
     {
@@ -28,6 +29,7 @@ class GrossOsagoClient
         ?string $postData = null,
         bool $binary = false
     ): string {
+        $this->lastRequestBody = $postData;
 
         $curl = curl_init();
 
@@ -57,6 +59,11 @@ class GrossOsagoClient
         curl_close($curl);
 
         return $response;
+    }
+
+    public function getLastRequestBody(): ?string
+    {
+        return $this->lastRequestBody;
     }
 
     ////////////////////////////////////////////////////////

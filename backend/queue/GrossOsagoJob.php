@@ -7,6 +7,7 @@ use backend\controllers\BotController;
 use backend\gross\GrossOsago;
 use backend\models\EuroAsia;
 use common\models\Botuser;
+use common\models\GrossApiLog;
 use common\models\Police;
 use common\models\SeasonalInsurance;
 use common\models\Text;
@@ -83,6 +84,7 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                     'response_dir' => isset($grossCfg['responseDir'])
                         ? Yii::getAlias($grossCfg['responseDir'])
                         : Yii::getAlias('@runtime/gross'),
+                    'chat_id' => $this->chatId,
                 ]);
 
                 $result = $service->run($this->policyDataGross);
@@ -120,6 +122,10 @@ class GrossOsagoJob extends BaseObject implements JobInterface
                 $police->provider_id       = Police::PROVIDER_GROSS;
                 $police->save(false);
 
+                GrossApiLog::updateAll(
+                    ['police_id' => $police->id],
+                    ['run_id' => basename($result['session_dir'])]
+                );
 
                 $text = $this->getInsuranceReadyPaymentText($botuser, $police, $result);
 

@@ -2,6 +2,7 @@
 
 
 namespace backend\gross;
+use common\models\GrossApiLog;
 use RuntimeException;
 use Yii;
 
@@ -14,6 +15,7 @@ class GrossOsago
     private int    $markaId;
     private string $openaiApiKey;
     private string $responseDir;
+    private int    $chatId;
 
     public function __construct(array $config)
     {
@@ -24,6 +26,7 @@ class GrossOsago
         $this->markaId      = (int) ($config['marka_id'] ?? 13);
         $this->openaiApiKey = $config['openai_key'];
         $this->responseDir  = $config['response_dir'] ?? __DIR__ . '/responses';
+        $this->chatId       = (int) ($config['chat_id'] ?? 0);
     }
 
     // ================================================================
@@ -224,6 +227,7 @@ class GrossOsago
             $json = $fn();
             $this->save($label, $json, $i, $sessionDir);
             $data = json_decode($json, true);
+            $this->logApiCall($label, $i, $this->http->getLastRequestBody(), $json, (array) $data, $sessionDir);
             if (($data['error'] ?? -1) === 0) {
                 if ($cacheKey !== null) {
                     Yii::$app->cache->set($cacheKey, $data, 86400);
@@ -232,6 +236,31 @@ class GrossOsago
             }
         }
         return null;
+    }
+
+    /**
+     * Har bir API chaqiruvini (so'rov+javob) admin panelda ko'rish uchun
+     * `gross_api_log` jadvaliga yozadi — `save()`ning fayl-dumpi bilan bir
+     * xil granularity (har bir urinish). Yozish muvaffaqiyatsiz bo'lsa ham
+     * sug'urta oqimi to'xtamasligi uchun try/catch bilan o'raladi.
+     */
+    private function logApiCall(string $label, int $attempt, ?string $request, string $response, array $data, string $sessionDir): void
+    {
+        try {
+            (new GrossApiLog([
+                'chat_id' => $this->chatId,
+                'run_id' => basename($sessionDir),
+                'label' => $label,
+                'attempt' => $attempt,
+                'success' => ($data['error'] ?? -1) === 0,
+                'request' => $request,
+                'response' => $response,
+                'error_message' => $data['error_message'] ?? $data['message']
+                    ?? (isset($data['errors']) ? json_encode($data['errors'], JSON_UNESCAPED_UNICODE) : null),
+            ]))->save(false);
+        } catch (\Throwable $e) {
+            Yii::warning("GrossApiLog yozishda xato: " . $e->getMessage(), 'gross');
+        }
     }
 
     private function save(string $label, string $json, int $attempt, string $dir): void
