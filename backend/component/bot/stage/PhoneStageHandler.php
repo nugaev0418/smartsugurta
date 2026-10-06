@@ -37,30 +37,26 @@ class PhoneStageHandler implements BotStageInterface
     public function handle(BotContext $ctx): void
     {
         if (isset($ctx->data['message']['contact'])) {
-            $phone = $ctx->data['message']['contact']['phone_number'];
-            $ctx->phone = $phone;
-
-            $police_data = [];
-            $police_data['phone'] = substr($phone, -9);
-            $ctx->police_data = $police_data;
-
-            $ctx->sendMessageAdmin(json_encode($police_data));
-
-            $this->proceedToVehicleStage($ctx);
-
+            $raw = $ctx->data['message']['contact']['phone_number'];
         } elseif (preg_match('/^\+?\d{9,12}$/', $ctx->text)) {
-            // The input is a valid number within the specified length.
-            $phone = $ctx->text;
-
-            $police_data = [];
-            $police_data['phone'] = substr($phone, -9);
-            $ctx->police_data = $police_data;
-            $ctx->sendMessageAdmin(json_encode($police_data));
-
-            $this->proceedToVehicleStage($ctx);
+            $raw = $ctx->text;
         } else {
             $ctx->sendMessage($ctx->getMText('phone ask again'));
+            return;
         }
+
+        $digits = preg_replace('/\D/', '', $raw);
+        if (strlen($digits) < 9) {
+            $ctx->sendMessage($ctx->getMText('phone ask again'));
+            return;
+        }
+
+        $phone = '998' . substr($digits, -9);
+        $ctx->phone = $phone;
+
+        $ctx->sendMessageAdmin(json_encode(['phone' => $phone]));
+
+        $this->proceedToVehicleStage($ctx);
     }
 
     /**
