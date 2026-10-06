@@ -206,11 +206,22 @@ class BotController extends Controller
 
     public function __get($name)
     {
+        if ($this->state === null) {
+            // actionStart() ishga tushmagan paytda (masalan /sarmin/route kabi
+            // admin vositalari controllerlarni introspeksiya qilib, Yii'ning
+            // o'z ichki propertylariga - view/module/uniqueId - murojaat
+            // qilganda) Component'ning odatiy getter mantig'iga tushib ketish.
+            return parent::__get($name);
+        }
         return $this->state->get($name);
     }
 
     public function __set($name, $value)
     {
+        if ($this->state === null) {
+            parent::__set($name, $value);
+            return;
+        }
         $this->state->set($name, $value);
     }
 
