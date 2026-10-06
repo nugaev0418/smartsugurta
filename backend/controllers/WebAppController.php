@@ -161,8 +161,8 @@ class WebAppController extends Controller
             'ru' => "Данные владельца автомобиля заполнены не полностью",
         ],
         'submitted_gross' => [
-            'uz' => "Arizangiz qabul qilindi va 3 daqiqa ichida sug'urta qilinasiz! To'lov havolasi botga yuboriladi.",
-            'ru' => "Ваша заявка принята, страховка будет оформлена в течение 3 минут! Ссылка на оплату придёт в бот.",
+            'uz' => "Arizangiz qabul qilindi, Iltimos biroz kuting, sizga sugʻurta to'lovi havolasi yuboriladi.",
+            'ru' => "Ваша заявка принята. Подождите немного, вам будет отправлена ссылка для оплаты страхового взноса.",
         ],
         'create_insurance_error' => [
             'uz' => "Sug'urta yaratishda xatolik yuz berdi. Iltimos qayta urinib ko'ring",
