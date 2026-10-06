@@ -236,12 +236,11 @@ class GrossOsago
 
     private function save(string $label, string $json, int $attempt, string $dir): void
     {
-        $suffix = $attempt > 1 ? "_attempt{$attempt}" : '';
         $pretty = json_encode(
             json_decode($json, true),
             JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
         );
-        file_put_contents("{$dir}/{$label}{$suffix}.json", $pretty !== false ? $pretty : $json);
+        file_put_contents("{$dir}/{$label}_attempt{$attempt}.json", $pretty !== false ? $pretty : $json);
     }
 
     /**
@@ -354,7 +353,7 @@ class GrossOsago
             if (!$summaryResp) throw new RuntimeException("#{$n} haydovchi summary olinmadi");
 
             $s      = $summaryResp['result'] ?? [];
-            $docs   = $s['DriverPersonInfo']['documents'] ?? [];
+            $docs   = $s['documents'] ?? [];
             $active = current(array_filter($docs, fn($d) => $d['document'] === $doc)) ?: ($docs[0] ?? []);
 
             $drivers[] = [
@@ -363,13 +362,13 @@ class GrossOsago
                 "pinfl"                => $pinfl,
                 "passport_series"      => substr($doc, 0, 2),
                 "passport_number"      => substr($doc, 2),
-                "surname"              => $s['DriverPersonInfo']['lastNameLatin']   ?? null,
-                "firstname"            => $s['DriverPersonInfo']['firstNameLatin']  ?? null,
-                "patronym"             => $s['DriverPersonInfo']['middleNameLatin'] ?? null,
-                "birthdate"            => $s['DriverPersonInfo']['birthDate']       ?? null,
-                "license_sery"         => $s['DriverInfo']['licenseSeria']          ?? null,
-                "license_number"       => $s['DriverInfo']['licenseNumber']         ?? null,
-                "license_date"         => substr($s['DriverInfo']['issueDate'] ?? '', 0, 10),
+                "surname"              => $s['lastNameLatin']   ?? null,
+                "firstname"            => $s['firstNameLatin']  ?? null,
+                "patronym"             => $s['middleNameLatin'] ?? null,
+                "birthdate"            => $s['birthDate']       ?? null,
+                "license_sery"         => $s['licenseSeria']    ?? null,
+                "license_number"       => $s['licenseNumber']   ?? null,
+                "license_date"         => substr($s['issueDate'] ?? '', 0, 10),
                 "passport_given_place" => $active['docgiveplace'] ?? null,
                 "passport_given_date"  => $active['datebegin']    ?? null,
                 "relative_type"        => (int) ($input['relative_type'] ?? 0),
