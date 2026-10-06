@@ -374,23 +374,24 @@ class GrossOsago
             ), $sessionDir, 10, $this->cacheKey('gross_passport', $doc, $input['birth_date']));
             if (!$passportResp) throw new RuntimeException("#{$n} haydovchi passport olinmadi");
 
-            $pinfl = $passportResp['result']['currentPinfl'] ?? '';
+            $passport = $passportResp['result'] ?? [];
+            $pinfl = $passport['currentPinfl'] ?? '';
 
             $summaryResp = $this->call("driver-summary-{$n}", fn() => $this->http->getDriverSummary(
                 $doc, $pinfl, $this->senderPinfl, (string) round(microtime(true) * 1000)
             ), $sessionDir, 10, $this->cacheKey('gross_driver_summary', $doc, $pinfl));
             if (!$summaryResp) throw new RuntimeException("#{$n} haydovchi summary olinmadi");
 
-            $s      = $summaryResp['result'] ?? [];
-            // erspapiv2'ning driver-summary-v2 javobi ikki xil shaklda keladi:
-            // ba'zan F.I.Sh/litsenziya maydonlari result'ning o'zida (flat),
-            // ba'zan DriverPersonInfo/DriverInfo ichida (nested) — ikkalasini
-            // ham qo'llab-quvvatlash uchun o'ram mavjud bo'lsa shundan, aks
-            // holda result'ning o'zidan o'qiladi.
-            $person = $s['DriverPersonInfo'] ?? $s;
+            // F.I.Sh/tug'ilgan sana/hujjatlar passport-birth-date-v2'dan
+            // (yuqorida, $passport) olinadi — bu har doim ishonchli flat
+            // keladi. driver-summary-v2'ning shaxsiy ma'lumot qismi
+            // (DriverPersonInfo) notinch: ba'zan flat, ba'zan o'ralgan,
+            // ba'zan butunlay bo'sh massiv ([]) qaytaradi — shuning uchun
+            // driver-summary faqat litsenziya (DriverInfo) uchun ishlatiladi.
+            $s       = $summaryResp['result'] ?? [];
             $license = $s['DriverInfo'] ?? $s;
-            $docs   = $person['documents'] ?? [];
-            $active = current(array_filter($docs, fn($d) => $d['document'] === $doc)) ?: ($docs[0] ?? []);
+            $docs    = $passport['documents'] ?? [];
+            $active  = current(array_filter($docs, fn($d) => $d['document'] === $doc)) ?: ($docs[0] ?? []);
 
             $drivers[] = [
                 "use_pinfl"            => false,
@@ -398,10 +399,10 @@ class GrossOsago
                 "pinfl"                => $pinfl,
                 "passport_series"      => substr($doc, 0, 2),
                 "passport_number"      => substr($doc, 2),
-                "surname"              => $person['lastNameLatin']   ?? null,
-                "firstname"            => $person['firstNameLatin']  ?? null,
-                "patronym"             => $person['middleNameLatin'] ?? null,
-                "birthdate"            => $person['birthDate']       ?? null,
+                "surname"              => $passport['lastNameLatin']   ?? null,
+                "firstname"            => $passport['firstNameLatin']  ?? null,
+                "patronym"             => $passport['middleNameLatin'] ?? null,
+                "birthdate"            => $passport['birthDate']       ?? null,
                 "license_sery"         => $license['licenseSeria']    ?? null,
                 "license_number"       => $license['licenseNumber']   ?? null,
                 "license_date"         => substr($license['issueDate'] ?? '', 0, 10),
