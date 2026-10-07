@@ -13,9 +13,9 @@ use common\models\SeasonalInsurance;
 use common\models\Text;
 use Yii;
 use yii\base\BaseObject;
-use yii\queue\JobInterface;
+use yii\queue\RetryableJobInterface;
 
-class GrossOsagoJob extends BaseObject implements JobInterface
+class GrossOsagoJob extends BaseObject implements RetryableJobInterface
 {
     public array  $policyDataGross = [];
     public array  $policyDataEAI   = [];
@@ -30,6 +30,34 @@ class GrossOsagoJob extends BaseObject implements JobInterface
         $this->policyDataGross = $data['policyDataGross'];
         $this->policyDataEAI   = $data['policyDataEAI'];
         $this->chatId          = (int) $data['chat_id'];
+    }
+
+    /**
+     * yii2-queue'da ttr — shunchaki rezervatsiya muddati emas, ish
+     * jarayonini MAJBURAN o'ldirish vaqti ham (cli/Command.php: isolate
+     * rejimida `new Process(..., $ttr)` — Symfony Process'ning timeout'i).
+     * Standart 300s bu ishning o'z budjetidan kichik: 2 tsikl × 3 urinish,
+     * orasida 10/40s kutish, ustiga har bir ichki API qadami 10 martagacha
+     * 2-8s kutib qayta so'raydi. Shu sababli ish o'rtasida uzilib,
+     * navbatdan jimgina o'chirilardi.
+     */
+    public function getTtr(): int
+    {
+        return 3600;
+    }
+
+    /**
+     * Uzilgan ish QAYTA BAJARILMAYDI — polisa allaqachon yaratilgan
+     * bo'lishi mumkin, qayta bajarish dublikat polisa va ikkinchi to'lov
+     * havolasiga olib keladi. Bu yerda `true` faqat ishni ikkinchi marta
+     * rezerv qilinishiga ruxsat berish uchun: haqiqiy bajarilishni
+     * QueueInterruptionNotifier EVENT_BEFORE_EXEC'da to'xtatadi va adminga
+     * xabar yuboradi. Agar darhol `false` qaytarilsa, yii2-queue ishni
+     * hech qanday event ishga tushirmasdan jimgina o'chiradi.
+     */
+    public function canRetry($attempt, $error): bool
+    {
+        return $attempt < 2;
     }
 
     public function execute($queue): void

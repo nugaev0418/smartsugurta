@@ -1,0 +1,47 @@
+# Gross Insurance orqali polisa yaratish navbatini (grossQueue,
+# console/config/main.php) doimiy tinglaydigan systemd xizmati.
+#
+# ⚠️ DIQQAT: serverda bu xizmat allaqachon QO'LDA yaratilgan (repoga
+# qo'shilmagan holda). Bu faylni o'rnatishdan oldin mavjud unit bilan
+# solishtirib chiqing (`systemctl cat gross-queue`) va faqat BITTA nusxa
+# ishlashiga ishonch hosil qiling — grossQueue'ni bir vaqtda ikki worker
+# tinglasa, bitta ariza ikki marta bajarilib, dublikat polisa va ikkinchi
+# to'lov havolasi yaratilishi mumkin.
+#
+# O'rnatish (production serverda, root sifatida):
+#   1. Kerak bo'lsa User=/Group=/WorkingDirectory=/ExecStart= yo'llarini real
+#      deploy yo'liga moslang (quyidagi qiymatlar ersp-queue.service bilan bir xil).
+#   2. cp deploy/systemd/gross-queue.service /etc/systemd/system/gross-queue.service
+#   3. systemctl daemon-reload
+#   4. systemctl enable --now gross-queue
+#
+# Boshqarish:
+#   systemctl status gross-queue        # holatini ko'rish
+#   systemctl restart gross-queue       # kodni deploy qilgandan keyin qayta ishga tushirish
+#   journalctl -u gross-queue -f        # jonli loglarni kuzatish
+#
+# Buyruq nomi `gross-queue` (komponent id `grossQueue`dan Inflector::camel2id()
+# orqali olinadi) — `grossQueue/listen` shaklida ishlamaydi.
+
+[Unit]
+Description=Smart Sug'urta - Gross Insurance polisa navbati (grossQueue)
+After=network.target mysql.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/smart
+ExecStart=/usr/bin/php /var/www/smart/yii gross-queue/listen --verbose
+
+# GrossOsagoJob uzoq ishlaydi (GrossOsagoJob::getTtr() — 1 soat): 2 tsikl ×
+# 3 urinish, har bir ichki API qadami 10 martagacha qayta so'raladi. Shuning
+# uchun to'xtatishga keng vaqt beriladi — ish o'rtasida uzilib qolmasin.
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

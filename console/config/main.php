@@ -44,6 +44,10 @@ return [
         'grossQueue' => [
             'class' => \yii\queue\db\Queue::class,
             'channel' => 'gross',
+            // Ish uzilib qolsa (ttr'da o'ldirilsa yoki worker to'xtasa)
+            // adminga xabar beradi va qayta bajarilishini to'xtatadi.
+            // ttr GrossOsagoJob::getTtr()dan keladi.
+            'as interruptionNotifier' => \backend\queue\QueueInterruptionNotifier::class,
         ],
         'broadcastQueue' => [
             'class' => \yii\queue\db\Queue::class,

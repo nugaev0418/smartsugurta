@@ -23,11 +23,14 @@ php init --env=Development            # environments/dev dan config fayllarini n
 php yii migrate                       # console/migrations dagi migratsiyalarni qo'llash
 php yii migrate/create <name>         # yangi migratsiya yaratish
 
-php yii queue/listen                  # default queue kanalini tinglash (agar kerak bo'lsa)
-php yii paynetQueue/listen             # Paynet to'lov navbatini ishga tushirish
-php yii grossQueue/listen              # Gross Insurance polisa navbatini ishga tushirish
-php yii broadcastQueue/listen          # bot orqali ommaviy xabar yuborish navbati
-php yii erspQueue/listen               # "Mening avtolarim" ERSP sug'urta tekshiruvi navbati
+# Navbat buyrug'ining nomi komponent id'sidan Inflector::camel2id() orqali olinadi
+# (`grossQueue` -> `gross-queue`) — camelCase shaklida ishlamaydi.
+php yii paynet-queue/listen            # Paynet to'lov navbatini ishga tushirish
+php yii gross-queue/listen             # Gross Insurance polisa navbatini ishga tushirish
+php yii broadcast-queue/listen         # bot orqali ommaviy xabar yuborish navbati
+php yii ersp-queue/listen              # "Mening avtolarim" ERSP sug'urta tekshiruvi navbati
+
+php yii reminder/expiry-check          # sug'urta muddati tugashi haqida eslatma (systemd timer chaqiradi)
 ```
 
 ### Testlar (Codeception + PHPUnit)
