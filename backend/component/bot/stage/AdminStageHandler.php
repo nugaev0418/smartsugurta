@@ -71,8 +71,8 @@ class AdminStageHandler implements BotStageInterface
             if (isset($msgData[$t])) { $msgType = $t; break; }
         }
 
-        $activeUsers = Botuser::find()->where(['status' => 1])->all();
-        $total       = count($activeUsers);
+        $recipients = Botuser::find()->select(['id', 'chat_id'])->where(['status' => 1]);
+        $total      = $recipients->count();
 
         $broadcast               = new Broadcast();
         $broadcast->message_type = $msgType;
@@ -82,12 +82,14 @@ class AdminStageHandler implements BotStageInterface
         $broadcast->status       = Broadcast::STATUS_SENDING;
         $broadcast->save(false);
 
-        foreach ($activeUsers as $user) {
-            Yii::$app->broadcastQueue->push(new BroadcastSendJob([
-                'broadcast_id' => $broadcast->id,
-                'user_id'      => (int)$user->id,
-                'chat_id'      => (int)$user->chat_id,
-            ]));
+        foreach ($recipients->asArray()->batch(500) as $batch) {
+            foreach ($batch as $user) {
+                Yii::$app->broadcastQueue->push(new BroadcastSendJob([
+                    'broadcast_id' => $broadcast->id,
+                    'user_id'      => (int)$user['id'],
+                    'chat_id'      => (int)$user['chat_id'],
+                ]));
+            }
         }
 
         $ctx->sendMessage("✅ Xabar <b>{$total}</b> ta foydalanuvchiga yuborilmoqda...\n🆔 Broadcast ID: <b>{$broadcast->id}</b>");
