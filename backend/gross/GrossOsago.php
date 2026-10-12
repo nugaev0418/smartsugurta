@@ -212,8 +212,18 @@ class GrossOsago
      * qaytadi, faqat haqiqatan muvaffaqiyatsiz bo'lgan qadam qayta
      * so'raladi. 'phone-checker' va 'contract' (mutatsiya) uchun
      * $cacheKey berilmaydi — ular hech qachon keshlanmaydi.
+     *
+     * $isAcceptable berilsa, $data['error']===0 bo'lsa ham javob hali
+     * "to'liq" emas deb hisoblanishi mumkin — masalan driver-summary-v2
+     * ba'zan error:0 bilan birga DriverInfo'ni bo'sh massiv ([]) qaytaradi
+     * (o'zi xato emas, lekin litsenziya ma'lumoti yo'q). Bunday holatda
+     * javob CACHE'LANMAYDI va tsikl davom etadi (xuddi error!==0'dagidek
+     * qayta so'raladi) — $tries tugagach, agar hech qachon acceptable
+     * bo'lmasa, oxirgi (error:0 bo'lgan, lekin to'liqsiz) javob qaytariladi,
+     * chunki bu haqiqiy API xatosi emas va ariza yuborishni to'sib
+     * qo'ymasligi kerak.
      */
-    private function call(string $label, callable $fn, string $sessionDir, int $tries = 10, ?string $cacheKey = null): ?array
+    private function call(string $label, callable $fn, string $sessionDir, int $tries = 10, ?string $cacheKey = null, ?callable $isAcceptable = null): ?array
     {
         if ($cacheKey !== null) {
             $cached = Yii::$app->cache->get($cacheKey);
@@ -222,6 +232,8 @@ class GrossOsago
             }
         }
 
+        $lastSuccessful = null;
+
         for ($i = 1; $i <= $tries; $i++) {
             if ($i > 1) sleep(random_int(2, 8));
             $json = $fn();
@@ -229,13 +241,17 @@ class GrossOsago
             $data = json_decode($json, true);
             $this->logApiCall($label, $i, $this->http->getLastRequestBody(), $json, (array) $data, $sessionDir);
             if (($data['error'] ?? -1) === 0) {
+                $lastSuccessful = $data;
+                if ($isAcceptable !== null && !$isAcceptable($data)) {
+                    continue;
+                }
                 if ($cacheKey !== null) {
                     Yii::$app->cache->set($cacheKey, $data, 86400);
                 }
                 return $data;
             }
         }
-        return null;
+        return $lastSuccessful;
     }
 
     /**
@@ -377,9 +393,16 @@ class GrossOsago
             $passport = $passportResp['result'] ?? [];
             $pinfl = $passport['currentPinfl'] ?? '';
 
-            $summaryResp = $this->call("driver-summary-{$n}", fn() => $this->http->getDriverSummary(
-                $doc, $pinfl, $this->senderPinfl, (string) round(microtime(true) * 1000)
-            ), $sessionDir, 10, $this->cacheKey('gross_driver_summary', $doc, $pinfl));
+            $summaryResp = $this->call(
+                "driver-summary-{$n}",
+                fn() => $this->http->getDriverSummary(
+                    $doc, $pinfl, $this->senderPinfl, (string) round(microtime(true) * 1000)
+                ),
+                $sessionDir,
+                10,
+                $this->cacheKey('gross_driver_summary', $doc, $pinfl),
+                fn(array $data) => !empty($data['result']['DriverInfo'])
+            );
             if (!$summaryResp) throw new RuntimeException("#{$n} haydovchi summary olinmadi");
 
             // F.I.Sh/tug'ilgan sana/hujjatlar passport-birth-date-v2'dan
