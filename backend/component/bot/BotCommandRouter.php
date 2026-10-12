@@ -34,6 +34,10 @@ class BotCommandRouter
 
     public function route(BotContext $ctx): bool
     {
+        if (!is_string($ctx->text) || $ctx->text === '') {
+            return false;
+        }
+
         switch ($ctx->text) {
             case '/start':
                 if ($ctx->lang) {
