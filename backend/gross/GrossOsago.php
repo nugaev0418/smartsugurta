@@ -401,7 +401,7 @@ class GrossOsago
                 $sessionDir,
                 10,
                 $this->cacheKey('gross_driver_summary', $doc, $pinfl),
-                fn(array $data) => !empty($data['result']['DriverInfo'])
+                fn(array $data) => !empty($data['result']['DriverInfo']) && !empty($data['result']['DriverPersonInfo'])
             );
             if (!$summaryResp) throw new RuntimeException("#{$n} haydovchi summary olinmadi");
 
