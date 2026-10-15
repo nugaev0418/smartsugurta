@@ -19,10 +19,12 @@ use backend\component\bot\stage\MyVehiclesStageHandler;
 use backend\component\bot\stage\OwnerStageHandler;
 use backend\component\bot\stage\PhoneStageHandler;
 use backend\component\bot\stage\PoliceSeasonStageHandler;
+use backend\component\bot\stage\SurveyStageHandler;
 use backend\component\bot\stage\VehicleLookupStageHandler;
 use backend\component\bot\stage\WalletStageHandler;
 use backend\component\bot\WebhookGuard;
 use backend\component\DeeplinkService;
+use backend\component\MarketingAttributionService;
 use backend\component\ReferralService;
 use backend\models\Pages;
 use common\models\Setting;
@@ -104,18 +106,34 @@ class BotController extends Controller
                 return 'ok';
             }
 
-            $referralNotify = $this->text
+            // Attribution faqat /start (payload bilan yoki sof) uchun
+            // yoziladi — oddiy FSM xabarlari (telefon raqami, tugma bosish
+            // va h.k.) har safar "to'g'ridan-to'g'ri tashrif" sifatida
+            // qayd etilib ketmasligi uchun.
+            $isStartCommand = is_string($this->text) && str_starts_with($this->text, '/start');
+
+            $refRegexMatched = $isStartCommand && preg_match('/^\/start ref_/', $this->text);
+            $referralNotify = $refRegexMatched
                 ? (new ReferralService())->processStartCommand($this->text, $this->chat_id, $isNewUser)
                 : null;
             if ($referralNotify) {
                 $this->messenger->sendWithId($referralNotify['chat_id'], $referralNotify['message']);
             }
-            if ($this->text && preg_match('/^\/start ref_/', $this->text)) {
+            if ($refRegexMatched) {
                 $this->text = '/start';
             }
 
-            if ($this->text && (new DeeplinkService())->processStartCommand($this->text, $this->chat_id, $isNewUser)) {
+            $deeplinkMatched = $isStartCommand && $this->text && (new DeeplinkService())->processStartCommand($this->text, $this->chat_id, $isNewUser);
+            if ($deeplinkMatched) {
                 $this->text = '/start';
+            }
+
+            // Hech qanday reklama/referral payload mos kelmagan — sof /start.
+            // Yangi foydalanuvchi uchun manba so'rovnomasi kerak bo'lishi mumkin.
+            $needsSurvey = false;
+            if ($isStartCommand && !$refRegexMatched && !$deeplinkMatched) {
+                (new MarketingAttributionService())->recordDirectTouch($this->chat_id, $isNewUser);
+                $needsSurvey = $isNewUser;
             }
 
             $ctx = new BotContext(
@@ -128,6 +146,10 @@ class BotController extends Controller
                 $this->textService,
                 self::ADMIN_ID
             );
+
+            if ($needsSurvey) {
+                $ctx->needsSurvey = true;
+            }
 
             if (!$this->buildCommandRouter()->route($ctx)) {
                 $this->buildStageRegistry()->get($ctx->page)?->handle($ctx);
@@ -195,6 +217,8 @@ class BotController extends Controller
         $registry->register(Pages::MY_VEHICLE_ADD_TEXPASS, $myVehicles);
         $registry->register(Pages::MY_VEHICLE_DETAIL, $myVehicles);
         $registry->register(Pages::MY_VEHICLE_DELETE_CONFIRM, $myVehicles);
+
+        $registry->register(Pages::SURVEY_SOURCE, Yii::createObject(SurveyStageHandler::class));
 
         return $registry;
     }

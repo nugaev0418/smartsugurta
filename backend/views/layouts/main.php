@@ -27,6 +27,8 @@ $navItems = [
     ['label' => 'Text',     'url' => '/text/index',     'icon' => 'ti-file-text',      'controller' => 'text'],
     ['label' => 'Broadcast', 'url' => '/broadcast/index', 'icon' => 'ti-speakerphone',   'controller' => 'broadcast'],
     ['label' => 'Deeplink',  'url' => '/deeplink/index',  'icon' => 'ti-link',           'controller' => 'deeplink'],
+    ['label' => 'Marketing dashboard', 'url' => '/marketing-dashboard/index', 'icon' => 'ti-chart-bar', 'controller' => 'marketing-dashboard'],
+    ['label' => 'Komissiya stavkalari', 'url' => '/marketing-commission-rate/index', 'icon' => 'ti-percentage', 'controller' => 'marketing-commission-rate'],
     ['label' => 'Income',   'url' => '/income/index',   'icon' => 'ti-cash',           'controller' => 'income'],
     ['label' => 'Setting',  'url' => '/setting/index',  'icon' => 'ti-adjustments',    'controller' => 'setting'],
     ['label' => 'Paynet',   'url' => '/paynet/index',   'icon' => 'ti-credit-card',    'controller' => 'paynet'],

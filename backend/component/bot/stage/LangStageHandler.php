@@ -13,7 +13,8 @@ use backend\models\Pages;
 class LangStageHandler implements BotStageInterface
 {
     public function __construct(
-        private MainMenuStageHandler $mainMenu
+        private MainMenuStageHandler $mainMenu,
+        private SurveyStageHandler $surveyStage
     ) {
     }
 
@@ -36,14 +37,25 @@ class LangStageHandler implements BotStageInterface
         switch ($ctx->text) {
             case "O'zbekcha":
                 $ctx->lang = 'uz';
-                $this->mainMenu->show($ctx);
+                $this->afterLangChosen($ctx);
                 break;
             case "Русский":
                 $ctx->lang = 'ru';
-                $this->mainMenu->show($ctx);
+                $this->afterLangChosen($ctx);
                 break;
             default:
                 $this->show($ctx);
         }
+    }
+
+    private function afterLangChosen(BotContext $ctx): void
+    {
+        if ($ctx->needsSurvey) {
+            $ctx->needsSurvey = '';
+            $this->surveyStage->show($ctx);
+            return;
+        }
+
+        $this->mainMenu->show($ctx);
     }
 }

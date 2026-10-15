@@ -13,6 +13,8 @@ use Yii;
  * @property string|null $passportSeria
  * @property int|null $relativeId
  * @property int|null $police_id
+ * @property string|null $firstName
+ * @property string|null $lastName
  * @property string|null $created_at
  * @property string|null $updated_at
  *
@@ -37,10 +39,10 @@ class Driver extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['passportBirthdate', 'passportNumber', 'passportSeria', 'relativeId', 'police_id'], 'default', 'value' => null],
+            [['passportBirthdate', 'passportNumber', 'passportSeria', 'relativeId', 'police_id', 'firstName', 'lastName'], 'default', 'value' => null],
             [['passportBirthdate', 'created_at', 'updated_at'], 'safe'],
             [['relativeId', 'police_id'], 'integer'],
-            [['passportNumber', 'passportSeria'], 'string', 'max' => 255],
+            [['passportNumber', 'passportSeria', 'firstName', 'lastName'], 'string', 'max' => 255],
             [['police_id'], 'exist', 'skipOnError' => true, 'targetClass' => Police::class, 'targetAttribute' => ['police_id' => 'id']],
             [['relativeId'], 'exist', 'skipOnError' => true, 'targetClass' => Relative::class, 'targetAttribute' => ['relativeId' => 'id']],
         ];
@@ -58,6 +60,8 @@ class Driver extends \yii\db\ActiveRecord
             'passportSeria' => Yii::t('app', 'Passport Seria'),
             'relativeId' => Yii::t('app', 'Relative ID'),
             'police_id' => Yii::t('app', 'Police ID'),
+            'firstName' => Yii::t('app', 'First Name'),
+            'lastName' => Yii::t('app', 'Last Name'),
             'created_at' => Yii::t('app', 'Created At'),
             'updated_at' => Yii::t('app', 'Updated At'),
         ];

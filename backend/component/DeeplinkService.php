@@ -7,6 +7,13 @@ use common\models\Deeplink;
 
 class DeeplinkService
 {
+    private MarketingAttributionService $attribution;
+
+    public function __construct(?MarketingAttributionService $attribution = null)
+    {
+        $this->attribution = $attribution ?? new MarketingAttributionService();
+    }
+
     public function processStartCommand(string $text, string $chatId, bool $isNewUser): bool
     {
         if (!preg_match('/^\/start (dl\w+)$/', $text, $m)) {
@@ -20,6 +27,8 @@ class DeeplinkService
             $self->deeplink_code = $deeplink->code;
             $self->save(false);
         }
+
+        $this->attribution->recordDeeplinkTouch($chatId, $deeplink, $isNewUser);
 
         return true;
     }

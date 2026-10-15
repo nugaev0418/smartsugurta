@@ -45,6 +45,7 @@ class OsagoSubmissionService
                 'policyDataGross' => $grossPayload,
                 'policyDataEAI' => $eaiPayload,
                 'chat_id' => $botuser->chat_id,
+                'applicationData' => (array)$data,
             ]));
 
             return OsagoSubmissionResult::gross($jobId);
@@ -69,6 +70,8 @@ class OsagoSubmissionService
         $police->season_id = $seasonModel->id ?? null;
         $police->provider_id = Police::PROVIDER_EAI;
         $police->save(false);
+
+        (new InsuranceRecordPersister())->persist($police, (array)$data);
 
         return OsagoSubmissionResult::eai($police, $dto->paymentLink);
     }

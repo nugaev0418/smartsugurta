@@ -105,6 +105,74 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]) ?>
 
+    <?php $vehicle = $model->vehicles[0] ?? null; ?>
+    <div class="card mt-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-car me-1"></i>Avtomobil</h3></div>
+        <div class="card-body">
+            <?php if ($vehicle): ?>
+                <table class="table table-sm mb-0">
+                    <tr><th>Davlat raqami</th><td><?= Html::encode($vehicle->licenseNumber ?: '—') ?></td></tr>
+                    <tr><th>Texpasport seriya</th><td><?= Html::encode($vehicle->techPassportSeria ?: '—') ?></td></tr>
+                    <tr><th>Texpasport raqami</th><td><?= Html::encode($vehicle->techPassportNumber ?: '—') ?></td></tr>
+                </table>
+            <?php else: ?>
+                <span class="text-secondary">—</span>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php $owner = $model->owners[0] ?? null; ?>
+    <div class="card mt-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-id-badge-2 me-1"></i>Egasi</h3></div>
+        <div class="card-body">
+            <?php if ($owner): ?>
+                <table class="table table-sm mb-0">
+                    <?php if ($owner->type === 'ORGANIZATION'): ?>
+                        <tr><th>Turi</th><td>Tashkilot</td></tr>
+                        <tr><th>Nomi</th><td><?= Html::encode($owner->name ?: '—') ?></td></tr>
+                        <tr><th>INN</th><td><?= Html::encode($owner->inn ?: '—') ?></td></tr>
+                    <?php else: ?>
+                        <tr><th>Turi</th><td>Jismoniy shaxs</td></tr>
+                        <tr><th>F.I.Sh.</th><td><?= Html::encode(trim("{$owner->firstName} {$owner->middlename} {$owner->lastname}") ?: '—') ?></td></tr>
+                        <tr><th>PINFL</th><td><?= Html::encode($owner->pinfl ?: '—') ?></td></tr>
+                    <?php endif; ?>
+                </table>
+            <?php else: ?>
+                <span class="text-secondary">—</span>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-1"></i>Haydovchilar</h3></div>
+        <div class="card-body">
+            <?php if ($model->drivers): ?>
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ism</th>
+                            <th>Passport</th>
+                            <th>Tug'ilgan sana</th>
+                            <th>Qarindoshligi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($model->drivers as $driver): ?>
+                            <tr>
+                                <td><?= Html::encode(trim("{$driver->firstName} {$driver->lastName}") ?: '—') ?></td>
+                                <td><?= Html::encode(trim("{$driver->passportSeria} {$driver->passportNumber}") ?: '—') ?></td>
+                                <td><?= Html::encode($driver->passportBirthdate ?: '—') ?></td>
+                                <td><?= Html::encode($driver->relative->name ?? '—') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <span class="text-secondary">—</span>
+            <?php endif; ?>
+        </div>
+    </div>
+
 </div>
 
 <?= $this->renderFile('@backend/views/shared/_user_modal.php') ?>

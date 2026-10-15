@@ -10,8 +10,11 @@ use common\models\Text;
 
 class ReferralService
 {
-    public function __construct(private string $botUsername = 'smartsugurtabot')
+    private MarketingAttributionService $attribution;
+
+    public function __construct(private string $botUsername = 'smartsugurtabot', ?MarketingAttributionService $attribution = null)
     {
+        $this->attribution = $attribution ?? new MarketingAttributionService();
     }
 
     public function processStartCommand(string $text, string $chatId, bool $isNewUser): ?array
@@ -24,11 +27,19 @@ class ReferralService
         $self     = Botuser::find()->where(['chat_id' => $chatId])->one();
 
         if (!$referrer || !$self || $self->referred_by || $referrer->id === $self->id) {
+            // Kod formati mos keldi, lekin aslida yangi referral bog'lanish
+            // o'rnatilmadi (eski/yaroqsiz kod, o'z-o'ziga referral yoki
+            // foydalanuvchi allaqachon boshqa referral bilan bog'langan) —
+            // rule 3'dagi "noma'lum kampaniya" bilan bir xil mantiq:
+            // ishonchli manba sifatida yozilmaydi.
+            $this->attribution->recordUnknownReferralAttempt($chatId, $isNewUser);
             return null;
         }
 
         $self->referred_by = $referrer->id;
         $self->save(false);
+
+        $this->attribution->recordReferralTouch($chatId, $isNewUser);
 
         $refLang = 'uz';
         if ($referrer->data) {

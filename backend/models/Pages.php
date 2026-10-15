@@ -33,5 +33,7 @@ class Pages
         MY_VEHICLE_ADD_GOV_NUMBER = 'my_vehicle_add_gov_number_page',
         MY_VEHICLE_ADD_TEXPASS    = 'my_vehicle_add_texpass_page',
         MY_VEHICLE_DETAIL         = 'my_vehicle_detail_page',
-        MY_VEHICLE_DELETE_CONFIRM = 'my_vehicle_delete_confirm_page';
+        MY_VEHICLE_DELETE_CONFIRM = 'my_vehicle_delete_confirm_page',
+
+        SURVEY_SOURCE = 'survey_source_page';
 }

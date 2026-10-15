@@ -3,6 +3,7 @@
 namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
+use backend\component\MarketingAttributionService;
 use backend\models\EuroAsia;
 use common\models\Botuser;
 use common\models\Income;
@@ -173,6 +174,10 @@ class PoliceController extends Controller
 
                 $police->save();
 
+                if ($police->payment_status) {
+                    (new MarketingAttributionService())->recordPurchase($police);
+                }
+
                 if ($police->status){
                     $user = Botuser::find()->where(['id'=>$police->user_id])->one();
                     $this->chat_id = $user->chat_id;
@@ -221,6 +226,8 @@ class PoliceController extends Controller
                 $police->payment_status = 1;
 
                 $police->save(false);
+
+                (new MarketingAttributionService())->recordPurchase($police);
 
                 if ($police->status){
                     $user = Botuser::find()->where(['id'=>$police->user_id])->one();

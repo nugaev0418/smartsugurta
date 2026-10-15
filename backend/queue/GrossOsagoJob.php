@@ -3,6 +3,7 @@
 namespace backend\queue;
 
 use backend\component\EuroAsiaService;
+use backend\component\insurance\InsuranceRecordPersister;
 use backend\controllers\BotController;
 use backend\gross\GrossOsago;
 use backend\models\EuroAsia;
@@ -19,6 +20,7 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
 {
     public array  $policyDataGross = [];
     public array  $policyDataEAI   = [];
+    public array  $applicationData = [];
     public int    $chatId          = 0;
     public int    $maxAttempts     = 3;
     public int    $retryDelay      = 10;
@@ -29,6 +31,7 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
     {
         $this->policyDataGross = $data['policyDataGross'];
         $this->policyDataEAI   = $data['policyDataEAI'];
+        $this->applicationData = $data['applicationData'] ?? [];
         $this->chatId          = (int) $data['chat_id'];
     }
 
@@ -149,6 +152,8 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
                 $police->anketa_id         = $result['anketa_id'];
                 $police->provider_id       = Police::PROVIDER_GROSS;
                 $police->save(false);
+
+                (new InsuranceRecordPersister())->persist($police, $this->applicationData);
 
                 GrossApiLog::updateAll(
                     ['police_id' => $police->id],

@@ -39,6 +39,31 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
 
             [
+                'label'  => 'Kanal / Manba',
+                'format' => 'raw',
+                'value'  => function ($model) {
+                    $channel = \common\models\Deeplink::getChannelList()[$model->channel] ?? '—';
+                    $source  = \common\models\Deeplink::getSourceList()[$model->source] ?? '—';
+                    return "{$channel} / {$source}";
+                },
+            ],
+
+            [
+                'attribute' => 'cost',
+                'label'     => 'Xarajat',
+                'value'     => fn($model) => number_format($model->cost, 0, '.', ' ') . ' ' . $model->currency,
+            ],
+
+            [
+                'attribute' => 'status',
+                'label'     => 'Holati',
+                'format'    => 'raw',
+                'value'     => fn($model) => $model->isActive()
+                    ? '<span class="badge bg-green-lt text-green">Faol</span>'
+                    : '<span class="badge bg-secondary-lt text-secondary">Yakunlangan</span>',
+            ],
+
+            [
                 'label'  => 'Havola',
                 'format' => 'raw',
                 'value'  => function ($model) {
@@ -67,17 +92,20 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'label'  => '',
                 'format' => 'raw',
-                'value'  => fn($model) => Html::a(
-                    '<i class="ti ti-trash"></i>',
-                    ['delete', 'id' => $model->id],
-                    [
-                        'class' => 'btn btn-sm btn-danger',
-                        'data'  => [
-                            'confirm' => "'{$model->name}' deeplink o'chirilsinmi?",
-                            'method'  => 'post',
-                        ],
-                    ]
-                ),
+                'value'  => function ($model) {
+                    return Html::a('<i class="ti ti-edit"></i>', ['update', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-secondary me-1'])
+                        . Html::a(
+                            '<i class="ti ti-trash"></i>',
+                            ['delete', 'id' => $model->id],
+                            [
+                                'class' => 'btn btn-sm btn-danger',
+                                'data'  => [
+                                    'confirm' => "'{$model->name}' deeplink o'chirilsinmi?",
+                                    'method'  => 'post',
+                                ],
+                            ]
+                        );
+                },
             ],
         ],
     ]); ?>

@@ -545,6 +545,10 @@ class WebAppController extends Controller
                 'number' => $dNumber,
                 'birthDateIso' => $dBirthIso,
                 'relativeType' => self::RELATIVE_TYPES[$relation] ?? 0,
+                // Frontend yuboradi faqat bitta birlashtirilgan 'name' (firstName+lastName
+                // ajratilmagan) — Driver.firstName ustuniga shu holicha yoziladi.
+                'firstName' => (string)($driver['name'] ?? '') !== '' ? (string)$driver['name'] : null,
+                'lastName' => null,
             ];
         }
 
@@ -563,11 +567,16 @@ class WebAppController extends Controller
         $data->techNumber = $techNumber;
         $data->isOrganization = $isOrg;
         $data->organizationInn = $vehicleData['inn'] ?? '';
+        $data->organizationName = $vehicleData['name'] ?? null;
         if (!$isOrg) {
             $data->ownerSeria = $ownerData['seria'];
             $data->ownerNumber = $ownerData['number'];
             $data->ownerBirthDateIso = $ownerData['birthDate'] ?? null;
             $data->districtId = $ownerData['districtId'] ?? null;
+            $data->ownerFirstName = $ownerData['firstName'] ?? null;
+            $data->ownerMiddleName = $ownerData['middleName'] ?? null;
+            $data->ownerLastName = $ownerData['lastName'] ?? null;
+            $data->ownerPinfl = $ownerData['pinfl'] ?? null;
         }
         $data->grossPhoneDigits9 = substr($phoneDigits, -9);
         $data->eaiPhoneNumber = '998' . substr($phoneDigits, -9);

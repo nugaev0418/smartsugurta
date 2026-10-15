@@ -26,11 +26,16 @@ class OsagoApplicationData
 
     public bool $isOrganization;
     public ?string $organizationInn = null;
+    public ?string $organizationName = null;
 
     public ?string $ownerSeria = null;
     public ?string $ownerNumber = null;
     public ?string $ownerBirthDateIso = null;
     public ?string $districtId = null;
+    public ?string $ownerFirstName = null;
+    public ?string $ownerMiddleName = null;
+    public ?string $ownerLastName = null;
+    public ?string $ownerPinfl = null;
 
     /** Last 9 digits, no country code — Gross's 'phone' field. */
     public string $grossPhoneDigits9;
@@ -43,7 +48,7 @@ class OsagoApplicationData
     public int $periodType;
     public string $gateway;
 
-    /** @var array<int, array{seria:string, number:string, birthDateIso:string, relativeType:int}> */
+    /** @var array<int, array{seria:string, number:string, birthDateIso:string, relativeType:int, firstName?:?string, lastName?:?string}> */
     public array $drivers = [];
 
     /**
@@ -62,6 +67,7 @@ class OsagoApplicationData
         $vehicleData = $ctx->vehicleData;
         $d->isOrganization = $vehicleData['ownerType'] !== 'PERSON';
         $d->organizationInn = $vehicleData['inn'] ?? null;
+        $d->organizationName = $vehicleData['name'] ?? null;
 
         if (!$d->isOrganization) {
             $ownerData = $ctx->ownerData;
@@ -69,6 +75,10 @@ class OsagoApplicationData
             $d->ownerNumber = $ownerData['number'];
             $d->ownerBirthDateIso = $ownerData['birthDate'];
             $d->districtId = $ownerData['districtId'];
+            $d->ownerFirstName = $ownerData['firstName'] ?? null;
+            $d->ownerMiddleName = $ownerData['middleName'] ?? null;
+            $d->ownerLastName = $ownerData['lastName'] ?? null;
+            $d->ownerPinfl = $ownerData['pinfl'] ?? null;
         }
 
         $d->eaiPhoneNumber = $ctx->phone;
@@ -91,6 +101,8 @@ class OsagoApplicationData
                     'number' => $driver['number'],
                     'birthDateIso' => $driver['birthDate'],
                     'relativeType' => (int)($policeDrivers[$i]['relative_type'] ?? 0),
+                    'firstName' => $driver['firstName'] ?? null,
+                    'lastName' => $driver['lastName'] ?? null,
                 ];
             }
         }

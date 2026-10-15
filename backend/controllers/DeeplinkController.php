@@ -43,6 +43,18 @@ class DeeplinkController extends Controller
         return $this->render('create', compact('model'));
     }
 
+    public function actionUpdate(int $id)
+    {
+        $model = $this->findModel($id);
+
+        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', "Deeplink yangilandi.");
+            return $this->redirect(['index']);
+        }
+
+        return $this->render('update', compact('model'));
+    }
+
     public function actionDelete(int $id)
     {
         $this->findModel($id)->delete();
