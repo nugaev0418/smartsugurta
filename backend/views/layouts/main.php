@@ -31,6 +31,7 @@ $navItems = [
     ['label' => 'Setting',  'url' => '/setting/index',  'icon' => 'ti-adjustments',    'controller' => 'setting'],
     ['label' => 'Paynet',   'url' => '/paynet/index',   'icon' => 'ti-credit-card',    'controller' => 'paynet'],
     ['label' => 'Gross Logs', 'url' => '/gross-api-log/index', 'icon' => 'ti-list-details', 'controller' => 'gross-api-log'],
+    ['label' => 'Mening avtolarim', 'url' => '/saved-vehicle/index', 'icon' => 'ti-car', 'controller' => 'saved-vehicle'],
 ];
 ?>
 <?php $this->beginPage() ?>

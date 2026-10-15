@@ -434,12 +434,12 @@ class ErspVehicleClient
     // ko'rinishida keladi — oxirgi sana bugungi kundan oldin bo'lmagan
     // polisalar qaytariladi.
     ////////////////////////////////////////////////////////
-    public function filterActivePolicies(array $policies): array
+    public static function filterActivePolicies(array $policies): array
     {
         $today = new \DateTimeImmutable('today');
 
         return array_values(array_filter($policies, function (array $policy) use ($today) {
-            $endDate = $this->extractEndDate($policy);
+            $endDate = self::extractEndDate($policy);
 
             return $endDate !== null && $endDate >= $today;
         }));
@@ -450,9 +450,9 @@ class ErspVehicleClient
     // extractEndDate() bilan bir xil "Polisni amal qilish muddati"
     // ustunidan oxirgi sanani o'qib, bugungi kun bilan solishtiradi.
     ////////////////////////////////////////////////////////
-    public function remainingLabel(array $policy): ?string
+    public static function remainingLabel(array $policy): ?string
     {
-        $endDate = $this->extractEndDate($policy);
+        $endDate = self::extractEndDate($policy);
 
         if ($endDate === null) {
             return null;
@@ -483,9 +483,9 @@ class ErspVehicleClient
     ////////////////////////////////////////////////////////
     // TUGASH SANASI (Y-m-d)
     ////////////////////////////////////////////////////////
-    public function endDateLabel(array $policy): ?string
+    public static function endDateLabel(array $policy): ?string
     {
-        $endDate = $this->extractEndDate($policy);
+        $endDate = self::extractEndDate($policy);
 
         return $endDate ? $endDate->format('Y-m-d') : null;
     }
@@ -496,9 +496,9 @@ class ErspVehicleClient
     // solishtiriladi, shuning uchun remainingLabel()dagi
     // "X yil Y oy Z kun" formati bu yerga mos emas.
     ////////////////////////////////////////////////////////
-    public function daysRemaining(array $policy): ?int
+    public static function daysRemaining(array $policy): ?int
     {
-        $endDate = $this->extractEndDate($policy);
+        $endDate = self::extractEndDate($policy);
 
         if ($endDate === null) {
             return null;
@@ -513,7 +513,7 @@ class ErspVehicleClient
         return $today->diff($endDate)->days;
     }
 
-    private function extractEndDate(array $policy): ?\DateTimeImmutable
+    private static function extractEndDate(array $policy): ?\DateTimeImmutable
     {
         $range = $policy['Polisni amal qilish muddati'] ?? null;
 

@@ -37,6 +37,21 @@ class SavedVehicle extends \yii\db\ActiveRecord
     const CHECK_COOLDOWN_SECONDS = 600; // 10 daqiqa
 
     /**
+     * `ERSP_STATUS_*` konstantalariga mos o'zbekcha yorliqlar — admin panelda
+     * (GridView filtri/badge matni) va bot/WebApp'da bir xil matn ishlatilishi
+     * uchun bitta joyda saqlanadi.
+     */
+    public static function statusLabels(): array
+    {
+        return [
+            self::ERSP_STATUS_IDLE     => 'Tekshirilmagan',
+            self::ERSP_STATUS_CHECKING => 'Tekshirilmoqda',
+            self::ERSP_STATUS_DONE     => 'Tekshirildi',
+            self::ERSP_STATUS_FAILED   => 'Xato',
+        ];
+    }
+
+    /**
      * {@inheritdoc}
      */
     public static function tableName()
