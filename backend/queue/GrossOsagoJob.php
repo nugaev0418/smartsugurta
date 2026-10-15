@@ -153,7 +153,19 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
                 $police->provider_id       = Police::PROVIDER_GROSS;
                 $police->save(false);
 
-                (new InsuranceRecordPersister())->persist($police, $this->applicationData);
+                // Polis Gross'da muvaffaqiyatli yaratildi va mahalliy
+                // saqlandi — shundan keyingi xatolik (bu yerda yoki
+                // pastdagi xabar yuborishda) butun urinishni QAYTADAN
+                // boshlamasligi kerak, aks holda pastdagi catch orqali
+                // Gross'ga SAME arizani IKKINCHI marta yuborib yuboramiz
+                // (haqiqiy ikkinchi polis + takroriy vehicle/owner/driver
+                // yozuvlari). Shu sabab bu yerda alohida try/catch.
+                try {
+                    (new InsuranceRecordPersister())->persist($police, $this->applicationData);
+                } catch (\Throwable $persistError) {
+                    Yii::error("InsuranceRecordPersister xato (police #{$police->id}): " . $persistError->getMessage(), 'gross');
+                    $this->sendMessageAdmin("⚠️ Polis #{$police->id} uchun vehicle/owner/driver saqlanmadi: " . $persistError->getMessage());
+                }
 
                 GrossApiLog::updateAll(
                     ['police_id' => $police->id],

@@ -71,7 +71,11 @@ class OsagoSubmissionService
         $police->provider_id = Police::PROVIDER_EAI;
         $police->save(false);
 
-        (new InsuranceRecordPersister())->persist($police, (array)$data);
+        try {
+            (new InsuranceRecordPersister())->persist($police, (array)$data);
+        } catch (\Throwable $persistError) {
+            Yii::error("InsuranceRecordPersister xato (police #{$police->id}): " . $persistError->getMessage());
+        }
 
         return OsagoSubmissionResult::eai($police, $dto->paymentLink);
     }

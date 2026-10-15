@@ -18,11 +18,21 @@ use common\models\Vehicle;
  * $applicationData — OsagoApplicationData'ning public propertylaridan
  * (array) cast qilingan massiv — GrossOsagoJob queue orqali serialize
  * qilingani uchun typed obyekt emas, oddiy massiv qabul qilinadi.
+ *
+ * Idempotent: agar shu $police->id uchun Vehicle qatori allaqachon mavjud
+ * bo'lsa, hech narsa qayta yozilmaydi — GrossOsagoJob::tryGross() xatolik
+ * yuzasidan (masalan Telegram'ga xabar yuborishda) qayta urinilganda ham
+ * (bu holatda Police allaqachon saqlangan bo'ladi) bir xil ma'lumot
+ * takrorlanib yozilmasligi uchun.
  */
 class InsuranceRecordPersister
 {
     public function persist(Police $police, array $applicationData): void
     {
+        if (Vehicle::find()->where(['police_id' => $police->id])->exists()) {
+            return;
+        }
+
         $this->persistVehicle($police, $applicationData);
         $this->persistOwner($police, $applicationData);
         $this->persistDrivers($police, $applicationData);

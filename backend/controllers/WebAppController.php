@@ -573,10 +573,13 @@ class WebAppController extends Controller
             $data->ownerNumber = $ownerData['number'];
             $data->ownerBirthDateIso = $ownerData['birthDate'] ?? null;
             $data->districtId = $ownerData['districtId'] ?? null;
-            $data->ownerFirstName = $ownerData['firstName'] ?? null;
-            $data->ownerMiddleName = $ownerData['middleName'] ?? null;
-            $data->ownerLastName = $ownerData['lastName'] ?? null;
-            $data->ownerPinfl = $ownerData['pinfl'] ?? null;
+            // personByPinflV2 (actionOwner) ba'zi egalar uchun ism/pinfl'ni
+            // bo'sh qaytaradi — avtomobil ro'yxatidan (actionVehicle) olingan
+            // egasi ma'lumoti ishonchli zahira manba sifatida ishlatiladi.
+            $data->ownerFirstName = !empty($ownerData['firstName']) ? $ownerData['firstName'] : ($vehicleData['firstName'] ?? null);
+            $data->ownerMiddleName = !empty($ownerData['middleName']) ? $ownerData['middleName'] : ($vehicleData['middleName'] ?? null);
+            $data->ownerLastName = !empty($ownerData['lastName']) ? $ownerData['lastName'] : ($vehicleData['lastName'] ?? null);
+            $data->ownerPinfl = !empty($ownerData['pinfl']) ? $ownerData['pinfl'] : ($vehicleData['pinfl'] ?? null);
         }
         $data->grossPhoneDigits9 = substr($phoneDigits, -9);
         $data->eaiPhoneNumber = '998' . substr($phoneDigits, -9);

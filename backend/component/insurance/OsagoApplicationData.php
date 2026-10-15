@@ -75,10 +75,15 @@ class OsagoApplicationData
             $d->ownerNumber = $ownerData['number'];
             $d->ownerBirthDateIso = $ownerData['birthDate'];
             $d->districtId = $ownerData['districtId'];
-            $d->ownerFirstName = $ownerData['firstName'] ?? null;
-            $d->ownerMiddleName = $ownerData['middleName'] ?? null;
-            $d->ownerLastName = $ownerData['lastName'] ?? null;
-            $d->ownerPinfl = $ownerData['pinfl'] ?? null;
+            // personByPinflV2 (OwnerStageHandler'ning PINFL-orqali tasdiqlash
+            // so'rovi) ba'zi egalar uchun ism/pinfl'ni bo'sh qaytaradi —
+            // avtomobil ro'yxatidan (VehicleLookupService) olingan egasi
+            // ma'lumoti (shaxs turi uchun bir xil odam) ishonchli zahira
+            // manba sifatida ishlatiladi.
+            $d->ownerFirstName = !empty($ownerData['firstName']) ? $ownerData['firstName'] : ($vehicleData['firstName'] ?? null);
+            $d->ownerMiddleName = !empty($ownerData['middleName']) ? $ownerData['middleName'] : ($vehicleData['middleName'] ?? null);
+            $d->ownerLastName = !empty($ownerData['lastName']) ? $ownerData['lastName'] : ($vehicleData['lastName'] ?? null);
+            $d->ownerPinfl = !empty($ownerData['pinfl']) ? $ownerData['pinfl'] : ($vehicleData['pinfl'] ?? null);
         }
 
         $d->eaiPhoneNumber = $ctx->phone;
