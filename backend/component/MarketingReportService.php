@@ -70,24 +70,31 @@ class MarketingReportService
         $campaignCol = $touchType === 'last' ? 'last_campaign' : 'first_campaign';
 
         $newUsersRows = (new Query())
-            ->select(['source' => $sourceCol, 'campaign' => $campaignCol, 'new_users' => 'COUNT(*)'])
+            ->select([
+                'source' => $sourceCol,
+                'campaign' => $campaignCol,
+                'survey_source' => 'survey_source',
+                'new_users' => 'COUNT(*)',
+            ])
             ->from(MarketingAttribution::tableName())
             ->where(['between', 'first_seen_at', $from . ' 00:00:00', $to . ' 23:59:59'])
-            ->groupBy([$sourceCol, $campaignCol])
+            ->groupBy([$sourceCol, $campaignCol, 'survey_source'])
             ->all();
 
         $purchaseRows = $this->fetchPurchaseRows($from, $to);
 
         $groups = [];
         foreach ($newUsersRows as $row) {
-            $key = $this->groupKey($row['source'], $row['campaign']);
-            $groups[$key] = $this->emptyGroup($row['source'], $row['campaign']);
-            $groups[$key]['new_users'] = (int)$row['new_users'];
+            $source = $this->resolveEffectiveSource($row['source'], $row['survey_source']);
+            $key = $this->groupKey($source, $row['campaign']);
+            $groups[$key] ??= $this->emptyGroup($source, $row['campaign']);
+            $groups[$key]['new_users'] += (int)$row['new_users'];
         }
 
         foreach ($purchaseRows as $row) {
-            $source = $touchType === 'last' ? $row['last_source'] : $row['first_source'];
+            $rawSource = $touchType === 'last' ? $row['last_source'] : $row['first_source'];
             $campaign = $touchType === 'last' ? $row['last_campaign'] : $row['first_campaign'];
+            $source = $this->resolveEffectiveSource($rawSource, $row['survey_source']);
             $key = $this->groupKey($source, $campaign);
 
             if (!isset($groups[$key])) {
@@ -122,6 +129,7 @@ class MarketingReportService
             $buyers = count($group['buyer_ids']);
             unset($group['buyer_ids']);
             $group['buyers'] = $buyers;
+            $group['source_label'] = $this->sourceLabel($group['source']);
 
             $group['conversion_rate'] = $group['new_users'] > 0
                 ? round($buyers / $group['new_users'] * 100, 2)
@@ -148,6 +156,35 @@ class MarketingReportService
         return $result;
     }
 
+    /**
+     * So'rovnomaga javob berganlarning javoblari bo'yicha taqsimoti —
+     * dashboardda "To'g'ridan-to'g'ri" deb umumlashtirilgan foydalanuvchilar
+     * aslida qayerdan kelganini ko'rsatadi.
+     */
+    public function getSurveyBreakdown(string $from, string $to): array
+    {
+        $rows = (new Query())
+            ->select(['survey_source', 'cnt' => 'COUNT(*)'])
+            ->from(MarketingAttribution::tableName())
+            ->where(['between', 'first_seen_at', $from . ' 00:00:00', $to . ' 23:59:59'])
+            ->andWhere(['not', ['survey_source' => null]])
+            ->groupBy('survey_source')
+            ->all();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'key' => $row['survey_source'],
+                'label' => MarketingAttribution::SURVEY_LABELS[$row['survey_source']] ?? $row['survey_source'],
+                'count' => (int)$row['cnt'],
+            ];
+        }
+
+        usort($result, fn($a, $b) => $b['count'] <=> $a['count']);
+
+        return $result;
+    }
+
     public function exportCsv(array $rows): string
     {
         $headers = [
@@ -158,7 +195,7 @@ class MarketingReportService
         $lines = [implode(',', $headers)];
         foreach ($rows as $row) {
             $lines[] = implode(',', [
-                $this->csvCell($row['source'] ?? '—'),
+                $this->csvCell($row['source_label'] ?? $row['source'] ?? '—'),
                 $this->csvCell($row['campaign'] ?? '—'),
                 $row['new_users'],
                 $row['buyers'],
@@ -187,6 +224,7 @@ class MarketingReportService
                 'first_campaign' => 'ma.first_campaign',
                 'last_source' => 'ma.last_source',
                 'last_campaign' => 'ma.last_campaign',
+                'survey_source' => 'ma.survey_source',
                 'metadata' => 'mt.metadata',
             ])
             ->from(['p' => Police::tableName()])
@@ -195,6 +233,43 @@ class MarketingReportService
             ->where(['p.payment_status' => 1])
             ->andWhere(['between', 'p.created_at', $from . ' 00:00:00', $to . ' 23:59:59'])
             ->all();
+    }
+
+    /**
+     * source_method='direct' (ya'ni manba aniqlanmagan) bo'lgan
+     * foydalanuvchi so'rovnomaga javob bergan bo'lsa, hisobotda xom
+     * "direct"/"unknown" o'rniga shu javob asosiy manba sifatida
+     * ko'rsatiladi — aks holda so'rovnoma javobi hech qayerda
+     * ko'rinmay qolardi.
+     */
+    private function resolveEffectiveSource(?string $source, ?string $surveySource): ?string
+    {
+        if ($surveySource && in_array($source, [null, '', MarketingAttribution::METHOD_DIRECT, 'unknown'], true)) {
+            return 'survey:' . $surveySource;
+        }
+        return $source;
+    }
+
+    private function sourceLabel(?string $source): string
+    {
+        if ($source === null || $source === '') {
+            return 'Noma\'lum';
+        }
+        if ($source === MarketingAttribution::METHOD_DIRECT) {
+            return "To'g'ridan-to'g'ri (hal qilinmagan)";
+        }
+        if ($source === 'unknown') {
+            return "Noma'lum (yaroqsiz havola)";
+        }
+        if ($source === 'referral') {
+            return 'Referral (do\'stdan)';
+        }
+        if (str_starts_with($source, 'survey:')) {
+            $key = substr($source, 7);
+            return "So'rovnoma: " . (MarketingAttribution::SURVEY_LABELS[$key] ?? $key);
+        }
+
+        return Deeplink::getSourceList()[$source] ?? $source;
     }
 
     private function groupKey(?string $source, ?string $campaign): string

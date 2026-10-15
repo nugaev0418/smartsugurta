@@ -9,6 +9,7 @@ use yii\helpers\Url;
 /** @var string $touchType */
 /** @var array $funnel */
 /** @var array $conversion */
+/** @var array $surveyBreakdown */
 
 $this->title = 'Marketing dashboard';
 $this->params['breadcrumbs'][] = $this->title;
@@ -76,11 +77,53 @@ $methodLabels = [
                 </div>
             </div>
         </div>
+        <div class="col-md-2">
+            <div class="card card-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Hali hal qilinmagan</div>
+                    <div class="fs-3 fw-bold"><?= max(0, $funnel['unresolved']) ?></div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <?php if ($surveyBreakdown): ?>
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">So'rovnoma javoblari</h3>
+                <div class="card-subtitle text-muted">
+                    "To'g'ridan-to'g'ri (hal qilinmagan)" deb ko'rsatilgan foydalanuvchilarning
+                    so'rovnomaga aniq qanday javob berganlari shu yerda.
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr><th>Javob</th><th>Soni</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($surveyBreakdown as $row): ?>
+                            <tr>
+                                <td><?= Html::encode($row['label']) ?></td>
+                                <td><?= $row['count'] ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Kanal / kampaniya bo'yicha konversiya</h3>
+            <div class="card-subtitle text-muted">
+                Xarajat, CAC va ROAS faqat admin panelda xarajati kiritilgan kampaniyaga (Deeplink)
+                biriktirilgan manbalar uchun hisoblanadi — "To'g'ridan-to'g'ri"/"Referral"/so'rovnoma
+                orqali kelgan foydalanuvchilarga xarajat biriktirilmagani uchun bu ustunlar "—" bo'ladi.
+                Komissiya esa faqat "Komissiya stavkalari" bo'limida provayder+hudud uchun foiz
+                kiritilgan bo'lsagina hisoblanadi, aks holda "noma'lum" ko'rsatiladi (taxmin qilinmaydi).
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-vcenter card-table">
@@ -103,7 +146,7 @@ $methodLabels = [
                 <tbody>
                     <?php foreach ($conversion as $row): ?>
                         <tr>
-                            <td><?= Html::encode($row['source'] ?? '—') ?></td>
+                            <td><?= Html::encode($row['source_label'] ?? $row['source'] ?? '—') ?></td>
                             <td><?= $row['campaign'] ? '<code>' . Html::encode($row['campaign']) . '</code>' : '—' ?></td>
                             <td><?= $row['new_users'] ?></td>
                             <td><?= $row['buyers'] ?></td>

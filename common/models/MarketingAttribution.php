@@ -30,6 +30,17 @@ class MarketingAttribution extends \yii\db\ActiveRecord
     const METHOD_SURVEY = 'survey';
     const METHOD_DIRECT = 'direct';
 
+    // SurveyStageHandler'dagi so'rovnoma variantlariga mos kalitlar —
+    // admin panelda (MarketingReportService) ko'rsatish uchun yagona manba.
+    const SURVEY_LABELS = [
+        'instagram_blogger' => 'Instagram blogeridan',
+        'instagram_ads' => 'Instagram reklamasi',
+        'telegram_channel' => 'Telegram kanalidan',
+        'friend_referral' => "Do'stim tavsiya qildi",
+        'google_other' => 'Google yoki boshqa manba',
+        'other_unknown' => "Boshqa / eslay olmayman",
+    ];
+
     public static function tableName(): string
     {
         return 'marketing_attribution';

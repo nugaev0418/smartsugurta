@@ -27,6 +27,7 @@ class MarketingDashboardController extends Controller
         $service = new MarketingReportService();
         $funnel = $service->getFunnel($from, $to);
         $conversion = $service->getConversion($from, $to, $touchType);
+        $surveyBreakdown = $service->getSurveyBreakdown($from, $to);
 
         return $this->render('index', [
             'from' => $from,
@@ -34,6 +35,7 @@ class MarketingDashboardController extends Controller
             'touchType' => $touchType,
             'funnel' => $funnel,
             'conversion' => $conversion,
+            'surveyBreakdown' => $surveyBreakdown,
         ]);
     }
 
