@@ -10,6 +10,7 @@ use common\models\Setting;
 use common\models\Text;
 use Yii;
 use yii\console\Controller;
+use yii\helpers\Console;
 
 /**
  * "Mening avtolarim"dagi saqlangan avtomobillarning (keshlangan) OSAGO
@@ -23,25 +24,34 @@ class ReminderController extends Controller
 
     public function actionExpiryCheck(): void
     {
+        $this->stdout('[' . date('Y-m-d H:i:s') . "] Muddat tugashi eslatmasini tekshirish boshlandi...\n");
+
         if (!Setting::getBotStatus() || !Setting::getMyVehiclesStatus()) {
-            Yii::info('ReminderController: bot yoki "Mening avtolarim" o\'chirilgan, eslatmalar tekshirilmadi', 'reminder');
+            $message = 'Bot yoki "Mening avtolarim" o\'chirilgan, eslatmalar tekshirilmadi';
+            Yii::info("ReminderController: {$message}", 'reminder');
+            $this->stdout($message . "\n", Console::FG_YELLOW);
             return;
         }
 
         $client = new ErspVehicleClient();
+        $checked = 0;
         $sent = 0;
 
         SavedVehicle::find()
             ->andWhere(['not', ['ersp_policies_json' => null]])
-            ->each(function (SavedVehicle $vehicle) use ($client, &$sent) {
+            ->each(function (SavedVehicle $vehicle) use ($client, &$checked, &$sent) {
+                $checked++;
                 try {
                     $sent += $this->processVehicle($vehicle, $client);
                 } catch (\Throwable $e) {
                     Yii::warning("ReminderController: avtomobil #{$vehicle->id} uchun xato: " . $e->getMessage(), 'reminder');
+                    $this->stdout("  Avtomobil #{$vehicle->id}: xato — " . $e->getMessage() . "\n", Console::FG_RED);
                 }
             });
 
+        $summary = "Tekshirildi: {$checked} ta avtomobil, yuborildi: {$sent} ta eslatma";
         Yii::info("ReminderController: tekshiruv tugadi, {$sent} ta eslatma yuborildi", 'reminder');
+        $this->stdout($summary . "\n", $sent > 0 ? Console::FG_GREEN : Console::FG_YELLOW);
     }
 
     private function processVehicle(SavedVehicle $vehicle, ErspVehicleClient $client): int
@@ -77,6 +87,7 @@ class ReminderController extends Controller
                     'milestone_days' => $days,
                 ]))->save(false);
                 $sent++;
+                $this->stdout("  Avtomobil #{$vehicle->id} ({$vehicle->gov_number}): {$days} kun qoldi — eslatma yuborildi\n", Console::FG_GREEN);
             }
         }
 
