@@ -37,17 +37,21 @@ class ReminderController extends Controller
         $checked = 0;
         $sent = 0;
 
-        SavedVehicle::find()
-            ->andWhere(['not', ['ersp_policies_json' => null]])
-            ->each(function (SavedVehicle $vehicle) use ($client, &$checked, &$sent) {
-                $checked++;
-                try {
-                    $sent += $this->processVehicle($vehicle, $client);
-                } catch (\Throwable $e) {
-                    Yii::warning("ReminderController: avtomobil #{$vehicle->id} uchun xato: " . $e->getMessage(), 'reminder');
-                    $this->stdout("  Avtomobil #{$vehicle->id}: xato — " . $e->getMessage() . "\n", Console::FG_RED);
-                }
-            });
+        // DIQQAT: ActiveQuery::each() callback qabul qilmaydi — faqat
+        // foreach'da iteratsiya qilinganda haqiqatan bazaga so'rov yuboradi
+        // (lazy BatchQueryResult qaytaradi). Avval ->each($closure) deb
+        // chaqirilgani uchun $closure shunchaki $batchSize sifatida
+        // yutilib, natija hech qayerda iteratsiya qilinmasdan tashlab
+        // yuborilardi — so'rov UMUMAN bajarilmay, har doim 0/0 chiqardi.
+        foreach (SavedVehicle::find()->andWhere(['not', ['ersp_policies_json' => null]])->each() as $vehicle) {
+            $checked++;
+            try {
+                $sent += $this->processVehicle($vehicle, $client);
+            } catch (\Throwable $e) {
+                Yii::warning("ReminderController: avtomobil #{$vehicle->id} uchun xato: " . $e->getMessage(), 'reminder');
+                $this->stdout("  Avtomobil #{$vehicle->id}: xato — " . $e->getMessage() . "\n", Console::FG_RED);
+            }
+        }
 
         $summary = "Tekshirildi: {$checked} ta avtomobil, yuborildi: {$sent} ta eslatma";
         Yii::info("ReminderController: tekshiruv tugadi, {$sent} ta eslatma yuborildi", 'reminder');
