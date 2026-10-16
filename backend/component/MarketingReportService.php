@@ -117,10 +117,12 @@ class MarketingReportService
         $campaignCodes = array_values(array_filter(array_unique(array_column($groups, 'campaign'))));
         $costByCode = [];
         $currencyByCode = [];
+        $nameByCode = [];
         if ($campaignCodes) {
             foreach (Deeplink::find()->where(['code' => $campaignCodes])->all() as $dl) {
                 $costByCode[$dl->code] = (float)$dl->cost;
                 $currencyByCode[$dl->code] = $dl->currency;
+                $nameByCode[$dl->code] = $dl->name;
             }
         }
 
@@ -129,7 +131,7 @@ class MarketingReportService
             $buyers = count($group['buyer_ids']);
             unset($group['buyer_ids']);
             $group['buyers'] = $buyers;
-            $group['source_label'] = $this->sourceLabel($group['source']);
+            $group['source_label'] = $this->sourceLabel($group['source'], $group['campaign'], $nameByCode);
 
             $group['conversion_rate'] = $group['new_users'] > 0
                 ? round($buyers / $group['new_users'] * 100, 2)
@@ -250,13 +252,27 @@ class MarketingReportService
         return $source;
     }
 
-    private function sourceLabel(?string $source): string
+    /**
+     * $campaign (deeplink.code) ma'lum bo'lsa — kampaniyaning o'z nomi
+     * (masalan "Blogger Jasur") eng foydali va aniq label, shuning uchun
+     * manba-bucket (channel/source bo'sh bo'lsa ham) ustidan ustuvor.
+     * Faqat $campaign bo'lmaganda (yoki nomi topilmaganda) umumiy
+     * manba-bucket'lar (direct/referral/survey/unknown) ko'rsatiladi.
+     */
+    private function sourceLabel(?string $source, ?string $campaign, array $nameByCode): string
     {
+        if ($campaign && !empty($nameByCode[$campaign])) {
+            return $nameByCode[$campaign];
+        }
+
         if ($source === null || $source === '') {
             return 'Noma\'lum';
         }
         if ($source === MarketingAttribution::METHOD_DIRECT) {
             return "To'g'ridan-to'g'ri (hal qilinmagan)";
+        }
+        if ($source === MarketingAttributionService::SOURCE_CAMPAIGN_UNSPECIFIED) {
+            return $campaign ? "Kampaniya ({$campaign}) — kanal belgilanmagan" : 'Kampaniya (kanal belgilanmagan)';
         }
         if ($source === 'unknown') {
             return "Noma'lum (yaroqsiz havola)";

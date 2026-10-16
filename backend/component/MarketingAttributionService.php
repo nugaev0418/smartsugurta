@@ -22,7 +22,13 @@ use Yii;
  */
 class MarketingAttributionService
 {
+    // "unknown" — kod topilmadi/muddati tugagan/o'chirilgan (rule 3: ishonchli
+    // manba sifatida hisoblanmaydi). "campaign" — kod HAQIQIY va faol, shunchaki
+    // admin hali shu kampaniyaga kanal/manba belgilamagan — bu ikkisi boshqa-
+    // boshqa holat, bir xil qiymatga qisqartirilmasligi kerak (aks holda haqiqiy
+    // kampaniya "yaroqsiz havola" deb noto'g'ri ko'rsatiladi).
     const SOURCE_UNKNOWN = 'unknown';
+    const SOURCE_CAMPAIGN_UNSPECIFIED = 'campaign';
     const SOURCE_REFERRAL = 'referral';
 
     public function recordDeeplinkTouch(string $chatId, ?Deeplink $deeplink, bool $isNewUser): void
@@ -30,7 +36,7 @@ class MarketingAttributionService
         if ($deeplink && $deeplink->isActive()) {
             $this->recordTouch(
                 $chatId,
-                $deeplink->source ?: $deeplink->channel ?: self::SOURCE_UNKNOWN,
+                $deeplink->source ?: $deeplink->channel ?: self::SOURCE_CAMPAIGN_UNSPECIFIED,
                 $deeplink->code,
                 MarketingAttribution::METHOD_DEEPLINK,
                 $isNewUser
