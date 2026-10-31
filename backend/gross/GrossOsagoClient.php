@@ -22,6 +22,11 @@ class GrossOsagoClient
     ////////////////////////////////////////////////////////
     // CURL REQUEST
     ////////////////////////////////////////////////////////
+    public function getCookieFile(): string
+    {
+        return $this->cookieFile;
+    }
+
     private function request(
         string $url,
         string $method = 'GET',

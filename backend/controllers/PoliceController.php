@@ -282,7 +282,7 @@ class PoliceController extends Controller
     public function grossCheckApi($anketa_id)
     {
         try {
-            $this->grossService ??= GrossOsago::fromParams();
+            $this->grossService ??= GrossOsago::fromParams(0, Yii::getAlias('@runtime/gross') . '/gross_cookie_check.txt');
 
             $ok = $this->grossService->checkPayment((string)$anketa_id);
 

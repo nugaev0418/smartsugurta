@@ -20,7 +20,7 @@ class GrossOsago
 
     public function __construct(array $config)
     {
-        $this->http         = new GrossOsagoClient();
+        $this->http         = new GrossOsagoClient($config['cookie_file'] ?? null);
         $this->login        = $config['login'];
         $this->password     = $config['password'];
         $this->senderPinfl  = $config['sender_pinfl'];
@@ -33,7 +33,7 @@ class GrossOsago
     /**
      * Yii::$app->params['gross'] / ['openai'] dan konfiguratsiya yig'adi.
      */
-    public static function fromParams(int $chatId = 0): self
+    public static function fromParams(int $chatId = 0, ?string $cookieFile = null): self
     {
         $grossCfg = Yii::$app->params['gross'];
 
@@ -47,6 +47,7 @@ class GrossOsago
                 ? Yii::getAlias($grossCfg['responseDir'])
                 : Yii::getAlias('@runtime/gross'),
             'chat_id'      => $chatId,
+            'cookie_file'  => $cookieFile,
         ]);
     }
 
@@ -240,9 +241,9 @@ class GrossOsago
 
     private function clearSessionCookie(): void
     {
-        $cookieFile = __DIR__ . '/gross_cookie.txt';
+        $cookieFile = $this->http->getCookieFile();
         if (file_exists($cookieFile)) {
-            unlink($cookieFile);
+            @unlink($cookieFile) || @file_put_contents($cookieFile, '');
         }
     }
 
