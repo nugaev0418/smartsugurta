@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Muloqot tili
+
+Foydalanuvchiga barcha javoblar **faqat o'zbek tilida** yoziladi (kod, commit xabarlari va fayl
+ichidagi izohlar kabi texnik narsalar o'z holicha qoladi — bu qoida faqat foydalanuvchiga ko'rinadigan
+matnga tegishli).
+
 ## Loyiha haqida
 
 Bu — **Yii2 Advanced Project Template** asosidagi PHP ilova bo'lib, Telegram bot orqali avtomobil OSAGO
