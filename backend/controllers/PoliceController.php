@@ -150,7 +150,7 @@ class PoliceController extends Controller
     {
         $this->telegram = Yii::$app->telegram;
 
-        $tenDaysAgo = date('Y-m-d H:i:s', strtotime('-10 days'));
+        $tenDaysAgo = date('Y-m-d H:i:s', strtotime('-1 days'));
 
         $polices = Police::find()
             ->where(['status' => 0, 'provider_id' => Police::PROVIDER_EAI])
