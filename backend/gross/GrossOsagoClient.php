@@ -10,9 +10,13 @@ class GrossOsagoClient
     private string $cookieFile;
     private ?string $lastRequestBody = null;
 
-    public function __construct()
+    public function __construct(?string $cookieFile = null)
     {
-        $this->cookieFile = __DIR__ . '/gross_cookie.txt';
+        $this->cookieFile = $cookieFile ?? __DIR__ . '/gross_cookie.txt';
+
+        if (!is_dir(dirname($this->cookieFile))) {
+            mkdir(dirname($this->cookieFile), 0777, true);
+        }
 
         if (!file_exists($this->cookieFile)) {
             file_put_contents($this->cookieFile, '');
