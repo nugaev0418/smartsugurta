@@ -470,6 +470,21 @@ class GrossOsagoClient
 
 
 ////////////////////////////////////////////////////////
+// CHECK PAYMENT STATUS (avtorizatsiya talab qiladi — cookie-jar orqali)
+////////////////////////////////////////////////////////
+    public function checkOplata(string $anketaId): string
+    {
+        return $this->request(
+            $this->baseUrl . '/epolis/check_oplata.php?anketa_id=' . urlencode($anketaId),
+            'GET',
+            [
+                'Referer: https://osago.gross.uz/',
+                'User-Agent: Mozilla/5.0',
+            ]
+        );
+    }
+
+////////////////////////////////////////////////////////
 // OPEN EPOLIS OPLATA PAGE (warm-up GET before payment POSTs)
 ////////////////////////////////////////////////////////
     public function openEpolisOplata(string $uuid, string $anketaId): string

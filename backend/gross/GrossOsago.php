@@ -29,9 +29,48 @@ class GrossOsago
         $this->chatId       = (int) ($config['chat_id'] ?? 0);
     }
 
+    /**
+     * Yii::$app->params['gross'] / ['openai'] dan konfiguratsiya yig'adi.
+     */
+    public static function fromParams(int $chatId = 0): self
+    {
+        $grossCfg = Yii::$app->params['gross'];
+
+        return new self([
+            'login'        => $grossCfg['login'],
+            'password'     => $grossCfg['password'],
+            'sender_pinfl' => $grossCfg['senderPinfl'],
+            'marka_id'     => $grossCfg['markaId'] ?? 13,
+            'openai_key'   => Yii::$app->params['openai']['apiKey'],
+            'response_dir' => isset($grossCfg['responseDir'])
+                ? Yii::getAlias($grossCfg['responseDir'])
+                : Yii::getAlias('@runtime/gross'),
+            'chat_id'      => $chatId,
+        ]);
+    }
+
     // ================================================================
     // PUBLIC
     // ================================================================
+
+    /**
+     * Polisa to'lovi holatini tekshiradi (avtorizatsiya bilan). Sessiya
+     * tugagan bo'lsa bir marta qayta login qilib qayta so'raydi.
+     */
+    public function checkPayment(string $anketaId): bool
+    {
+        $this->ensureLoggedIn();
+
+        $response = $this->http->checkOplata($anketaId);
+
+        if (stripos($response, 'name="UserName"') !== false) {
+            $this->clearSessionCookie();
+            $this->ensureLoggedIn();
+            $response = $this->http->checkOplata($anketaId);
+        }
+
+        return trim($response) === 'SUCCESS';
+    }
 
     /**
      * @return array{uuid: string, anketa_id: string, premium: int, gateway: string, payment_url: ?string, session_dir: string}
@@ -149,7 +188,7 @@ class GrossOsago
         return $dir;
     }
 
-    private function ensureLoggedIn(int $maxAttempts = 10): void
+    private function ensureLoggedIn(int $maxAttempts = 2): void
     {
         if ($this->isSessionAlive()) {
             return;

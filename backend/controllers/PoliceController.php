@@ -4,6 +4,7 @@ namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
 use backend\component\MarketingAttributionService;
+use backend\gross\GrossOsago;
 use backend\models\EuroAsia;
 use common\models\Botuser;
 use common\models\Income;
@@ -25,6 +26,7 @@ class PoliceController extends Controller
 {
     public $telegram;
     public $chat_id;
+    private ?GrossOsago $grossService = null;
     /**
      * @inheritDoc
      */
@@ -279,35 +281,13 @@ class PoliceController extends Controller
 
     public function grossCheckApi($anketa_id)
     {
-        $url = "https://osago.gross.uz/epolis/check_oplata.php?anketa_id={$anketa_id}";
+        try {
+            $this->grossService ??= GrossOsago::fromParams();
 
-        $ch = curl_init();
-
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [],
-            CURLOPT_COOKIE => '',
-            CURLOPT_SSL_VERIFYPEER => false, // agar SSL xatolik bo'lsa
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_TIMEOUT => 30,
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-
-        curl_close($ch);
-
-        if ($error) {
+            return $this->grossService->checkPayment((string)$anketa_id);
+        } catch (\Throwable $e) {
+            Yii::error("Gross to'lov tekshiruvi xatosi ({$anketa_id}): " . $e->getMessage(), 'gross');
             return false;
-        } else {
-
-            if ($response === 'SUCCESS'){
-                return true;
-            }else{
-                return false;
-            }
         }
     }
 

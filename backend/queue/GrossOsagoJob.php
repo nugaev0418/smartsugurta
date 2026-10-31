@@ -105,18 +105,7 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
             try {
                 Yii::info("Gross urinish {$attempt}/{$this->maxAttempts}", 'gross');
 
-                $grossCfg = Yii::$app->params['gross'];
-                $service  = new GrossOsago([
-                    'login'        => $grossCfg['login'],
-                    'password'     => $grossCfg['password'],
-                    'sender_pinfl' => $grossCfg['senderPinfl'],
-                    'marka_id'     => $grossCfg['markaId'] ?? 13,
-                    'openai_key'   => Yii::$app->params['openai']['apiKey'],
-                    'response_dir' => isset($grossCfg['responseDir'])
-                        ? Yii::getAlias($grossCfg['responseDir'])
-                        : Yii::getAlias('@runtime/gross'),
-                    'chat_id' => $this->chatId,
-                ]);
+                $service = GrossOsago::fromParams($this->chatId);
 
                 $result = $service->run($this->policyDataGross);
 
