@@ -284,9 +284,18 @@ class PoliceController extends Controller
         try {
             $this->grossService ??= GrossOsago::fromParams();
 
-            return $this->grossService->checkPayment((string)$anketa_id);
+            $ok = $this->grossService->checkPayment((string)$anketa_id);
+
+            echo '<pre>anketa_id=' . htmlspecialchars((string)$anketa_id)
+                . ' natija=' . ($ok ? 'SUCCESS' : 'false') . PHP_EOL
+                . 'sayt javobi: ' . htmlspecialchars(mb_substr((string)$this->grossService->getLastCheckResponse(), 0, 2000))
+                . '</pre>' . PHP_EOL;
+
+            return $ok;
         } catch (\Throwable $e) {
             Yii::error("Gross to'lov tekshiruvi xatosi ({$anketa_id}): " . $e->getMessage(), 'gross');
+            echo '<pre>anketa_id=' . htmlspecialchars((string)$anketa_id)
+                . ' XATO: ' . htmlspecialchars($e->getMessage()) . '</pre>' . PHP_EOL;
             return false;
         }
     }

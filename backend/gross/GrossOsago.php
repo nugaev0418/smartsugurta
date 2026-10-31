@@ -16,6 +16,7 @@ class GrossOsago
     private string $openaiApiKey;
     private string $responseDir;
     private int    $chatId;
+    private ?string $lastCheckResponse = null;
 
     public function __construct(array $config)
     {
@@ -69,7 +70,15 @@ class GrossOsago
             $response = $this->http->checkOplata($anketaId);
         }
 
+        $this->lastCheckResponse = $response;
+
         return trim($response) === 'SUCCESS';
+    }
+
+    /** Oxirgi checkPayment() da sayt qaytargan xom javob. */
+    public function getLastCheckResponse(): ?string
+    {
+        return $this->lastCheckResponse;
     }
 
     /**
