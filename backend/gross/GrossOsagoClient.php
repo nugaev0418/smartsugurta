@@ -116,7 +116,7 @@ class GrossOsagoClient
             throw new Exception("Captcha rasm yuklanmadi");
         }
 
-        $file = __DIR__ . '/captcha.jpg';
+        $file = dirname($this->cookieFile) . '/captcha.jpg';
 
         file_put_contents($file, $img);
         clearstatcache();
