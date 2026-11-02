@@ -536,6 +536,14 @@ class UzbekInvestClient
     // -------------------------------------------------------
     private function login(): string
     {
+        // Eskirgan sessiya cookie'lari bilan login sahifasi ochilsa, sayt login POST'ni
+        // "Сессия муддати тугади" bilan rad etadi — shuning uchun har doim toza sessiyadan boshlaymiz.
+        foreach ([$this->cookieFile, $this->sessionFile] as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+
         // 1. Bosh sahifa
         $step1 = $this->makeRequest($this->baseUrl . '/');
         if (in_array($step1['code'], [301, 302, 303, 307, 308]) && $step1['location']) {
