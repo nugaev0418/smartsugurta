@@ -225,7 +225,7 @@ class UzbekInvestOsago
      *   start_date (DD.MM.YYYY), period    — sug'urta boshlanishi va muddat
      *   drivers                            — [['passport','birthdate'], ...] 1..5 ta
      * Ixtiyoriy (default):
-     *   policy_type='2', use_territory_id='2', is_foreign='1',
+     *   policy_type='2', use_territory_id (raqamdan: 01/10 → 1, boshqa → 2), is_foreign='1',
      *   tech_date='18.06.2021' (fallback), vehicle_type='6' (fallback),
      *   owner_passport='', owner_birthdate='' (jismoniy egada majburiy)
      */
@@ -263,6 +263,13 @@ class UzbekInvestOsago
             if (empty($d['passport']) || empty($d['birthdate'])) {
                 return $this->fail('input', "Haydovchi #" . ($i + 1) . " da passport va birthdate ko'rsatilishi shart");
             }
+        }
+
+        // Ro'yxatdan o'tgan joy: saytning calculateTerritory() qoidasi —
+        // Toshkent shahri raqami (01/10) → 1, boshqa viloyatlar → 2.
+        if (!isset($input['use_territory_id'])) {
+            $plateCode = substr(trim((string)$input['gov_number']), 0, 2);
+            $input['use_territory_id'] = in_array($plateCode, ['01', '10'], true) ? '1' : '2';
         }
 
         $in = array_replace([
