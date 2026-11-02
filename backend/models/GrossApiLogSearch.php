@@ -14,7 +14,7 @@ class GrossApiLogSearch extends GrossApiLog
     public function rules()
     {
         return [
-            [['id', 'chat_id', 'attempt', 'police_id'], 'integer'],
+            [['id', 'chat_id', 'attempt', 'police_id', 'provider_id'], 'integer'],
             [['run_id', 'label', 'success', 'created_at'], 'safe'],
         ];
     }
@@ -46,6 +46,7 @@ class GrossApiLogSearch extends GrossApiLog
 
         $query->andFilterWhere([
             'id' => $this->id,
+            'provider_id' => $this->provider_id,
             'chat_id' => $this->chat_id,
             'attempt' => $this->attempt,
             'police_id' => $this->police_id,

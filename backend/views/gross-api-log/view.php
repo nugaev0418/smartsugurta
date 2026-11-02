@@ -6,8 +6,8 @@ use yii\widgets\DetailView;
 /** @var yii\web\View $this */
 /** @var common\models\GrossApiLog $model */
 
-$this->title = 'Gross API log #' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Gross API loglari', 'url' => ['index']];
+$this->title = 'Job log #' . $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'Job loglari', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 
 $pretty = function (?string $json): string {
@@ -33,6 +33,10 @@ $pretty = function (?string $json): string {
         'options'    => ['class' => 'table table-bordered detail-view'],
         'attributes' => [
             'id',
+            [
+                'attribute' => 'provider_id',
+                'value'     => $model->getProviderName(),
+            ],
             [
                 'attribute' => 'chat_id',
                 'format'    => 'raw',

@@ -3,7 +3,6 @@
 namespace backend\component\insurance;
 
 use backend\component\EuroAsiaService;
-use backend\controllers\BotController;
 use backend\queue\GrossOsagoJob;
 use backend\queue\UzbekInvestOsagoJob;
 use common\models\Botuser;
@@ -37,26 +36,13 @@ class OsagoSubmissionService
     ) {
     }
 
-    /**
-     * VAQTINCHA (sinov bosqichi): admin foydalanuvchilar uchun admin paneldagi
-     * sozlamadan qat'i nazar HAR DOIM Uzbekinvest ishlatiladi. Qolganlar uchun
-     * Setting::getOsagoProvider() (standart Gross) hal qiladi — Uzbekinvest
-     * yaxshi ishlashi tasdiqlangach, sozlamani o'zgartirish hamma uchun yoqadi
-     * va admin qoidasini olib tashlash mumkin.
-     */
-    private function useUzbekinvest(Botuser $botuser): bool
-    {
-        $isAdmin = (string)$botuser->chat_id === (string)BotController::ADMIN_ID || (bool)$botuser->is_admin;
-
-        return $isAdmin || Setting::getOsagoProvider() === Police::PROVIDER_UZBEKINVEST;
-    }
-
     public function submit(OsagoApplicationData $data, Botuser $botuser, bool $allowDirectEaiForTashkent): OsagoSubmissionResult
     {
         $eaiPayload = $this->builder->buildEaiPayload($data);
 
         if (!$allowDirectEaiForTashkent || !$this->builder->isTashkentPlate($data->plateNumber)) {
-            if ($this->useUzbekinvest($botuser)) {
+            // Provayder admin paneldan tanlanadi (Setting::getOsagoProvider(), standart Gross).
+            if (Setting::getOsagoProvider() === Police::PROVIDER_UZBEKINVEST) {
                 $jobId = Yii::$app->uzbekInvestQueue->push(new UzbekInvestOsagoJob([
                     'policyData' => $this->builder->buildUzbekinvestPayload($data),
                     'policyDataEAI' => $eaiPayload,

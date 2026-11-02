@@ -66,7 +66,7 @@
           <label data-i18n="labelTech">Texpassport seriya va raqami</label>
           <div class="row">
             <input type="text" id="techSeria" placeholder="AAG" maxlength="3" style="flex:0.9">
-            <input type="text" id="techNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
+            <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" id="techNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
           </div>
           <div class="error" id="err-tech"></div>
         </div>
@@ -97,7 +97,7 @@
           <label data-i18n="labelPassport">Passport seriya va raqami</label>
           <div class="row">
             <input type="text" id="physSeries" placeholder="AD" maxlength="2" style="flex:0.7">
-            <input type="text" id="physNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
+            <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" id="physNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
           </div>
           <div class="error" id="err-physPass"></div>
         </div>
@@ -251,7 +251,7 @@
           <label data-i18n="labelTech">Texpassport seriya va raqami</label>
           <div class="row">
             <input type="text" id="mvTechSeria" placeholder="AAG" maxlength="3" style="flex:0.9">
-            <input type="text" id="mvTechNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
+            <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" id="mvTechNumber" placeholder="1234567" maxlength="7" style="flex:1.3">
           </div>
         </div>
         <div class="error" id="mvAddErr"></div>
@@ -284,6 +284,6 @@
 
 </div>
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

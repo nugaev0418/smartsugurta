@@ -313,6 +313,7 @@ class GrossOsago
     {
         try {
             (new GrossApiLog([
+                'provider_id' => \common\models\Police::PROVIDER_GROSS,
                 'chat_id' => $this->chatId,
                 'run_id' => basename($sessionDir),
                 'label' => $label,

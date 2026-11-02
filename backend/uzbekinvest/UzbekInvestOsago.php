@@ -50,6 +50,7 @@ class UzbekInvestOsago
     private array       $options;
     private ?string     $logDir = null;
     private int         $logSeq = 0;
+    private string      $runId = '';
     private array       $warnings = [];
 
     /**
@@ -71,6 +72,8 @@ class UzbekInvestOsago
             'throw_on_error' => false,
             'dry_run'        => false,
             'verify_ssl'     => true,
+            'db_log'         => false, // true: har qadam gross_api_log ("Job logs") ga yoziladi (faqat Yii ichida)
+            'chat_id'        => 0,
         ], $options);
 
         $this->client = new UzbekInvestClient(
@@ -89,7 +92,7 @@ class UzbekInvestOsago
      * ("queue" worker va "check" cron bir-birining sessiyasini buzmasin).
      * Xatoda UzbekOsagoException throw qilinadi.
      */
-    public static function fromParams(string $profile = 'queue'): self
+    public static function fromParams(string $profile = 'queue', int $chatId = 0): self
     {
         $cfg  = \Yii::$app->params['uzbekinvest'];
         $root = \Yii::getAlias('@runtime/uzbekinvest');
@@ -100,6 +103,9 @@ class UzbekInvestOsago
             'log_root'       => $root . '/logs',
             'throw_on_error' => true,
             'verify_ssl'     => (bool)($cfg['verifySsl'] ?? true),
+            // faqat polisa yaratuvchi navbat yoziladi; to'lov tekshiruvi (cron) logni to'ldirmasin
+            'db_log'         => $profile === 'queue',
+            'chat_id'        => $chatId,
         ];
         if (!empty($cfg['baseUrl'])) {
             $options['base_url'] = $cfg['baseUrl'];
@@ -437,6 +443,7 @@ class UzbekInvestOsago
 
         $result = [
             'success'           => true,
+            'run_id'            => $this->runId,
             'contract_id'       => $contractId,
             'redirect_url'      => $redirectUrl,
             'pay_urls'          => $payUrls,
@@ -537,6 +544,8 @@ class UzbekInvestOsago
 
     private function beginLog(): void
     {
+        $this->runId = 'uz' . date('ymdHis') . bin2hex(random_bytes(4));
+
         if (!$this->options['log']) {
             $this->logDir = null;
             return;
@@ -550,12 +559,54 @@ class UzbekInvestOsago
 
     private function logStep(string $name, mixed $data): void
     {
+        $request = $this->client->pullLastRequest();
+        $this->logToDatabase($name, $request, $data);
+
         if (!$this->options['log'] || !$this->logDir) {
             return;
         }
         $this->logSeq++;
         $file = $this->logDir . '/' . $this->logSeq . '_' . $name . '.json';
         file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
+     * Qadamni admin paneldagi "Job logs" (gross_api_log, provider_id = Uzbekinvest) ga yozadi.
+     * Yozish xatosi sug'urta oqimini to'xtatmasligi uchun yutiladi.
+     */
+    private function logToDatabase(string $name, ?string $request, mixed $data): void
+    {
+        if (!$this->options['db_log'] || !class_exists(\Yii::class, false) || \Yii::$app === null) {
+            return;
+        }
+
+        try {
+            $isFail = str_starts_with($name, 'fail_');
+            $isErrorPayload = is_array($data) && (
+                ($data['status'] ?? '') === 'error' || ($data['success'] ?? true) === false
+            );
+            $error = null;
+            if (is_array($data)) {
+                $error = $data['error'] ?? $data['message'] ?? null;
+                if (!$isFail && !$isErrorPayload) {
+                    $error = null;
+                }
+            }
+
+            (new \common\models\GrossApiLog([
+                'provider_id'   => \common\models\Police::PROVIDER_UZBEKINVEST,
+                'chat_id'       => (int)$this->options['chat_id'] ?: null,
+                'run_id'        => $this->runId,
+                'label'         => mb_substr($name, 0, 64),
+                'attempt'       => 1,
+                'success'       => !$isFail && !$isErrorPayload,
+                'request'       => $request,
+                'response'      => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'error_message' => is_string($error) ? mb_substr($error, 0, 512) : null,
+            ]))->save(false);
+        } catch (\Throwable $e) {
+            \Yii::warning('Uzbekinvest job logini yozishda xato: ' . $e->getMessage(), 'uzbekinvest');
+        }
     }
 
     // ===================================================================

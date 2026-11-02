@@ -14,6 +14,7 @@ class UzbekInvestClient
     private array   $defaultHeaders;
     private bool    $verifySsl;
     public  ?string $debugDir = null;
+    private ?string $lastRequest = null;
 
     public function __construct(
         string $username,
@@ -534,6 +535,18 @@ class UzbekInvestClient
     // -------------------------------------------------------
     // Login — session ID qaytaradi
     // -------------------------------------------------------
+    /**
+     * Oxirgi API (POST) so'rovining tanasi (bir marta olinadi), log uchun: p_json ochiq JSON ko'rinishida.
+     * Login so'rovi (parol bor) hech qachon saqlanmaydi.
+     */
+    public function pullLastRequest(): ?string
+    {
+        $request = $this->lastRequest;
+        $this->lastRequest = null; // eskirgan so'rov keyingi log yozuviga o'tib qolmasin
+
+        return $request;
+    }
+
     private function login(): string
     {
         // Sayt ba'zan login POST'ni "Сессия муддати тугади" bilan rad etadi — toza
@@ -637,6 +650,7 @@ class UzbekInvestClient
 
         $loginPostUrl = $this->baseUrl . '/ords/wwv_flow.accept?p_context=insurance-products-sales-platform/login/' . $form['p_instance'];
         $step3        = $this->makeRequest($loginPostUrl, [], $postData, $loginUrl, true);
+        $this->lastRequest = null; // login so'rovida parol bor
 
         // 4. Natijani tekshirish
         $responseJson = json_decode($step3['body'], true);
@@ -730,6 +744,15 @@ class UzbekInvestClient
         }
 
         if ($postData !== null) {
+            $logged = $postData;
+            if (isset($logged['p_json']) && is_string($logged['p_json'])) {
+                $decoded = json_decode($logged['p_json'], true);
+                if (is_array($decoded)) {
+                    unset($decoded['salt'], $decoded['pageItems']['protected']);
+                    $logged['p_json'] = $decoded;
+                }
+            }
+            $this->lastRequest = json_encode($logged, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
             $headers[] = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8';

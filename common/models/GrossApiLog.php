@@ -4,6 +4,7 @@ namespace common\models;
 
 /**
  * @property int $id
+ * @property int $provider_id Police::PROVIDER_* (2 = Gross, 3 = Uzbekinvest)
  * @property int|null $chat_id
  * @property string $run_id
  * @property string $label
@@ -17,6 +18,10 @@ namespace common\models;
  *
  * @property Police|null $police
  */
+/**
+ * "Job logs": navbat job'lari (Gross, Uzbekinvest) tashqi API chaqiruvlarining so'rov/javobi.
+ * Jadval nomi tarixiy (gross_api_log), provayderni provider_id ajratadi.
+ */
 class GrossApiLog extends \yii\db\ActiveRecord
 {
     public static function tableName(): string
@@ -28,7 +33,7 @@ class GrossApiLog extends \yii\db\ActiveRecord
     {
         return [
             [['run_id', 'label'], 'required'],
-            [['chat_id', 'attempt', 'police_id'], 'integer'],
+            [['chat_id', 'attempt', 'police_id', 'provider_id'], 'integer'],
             [['success'], 'boolean'],
             [['request', 'response'], 'string'],
             [['run_id'], 'string', 'max' => 32],
@@ -36,6 +41,11 @@ class GrossApiLog extends \yii\db\ActiveRecord
             [['error_message'], 'string', 'max' => 512],
             [['created_at'], 'safe'],
         ];
+    }
+
+    public function getProviderName(): string
+    {
+        return Police::getProviderList()[$this->provider_id] ?? '—';
     }
 
     public function getPolice()

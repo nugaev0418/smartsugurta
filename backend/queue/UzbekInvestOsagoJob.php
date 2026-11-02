@@ -7,6 +7,7 @@ use backend\controllers\BotController;
 use backend\models\EuroAsia;
 use backend\uzbekinvest\UzbekInvestOsago;
 use common\models\Botuser;
+use common\models\GrossApiLog;
 use common\models\Police;
 use common\models\SeasonalInsurance;
 use common\models\Text;
@@ -102,7 +103,7 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
                     throw new \RuntimeException("SeasonalInsurance topilmadi (seasonId: {$this->policyDataEAI['seasonalInsuranceId']})");
                 }
 
-                $result = UzbekInvestOsago::fromParams('queue')->run($this->policyData);
+                $result = UzbekInvestOsago::fromParams('queue', $this->chatId)->run($this->policyData);
 
                 [$gateway, $paymentUrl] = $this->pickPayment($result['pay_urls'] ?? []);
                 if ($paymentUrl === null) {
@@ -141,6 +142,11 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
                 $police->anketa_id         = (int) $result['contract_id'];
                 $police->provider_id       = Police::PROVIDER_UZBEKINVEST;
                 $police->save(false);
+
+                // Job logs'dagi shu urinish yozuvlarini yaratilgan polisaga bog'laymiz.
+                if (!empty($result['run_id'])) {
+                    GrossApiLog::updateAll(['police_id' => $police->id], ['run_id' => $result['run_id']]);
+                }
 
                 // Polis yaratildi va saqlandi — keyingi xatolik urinishni QAYTA
                 // boshlamasligi kerak (Uzbekinvest'ga ikkinchi polis ketardi).

@@ -512,7 +512,7 @@
         '</div>' +
         '<div class="driver-row">' +
         '<input type="text" placeholder="' + escapeHtml(t('placeholderSeria')) + '" maxlength="2" data-field="seria" data-id="' + safeId + '" value="' + escapeHtml(d.seria) + '">' +
-        '<input type="text" placeholder="' + escapeHtml(t('placeholderNumber')) + '" maxlength="7" data-field="number" data-id="' + safeId + '" value="' + escapeHtml(d.number) + '">' +
+        '<input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="' + escapeHtml(t('placeholderNumber')) + '" maxlength="7" data-field="number" data-id="' + safeId + '" value="' + escapeHtml(d.number) + '">' +
         '</div>' +
         '<div class="date-field">' +
         '<input type="text" inputmode="numeric" placeholder="' + escapeHtml(t('dateMask')) + '" maxlength="10" data-birth-text value="' + escapeHtml(fmtDate(d.birthDate)) + '">' +

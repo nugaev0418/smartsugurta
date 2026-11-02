@@ -11,7 +11,7 @@ use yii\widgets\Pjax;
 /** @var backend\models\GrossApiLogSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
 
-$this->title = 'Gross API loglari';
+$this->title = 'Job loglari';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="gross-api-log-index">
@@ -25,6 +25,13 @@ $this->params['breadcrumbs'][] = $this->title;
             ['class' => 'yii\grid\SerialColumn'],
 
             'id',
+            [
+                'attribute' => 'provider_id',
+                'filter'    => \common\models\Police::getProviderList(),
+                'filterInputOptions' => ['class' => 'form-select', 'prompt' => 'Barchasi'],
+                'format'    => 'raw',
+                'value'     => fn($model) => '<span class="badge bg-secondary-lt text-secondary">' . Html::encode($model->getProviderName()) . '</span>',
+            ],
             [
                 'attribute' => 'chat_id',
                 'format'    => 'raw',
