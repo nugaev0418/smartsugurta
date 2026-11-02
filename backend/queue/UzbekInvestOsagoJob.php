@@ -4,6 +4,8 @@ namespace backend\queue;
 
 use backend\component\insurance\InsuranceRecordPersister;
 use backend\component\insurance\JobRetryService;
+use backend\component\insurance\OsagoApplicationData;
+use backend\component\insurance\OsagoSubmissionService;
 use backend\component\LogChannel;
 use backend\models\EuroAsia;
 use backend\uzbekinvest\UzbekInvestOsago;
@@ -11,6 +13,7 @@ use common\models\Botuser;
 use common\models\GrossApiLog;
 use common\models\Police;
 use common\models\SeasonalInsurance;
+use common\models\Setting;
 use common\models\Text;
 use Yii;
 use yii\base\BaseObject;
@@ -59,6 +62,12 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
 
     public function execute($queue): void
     {
+        // Navbatda turgan ariza pauza boshlanishidan oldin qo'yilgan bo'lsa: bot Uzbekinvest'ga kirmaydi,
+        // shuning uchun ariza Gross'ga o'tkaziladi (foydalanuvchi kutib qolmasin).
+        if (Setting::isUzbekinvestPaused() && $this->rerouteToGross()) {
+            return;
+        }
+
         for ($round = 1; $round <= $this->maxRounds; $round++) {
             Yii::info("UzbekInvestOsagoJob (pid: " . getmypid() . ") - {$round}/{$this->maxRounds}-tsikl boshlandi", 'uzbekinvest');
 
@@ -91,11 +100,36 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
         }
     }
 
+    /** Arizani Gross navbatiga o'tkazadi (pauza paytida). Muvaffaqiyatli bo'lsa true. */
+    private function rerouteToGross(): bool
+    {
+        try {
+            $botuser = Botuser::find()->where(['chat_id' => $this->chatId])->one();
+            if (!$botuser || !$this->applicationData) {
+                return false;
+            }
+
+            $jobId = Yii::createObject(OsagoSubmissionService::class)->queueForProvider(
+                OsagoApplicationData::fromArray($this->applicationData),
+                $botuser,
+                Police::PROVIDER_GROSS
+            );
+            $this->sendMessageAdmin("⏸ Uzbekinvest pauzada: ariza Gross navbatiga o'tkazildi (job " . json_encode($jobId) . ", chat {$this->chatId}).");
+
+            return true;
+        } catch (\Throwable $e) {
+            Yii::error('Pauzada Gross\'ga o\'tkazib bo\'lmadi: ' . $e->getMessage(), 'uzbekinvest');
+
+            return false;
+        }
+    }
+
     private function tryUzbekInvest(): bool
     {
         $lastException = null;
 
         for ($attempt = 1; $attempt <= $this->maxAttempts; $attempt++) {
+            $runCompleted = false; // true bo'lgach Uzbekinvest'da polis yaratilgan: Gross'ga o'tkazish dublikat bo'lardi
             try {
                 Yii::info("Uzbekinvest urinish {$attempt}/{$this->maxAttempts}", 'uzbekinvest');
 
@@ -114,6 +148,7 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
                 }
 
                 $result = UzbekInvestOsago::fromParams('queue', $this->chatId)->run($this->policyData);
+                $runCompleted = true;
 
                 [$gateway, $paymentUrl] = $this->pickPayment($result['pay_urls'] ?? []);
                 if ($paymentUrl === null) {
@@ -179,6 +214,11 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
                 return true;
             } catch (\Throwable $e) {
                 $lastException = $e;
+
+                // Ish jarayonida pauza yoqilgan va polis hali yaratilmagan: kutmasdan Gross'ga o'tkazamiz.
+                if (!$runCompleted && Setting::isUzbekinvestPaused() && $this->rerouteToGross()) {
+                    return true;
+                }
 
                 Yii::warning("Uzbekinvest urinish {$attempt}/{$this->maxAttempts} xato: " . $e->getMessage(), 'uzbekinvest');
 

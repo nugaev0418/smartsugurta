@@ -260,6 +260,12 @@ class PoliceController extends Controller
      */
     public function actionUzbekinvest()
     {
+        // Pauzada (admin brauzerdan ishlayapti) bot Uzbekinvest'ga kirmaydi; polislar keyingi cron'da tekshiriladi.
+        if (Setting::isUzbekinvestPaused()) {
+            echo 'Uzbekinvest pauzada' . PHP_EOL;
+            return;
+        }
+
         $this->telegram = Yii::$app->telegram;
 
         $polices = Police::find()

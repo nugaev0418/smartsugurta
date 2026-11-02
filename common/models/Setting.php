@@ -13,10 +13,14 @@ namespace common\models;
  * @property int $tashkent_user_percent
  * @property int $referral_percent
  * @property int $osago_provider
+ * @property string|null $uzbekinvest_pause_until
  */
 class Setting extends \yii\db\ActiveRecord
 {
     private static ?self $_instance = null;
+
+    /** Virtual (ustun emas): panelda tanlangan pauza muddati — daqiqa yoki 'end'. */
+    public $pause_minutes;
 
     public static function tableName(): string
     {
@@ -29,6 +33,7 @@ class Setting extends \yii\db\ActiveRecord
             [['bot_status', 'police_status', 'payment_status', 'my_vehicles_status', 'admin_online'], 'in', 'range' => [0, 1]],
             [['user_percent', 'tashkent_user_percent', 'referral_percent'], 'integer', 'min' => 0, 'max' => 100],
             ['osago_provider', 'in', 'range' => [Police::PROVIDER_GROSS, Police::PROVIDER_UZBEKINVEST]],
+            ['pause_minutes', 'in', 'range' => [15, 30, 60, 120, 'end']],
         ];
     }
 
@@ -44,6 +49,7 @@ class Setting extends \yii\db\ActiveRecord
             'referral_percent'      => 'Referal foizi (%)',
             'osago_provider'        => 'OSAGO provayderi',
             'admin_online'          => 'Admin online',
+            'pause_minutes'         => 'Uzbekinvest pauza',
         ];
     }
 
@@ -71,6 +77,32 @@ class Setting extends \yii\db\ActiveRecord
     public static function getAdminOnline(): int
     {
         return (int)static::find()->select('admin_online')->scalar();
+    }
+
+    /**
+     * Uzbekinvest pauzada bo'lsa bot u yerga umuman kirmaydi (admin brauzerdan ishlay olsin).
+     * Doim bazadan o'qiladi (worker uzoq yashaydi); vaqt DB NOW() bilan solishtiriladi.
+     * Ustun hali yo'q bo'lsa (migratsiya o'tmagan) pauza yo'q deb hisoblanadi — arizalar to'xtamasin.
+     */
+    public static function isUzbekinvestPaused(): bool
+    {
+        try {
+            return static::find()->where(['>', 'uzbekinvest_pause_until', new \yii\db\Expression('NOW()')])->exists();
+        } catch (\Throwable $e) {
+            \Yii::warning('Uzbekinvest pauza holatini o\'qib bo\'lmadi: ' . $e->getMessage(), 'uzbekinvest');
+
+            return false;
+        }
+    }
+
+    /** Pauza tugash vaqti (faol bo'lmasa null). */
+    public static function getUzbekinvestPauseUntil(): ?string
+    {
+        if (!static::isUzbekinvestPaused()) {
+            return null;
+        }
+
+        return static::find()->select('uzbekinvest_pause_until')->scalar() ?: null;
     }
 
     /** Polisa yaratiladigan provayder (Police::PROVIDER_GROSS yoki PROVIDER_UZBEKINVEST). Standart: Gross. */

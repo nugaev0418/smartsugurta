@@ -155,7 +155,10 @@ komponent sifatida e'lon qilingan va `bootstrap`da ishga tushiriladi:
   `OsagoSubmissionService::submit()` shunga qarab `grossQueue` yoki `uzbekInvestQueue`ga yuboradi.
   `Police.anketa_id` = Uzbekinvest shartnoma raqami; to'lov `police/uzbekinvest` (cron) orqali portfeldan
   tekshiriladi. Login/parol `params-local.php` → `'uzbekinvest'`. Buyruq: `php yii uzbek-invest-queue/listen`,
-  faqat BITTA worker (`deploy/systemd/uzbek-invest-queue.service`).
+  faqat BITTA worker (`deploy/systemd/uzbek-invest-queue.service`). Uzbekinvest bir akkauntda FAQAT BITTA
+  faol sessiyaga ruxsat beradi, shuning uchun worker, cron va login-test bitta umumiy sessiyadan foydalanadi
+  (`UzbekInvestOsago::sharedStorageDir()`), brauzerdan ishlash uchun esa admin panel → Bot sozlamalari →
+  "Uzbekinvest pauza" (pauzada bot kirmaydi, yangi arizalar Gross'ga yo'naladi, vaqt tugagach o'zi tugaydi).
 - `broadcastQueue` → `backend/queue/BroadcastSendJob.php` / `BroadcastDeleteJob.php` — botdan ommaviy
   xabar yuborish/o'chirish.
 - `erspQueue` → `backend/queue/ErspLookupJob.php` — "Mening avtolarim" bo'limidagi "✅ Tekshirish"

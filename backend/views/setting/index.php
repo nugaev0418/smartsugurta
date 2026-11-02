@@ -108,6 +108,26 @@ $this->params['breadcrumbs'][] = $this->title;
                     </div>
                 </div>
 
+                <?php $pauseUntil = \common\models\Setting::getUzbekinvestPauseUntil(); ?>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Uzbekinvest pauza</label>
+                        <?= Html::activeDropDownList($model, 'pause_minutes', [
+                            15 => '15 daqiqaga yoqish',
+                            30 => '30 daqiqaga yoqish',
+                            60 => '1 soatga yoqish',
+                            120 => '2 soatga yoqish',
+                            'end' => 'Pauzani tugatish',
+                        ], ['class' => 'form-select', 'prompt' => "O'zgartirmaslik"]) ?>
+                        <div class="mt-2">
+                            <?= $pauseUntil
+                                ? '<span class="badge bg-warning-lt text-warning">Pauza faol: ' . Html::encode(date('H:i', strtotime($pauseUntil))) . ' gacha</span>'
+                                : '<span class="badge bg-secondary-lt text-secondary">Pauza faol emas</span>' ?>
+                        </div>
+                        <div class="form-text">Brauzerdan Uzbekinvest'ga kirish uchun: pauzani yoqing, 1-2 daqiqa kuting (ishlayotgan ariza tugasin), ishlang, tugagach "Pauzani tugatish"ni tanlang. Pauzada bot Uzbekinvest'ga kirmaydi: yangi arizalar Gross'ga yo'naltiriladi, to'lov tekshiruvi to'xtaydi. Pauza belgilangan vaqtda o'zi tugaydi.</div>
+                    </div>
+                </div>
+
                 <h4 class="mb-3 text-secondary">Provayder</h4>
 
                 <div class="row g-3 mb-4">

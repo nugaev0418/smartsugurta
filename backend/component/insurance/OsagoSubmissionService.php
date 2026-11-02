@@ -3,6 +3,7 @@
 namespace backend\component\insurance;
 
 use backend\component\EuroAsiaService;
+use backend\component\LogChannel;
 use backend\queue\GrossOsagoJob;
 use backend\queue\UzbekInvestOsagoJob;
 use common\models\Botuser;
@@ -69,6 +70,11 @@ class OsagoSubmissionService
         if (!$allowDirectEaiForTashkent || !$this->builder->isTashkentPlate($data->plateNumber)) {
             // Provayder admin paneldan tanlanadi (Setting::getOsagoProvider(), standart Gross).
             $provider = Setting::getOsagoProvider();
+            if ($provider === Police::PROVIDER_UZBEKINVEST && Setting::isUzbekinvestPaused()) {
+                // Pauzada bot Uzbekinvest'ga kirmaydi: ariza yo'qolmasligi uchun Gross'ga yo'naltiriladi.
+                $provider = Police::PROVIDER_GROSS;
+                LogChannel::send("⏸ Uzbekinvest pauzada: ariza Gross'ga yo'naltirildi (chat {$botuser->chat_id}, {$data->plateNumber}).");
+            }
             $jobId = $this->queueForProvider($data, $botuser, $provider);
 
             return $provider === Police::PROVIDER_UZBEKINVEST

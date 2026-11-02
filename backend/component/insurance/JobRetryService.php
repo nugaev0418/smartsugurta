@@ -104,6 +104,11 @@ class JobRetryService
             return "Noma'lum provayder.";
         }
 
+        // Pauzada bot Uzbekinvest'ga kirmaydi: holatni "egallamaymiz", admin Gross'ni tanlay oladi.
+        if ($choice === Police::PROVIDER_UZBEKINVEST && Setting::isUzbekinvestPaused()) {
+            return "⏸ Uzbekinvest hozir pauzada. Gross'ni tanlang yoki pauza tugagach qayta urining.";
+        }
+
         $record = JobRetry::findOne($retryId);
         if (!$record) {
             return "Yozuv topilmadi (#{$retryId}).";

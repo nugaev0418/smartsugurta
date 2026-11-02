@@ -635,6 +635,12 @@ class UzbekInvestClient
 
     private function doLogin(): string
     {
+        // Admin brauzerdan ishlayotganda (pauza) bot QAYTA KIRMASLIGI shart: yangi login brauzer
+        // sessiyasini o'chiradi. Mavjud sessiyadan foydalanish xavfsiz, shuning uchun faqat login to'silgan.
+        if (class_exists(\Yii::class, false) && \Yii::$app !== null && \common\models\Setting::isUzbekinvestPaused()) {
+            throw new RuntimeException("Uzbekinvest pauzada (admin paneldan yoqilgan): bot login qilmaydi");
+        }
+
         $this->assertStorageWritable();
 
         // Eskirgan sessiya cookie'lari bilan login sahifasi ochilsa, sayt login POST'ni
