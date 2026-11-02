@@ -536,11 +536,58 @@ class UzbekInvestClient
     // -------------------------------------------------------
     private function login(): string
     {
+        // Sayt ba'zan login POST'ni "Сессия муддати тугади" bilan rad etadi — toza
+        // sessiya bilan bir marta qayta uriniladi, boshqa xatolar darhol qaytariladi.
+        try {
+            return $this->doLogin();
+        } catch (RuntimeException $e) {
+            if (mb_stripos($e->getMessage(), 'Сессия') === false) {
+                throw $e;
+            }
+            usleep(1500000);
+
+            return $this->doLogin();
+        }
+    }
+
+    /**
+     * Cookie/session fayllari yoziladigan bo'lishi shart: aks holda curl cookie'ni
+     * saqlay olmaydi va sayt "Сессия муддати тугади" deb javob beradi. Ko'pincha
+     * sabab — papka/fayl boshqa foydalanuvchi (masalan root) nomidan yaratilgani.
+     */
+    private function assertStorageWritable(): void
+    {
+        $dir = dirname($this->cookieFile);
+        foreach ([$this->cookieFile, $this->sessionFile] as $file) {
+            if (is_file($file) && !is_writable($file)) {
+                throw new RuntimeException("Uzbekinvest fayli yozib bo'lmaydi: {$file} (jarayon foydalanuvchisi: " . $this->processUser() . ')');
+            }
+        }
+        if (!is_writable($dir)) {
+            throw new RuntimeException("Uzbekinvest papkasi yozib bo'lmaydi: {$dir} (jarayon foydalanuvchisi: " . $this->processUser() . ')');
+        }
+    }
+
+    private function processUser(): string
+    {
+        if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
+            $info = posix_getpwuid(posix_geteuid());
+
+            return $info['name'] ?? (string)posix_geteuid();
+        }
+
+        return get_current_user();
+    }
+
+    private function doLogin(): string
+    {
+        $this->assertStorageWritable();
+
         // Eskirgan sessiya cookie'lari bilan login sahifasi ochilsa, sayt login POST'ni
         // "Сессия муддати тугади" bilan rad etadi — shuning uchun har doim toza sessiyadan boshlaymiz.
         foreach ([$this->cookieFile, $this->sessionFile] as $file) {
-            if (is_file($file)) {
-                @unlink($file);
+            if (is_file($file) && !@unlink($file)) {
+                throw new RuntimeException("Uzbekinvest eski faylini o'chirib bo'lmadi: {$file} (jarayon foydalanuvchisi: " . $this->processUser() . ')');
             }
         }
 
