@@ -1199,11 +1199,7 @@ class WebAppController extends Controller
                 $text = mb_substr($text, 0, 3900) . "\n… (qisqartirildi)";
             }
 
-            Yii::$app->telegram->sendMessage([
-                'chat_id' => BotController::ADMIN_ID,
-                'parse_mode' => 'html',
-                'text' => $text,
-            ]);
+            \backend\component\LogChannel::send($text, 'html');
         } catch (\Throwable $e) {
             Yii::error('Admin webapp logini yuborishda xato: ' . $e->getMessage(), 'webapp');
         }

@@ -40,6 +40,12 @@ class JobRetryService
     public function offerRetry(array $applicationData, int $chatId, int $failedProvider, string $reason, string $queueComponent): bool
     {
         if (!Setting::getAdminOnline() || empty($applicationData['plateNumber'])) {
+            // Admin offline: tugmasiz, lekin shu bilan to'liq ma'lumotli xabar adminga baribir boradi.
+            $this->sendToAdmin(
+                $this->failureText(null, $applicationData, $chatId, $failedProvider, $reason)
+                . "\n\nAdmin offline — foydalanuvchiga uzilish xabari yuborildi."
+            );
+
             return false;
         }
 
@@ -60,7 +66,7 @@ class JobRetryService
 
             Yii::$app->telegram->sendMessage([
                 'chat_id' => BotController::ADMIN_ID,
-                'text' => $this->adminText($record, $applicationData),
+                'text' => $this->failureText($record->id, $applicationData, $chatId, $failedProvider, $reason),
                 'parse_mode' => 'HTML',
                 'reply_markup' => Yii::$app->telegram->buildInlineKeyBoard([
                     [
@@ -169,18 +175,75 @@ class JobRetryService
         }
     }
 
-    private function adminText(JobRetry $record, array $d): string
-    {
-        $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML5);
-        $failed = Police::getProviderList()[$record->failed_provider] ?? $record->failed_provider;
+    private const PERIOD_NAMES = [7 => '1 yil', 1 => '6 oy', 8 => '20 kun'];
 
-        return "🆘 <b>Polisa yaratilmadi</b> (#{$record->id})\n"
-            . 'Provayder: <b>' . $h($failed) . "</b>\n"
-            . 'Avto: <b>' . $h($d['plateNumber'] ?? '') . '</b> (' . $h(($d['techSeria'] ?? '') . ($d['techNumber'] ?? '')) . ")\n"
-            . 'Foydalanuvchi: ' . $h($record->chat_id) . "\n"
-            . 'Boshlanish: ' . $h(substr((string)($d['startAtIso'] ?? ''), 0, 10)) . "\n"
-            . 'Xato: ' . $h($record->reason ?: "noma'lum") . "\n\n"
-            . 'Qayta urinish uchun provayderni tanlang. ' . (int)(self::TIMEOUT_SECONDS / 60) . " daqiqada javob bo'lmasa, foydalanuvchiga uzilish xabari yuboriladi.";
+    /**
+     * "Polis yaratilmadi" xabari: polis uchun kiritilgan BARCHA ma'lumotlar bilan (admin qo'lda
+     * yaratishi yoki muammoni tekshirishi mumkin bo'lishi uchun). $retryId berilsa tugmalar bilan
+     * birga ishlatiladi.
+     */
+    private function failureText(?int $retryId, array $d, int $chatId, int $failedProvider, string $reason): string
+    {
+        $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_HTML401);
+        $date = fn($iso) => $iso ? $h(substr((string)$iso, 0, 10)) : '—';
+        $provider = Police::getProviderList()[$failedProvider] ?? $failedProvider;
+
+        $user = Botuser::find()->where(['chat_id' => $chatId])->one();
+        $userLine = $user
+            ? trim(($user->fname ?? '') . ' ' . ($user->lname ?? '')) . ($user->username ? ' @' . $user->username : '') . ($user->phone ? ', ' . $user->phone : '')
+            : '';
+
+        $lines = [];
+        $lines[] = '🆘 <b>Polis yaratilmadi</b>' . ($retryId ? " (#{$retryId})" : '');
+        $lines[] = 'Provayder: <b>' . $h($provider) . '</b>';
+        $lines[] = 'Xato: ' . $h($reason !== '' ? $reason : "noma'lum");
+        $lines[] = '';
+        $lines[] = '👤 Foydalanuvchi: ' . $h($userLine !== '' ? $userLine . ' ' : '') . '<code>' . $h($chatId) . '</code>';
+        $lines[] = '📞 Telefon: ' . $h($d['eaiPhoneNumber'] ?? '—');
+        $lines[] = '🚗 Avto: <b>' . $h($d['plateNumber'] ?? '—') . '</b>, texpassport ' . $h(($d['techSeria'] ?? '') . ($d['techNumber'] ?? ''));
+
+        if (!empty($d['isOrganization'])) {
+            $lines[] = '🏢 Egasi (tashkilot): INN ' . $h($d['organizationInn'] ?? '—') . ($d['organizationName'] ?? null ? ', ' . $h($d['organizationName']) : '');
+        } else {
+            $fio = trim(($d['ownerLastName'] ?? '') . ' ' . ($d['ownerFirstName'] ?? '') . ' ' . ($d['ownerMiddleName'] ?? ''));
+            $lines[] = '🧍 Egasi: ' . $h($fio !== '' ? $fio . ', ' : '')
+                . 'passport ' . $h(($d['ownerSeria'] ?? '') . ($d['ownerNumber'] ?? ''))
+                . ', tug\'ilgan ' . $date($d['ownerBirthDateIso'] ?? null)
+                . (!empty($d['ownerPinfl']) ? ', PINFL ' . $h($d['ownerPinfl']) : '');
+        }
+
+        $lines[] = '🛡 Polis: ' . (!empty($d['driverRestriction']) ? 'cheklangan' : 'cheklanmagan')
+            . ', muddat ' . $h(self::PERIOD_NAMES[$d['periodType'] ?? 0] ?? ('kod ' . ($d['periodType'] ?? '?')))
+            . ', boshlanishi ' . $date($d['startAtIso'] ?? null)
+            . ', to\'lov ' . $h($d['gateway'] ?? '—');
+
+        $drivers = $d['drivers'] ?? [];
+        if ($drivers) {
+            $lines[] = '👥 Haydovchilar:';
+            foreach ($drivers as $i => $driver) {
+                $name = trim(($driver['lastName'] ?? '') . ' ' . ($driver['firstName'] ?? ''));
+                $lines[] = ($i + 1) . '. ' . $h(($driver['seria'] ?? '') . ($driver['number'] ?? ''))
+                    . ', tug\'ilgan ' . $date($driver['birthDateIso'] ?? null)
+                    . ($name !== '' ? ', ' . $h($name) : '')
+                    . (!empty($driver['relativeType']) ? ', qarindoshlik kodi ' . $h($driver['relativeType']) : '');
+            }
+        }
+
+        if ($retryId) {
+            $lines[] = '';
+            $lines[] = 'Qayta urinish uchun provayderni tanlang. ' . (int)(self::TIMEOUT_SECONDS / 60) . " daqiqada javob bo'lmasa, foydalanuvchiga uzilish xabari yuboriladi.";
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function sendToAdmin(string $text): void
+    {
+        try {
+            Yii::$app->telegram->sendMessage(['chat_id' => BotController::ADMIN_ID, 'text' => $text, 'parse_mode' => 'HTML']);
+        } catch (\Throwable $e) {
+            Yii::error('Polis yaratilmadi xabari adminga yuborilmadi: ' . $e->getMessage(), 'uzbekinvest');
+        }
     }
 
     private function statusName(int $status): string

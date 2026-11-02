@@ -6,6 +6,8 @@ $localParams = file_exists(__DIR__ . '/params-local.php')
 
 return array_merge([
     'adminEmail' => 'admin@example.com',
+    // Log kanali (masalan '-1001234567890'); params-local.php da beriladi. null bo'lsa loglar adminga boradi.
+    'logChannelId' => null,
     // boshqa umumiy params...
     'osago' => [
         // Toshkent (01/10) davlat raqamlarini to'g'ridan-to'g'ri EuroAsia'ga yuborish —

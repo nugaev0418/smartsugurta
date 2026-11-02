@@ -16,11 +16,14 @@ class BotMessenger
 {
     private $telegram;
     private string $adminId;
+    /** Log xabarlari yuboriladigan chat (kanal); null bo'lsa admin. */
+    private string $logChatId;
 
-    public function __construct($telegram, string $adminId)
+    public function __construct($telegram, string $adminId, ?string $logChatId = null)
     {
         $this->telegram = $telegram;
         $this->adminId = $adminId;
+        $this->logChatId = $logChatId !== null && $logChatId !== '' ? $logChatId : $adminId;
     }
 
     public function send(string $chatId, string $text): void
@@ -34,9 +37,17 @@ class BotMessenger
         }
     }
 
+    /**
+     * Foydalanuvchi harakatlari logi: log kanaliga (sozlanmagan bo'lsa adminga) yuboriladi.
+     * Log yuborilmasa ham foydalanuvchi oqimi to'xtamaydi.
+     */
     public function sendAdmin(string $text): void
     {
-        $this->send($this->adminId, $text);
+        try {
+            $this->send($this->logChatId, $text);
+        } catch (\Throwable $e) {
+            Yii::error('Log xabari yuborilmadi: ' . $e->getMessage(), 'logchannel');
+        }
     }
 
     public function sendWithId(string $chatId, string $text): void
@@ -121,7 +132,7 @@ class BotMessenger
             }
 
             $this->telegram->sendMessage([
-                'chat_id' => $this->adminId,
+                'chat_id' => $this->logChatId,
                 'parse_mode' => 'html',
                 'text' => $text,
             ]);

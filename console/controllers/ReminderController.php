@@ -121,11 +121,7 @@ class ReminderController extends Controller
             'parse_mode' => 'HTML',
         ]);
 
-        Yii::$app->telegram->sendMessage([
-            'chat_id' => BotController::ADMIN_ID,
-            'text' => "🔔 Eslatma yuborildi (chat_id: {$botuser->chat_id}):\n\n{$text}",
-            'parse_mode' => 'HTML',
-        ]);
+        \backend\component\LogChannel::send("🔔 Eslatma yuborildi (chat_id: {$botuser->chat_id}):\n\n{$text}", 'HTML');
 
         return true;
     }

@@ -5,7 +5,7 @@ namespace backend\queue;
 use backend\component\EuroAsiaService;
 use backend\component\insurance\InsuranceRecordPersister;
 use backend\component\insurance\JobRetryService;
-use backend\controllers\BotController;
+use backend\component\LogChannel;
 use backend\gross\GrossOsago;
 use backend\models\EuroAsia;
 use common\models\Botuser;
@@ -354,8 +354,9 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
         ]);
     }
 
+    /** Job holati logi: log kanaliga (Polis yaratilmadi xabari alohida, JobRetryService orqali adminga boradi). */
     private function sendMessageAdmin(string $text): void
     {
-        $this->sendMessage(BotController::ADMIN_ID, $text);
+        LogChannel::send($text);
     }
 }

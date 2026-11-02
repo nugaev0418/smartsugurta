@@ -62,7 +62,7 @@ class BotController extends Controller
     public function actionStart()
     {
         $this->telegram = Yii::$app->telegram;
-        $this->messenger = new BotMessenger($this->telegram, self::ADMIN_ID);
+        $this->messenger = new BotMessenger($this->telegram, self::ADMIN_ID, \backend\component\LogChannel::chatId());
         $this->textService = new BotTextService();
         $this->webhookGuard = new WebhookGuard();
         $this->onboarding = new BotUserOnboarding();

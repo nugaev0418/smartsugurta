@@ -32,6 +32,26 @@ class BotMessengerTest extends \Codeception\Test\Unit
         $this->assertSame('3673579', $tg->calls[0]['chat_id']);
     }
 
+    public function testSendAdminUsesLogChannelWhenConfigured()
+    {
+        $tg = $this->stubTelegram();
+        (new BotMessenger($tg, '3673579', '-1001234567890'))->sendAdmin('log-line');
+
+        $this->assertCount(1, $tg->calls);
+        $this->assertSame('-1001234567890', $tg->calls[0]['chat_id']);
+    }
+
+    public function testSendAdminSwallowsLogChannelFailure()
+    {
+        $tg = new class {
+            public function sendMessage(array $content) { throw new \ErrorException('bot kanalda emas'); }
+        };
+
+        // Log yuborilmasa ham foydalanuvchi oqimi to'xtamasligi kerak
+        (new BotMessenger($tg, '3673579', '-1001234567890'))->sendAdmin('log-line');
+        $this->assertTrue(true);
+    }
+
     public function testSendWithIdSetsDisableWebPagePreview()
     {
         $tg = $this->stubTelegram();

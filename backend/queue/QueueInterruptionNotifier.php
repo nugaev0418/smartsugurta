@@ -63,13 +63,7 @@ class QueueInterruptionNotifier extends Behavior
     {
         Yii::error($text, 'queue');
 
-        try {
-            Yii::$app->telegram->sendMessage([
-                'chat_id' => BotController::ADMIN_ID,
-                'text' => $text,
-            ]);
-        } catch (\Throwable $e) {
-            Yii::error('Navbat uzilishi haqida adminga xabar yuborilmadi: ' . $e->getMessage(), 'queue');
-        }
+        // LogChannel xatoni o'zi yutadi (asosiy oqim to'xtamasin)
+        \backend\component\LogChannel::send($text);
     }
 }
