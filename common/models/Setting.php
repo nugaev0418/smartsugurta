@@ -11,6 +11,7 @@ namespace common\models;
  * @property int $user_percent
  * @property int $tashkent_user_percent
  * @property int $referral_percent
+ * @property int $osago_provider
  */
 class Setting extends \yii\db\ActiveRecord
 {
@@ -26,6 +27,7 @@ class Setting extends \yii\db\ActiveRecord
         return [
             [['bot_status', 'police_status', 'payment_status', 'my_vehicles_status'], 'in', 'range' => [0, 1]],
             [['user_percent', 'tashkent_user_percent', 'referral_percent'], 'integer', 'min' => 0, 'max' => 100],
+            ['osago_provider', 'in', 'range' => [Police::PROVIDER_GROSS, Police::PROVIDER_UZBEKINVEST]],
         ];
     }
 
@@ -39,6 +41,7 @@ class Setting extends \yii\db\ActiveRecord
             'user_percent'          => 'Foydalanuvchi foizi (%)',
             'tashkent_user_percent' => 'Toshkent foydalanuvchi foizi (%)',
             'referral_percent'      => 'Referal foizi (%)',
+            'osago_provider'        => 'OSAGO provayderi',
         ];
     }
 
@@ -57,4 +60,11 @@ class Setting extends \yii\db\ActiveRecord
     public static function getUserPercent(): int          { return (int)self::getInstance()->user_percent; }
     public static function getTashkentUserPercent(): int  { return (int)self::getInstance()->tashkent_user_percent; }
     public static function getReferralPercent(): int      { return (int)self::getInstance()->referral_percent; }
+
+    /** Polisa yaratiladigan provayder (Police::PROVIDER_GROSS yoki PROVIDER_UZBEKINVEST). Standart: Gross. */
+    public static function getOsagoProvider(): int
+    {
+        $v = (int)self::getInstance()->osago_provider;
+        return $v === Police::PROVIDER_UZBEKINVEST ? $v : Police::PROVIDER_GROSS;
+    }
 }

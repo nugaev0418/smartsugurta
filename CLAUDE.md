@@ -149,6 +149,13 @@ komponent sifatida e'lon qilingan va `bootstrap`da ishga tushiriladi:
 
 - `paynetQueue` → `backend/queue/PaynetQueue.php` — Paynet orqali to'lovni amalga oshiradi.
 - `grossQueue` → `backend/queue/GrossOsagoJob.php` — Gross Insurance orqali polisa yaratadi.
+- `uzbekInvestQueue` → `backend/queue/UzbekInvestOsagoJob.php` — Uzbekinvest (APEX sales-platform,
+  captcha'siz login/cookie, `backend/uzbekinvest/UzbekInvestClient.php` + `UzbekInvestOsago.php`) orqali
+  polisa yaratadi. Provayder admin paneldan tanlanadi (`Setting::getOsagoProvider()`, standart Gross),
+  `OsagoSubmissionService::submit()` shunga qarab `grossQueue` yoki `uzbekInvestQueue`ga yuboradi.
+  `Police.anketa_id` = Uzbekinvest shartnoma raqami; to'lov `police/uzbekinvest` (cron) orqali portfeldan
+  tekshiriladi. Login/parol `params-local.php` → `'uzbekinvest'`. Buyruq: `php yii uzbek-invest-queue/listen`,
+  faqat BITTA worker (`deploy/systemd/uzbek-invest-queue.service`).
 - `broadcastQueue` → `backend/queue/BroadcastSendJob.php` / `BroadcastDeleteJob.php` — botdan ommaviy
   xabar yuborish/o'chirish.
 - `erspQueue` → `backend/queue/ErspLookupJob.php` — "Mening avtolarim" bo'limidagi "✅ Tekshirish"

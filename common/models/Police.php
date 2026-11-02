@@ -38,13 +38,15 @@ class Police extends \yii\db\ActiveRecord
 
     const
         PROVIDER_EAI = 1,
-        PROVIDER_GROSS = 2;
+        PROVIDER_GROSS = 2,
+        PROVIDER_UZBEKINVEST = 3;
 
     public static function getProviderList(): array
     {
         return [
-            self::PROVIDER_EAI   => 'EAI',
-            self::PROVIDER_GROSS => 'GROSS',
+            self::PROVIDER_EAI         => 'EAI',
+            self::PROVIDER_GROSS       => 'GROSS',
+            self::PROVIDER_UZBEKINVEST => 'UZBEKINVEST',
         ];
     }
 

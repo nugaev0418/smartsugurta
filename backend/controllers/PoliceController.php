@@ -253,6 +253,68 @@ class PoliceController extends Controller
         }
     }
 
+    /**
+     * Uzbekinvest polislarining to'lovini tekshiradi (cron: police/uzbekinvest,
+     * actionGross() bilan bir xil). Portfelda shartnoma "Тасдиқланган" bo'lib,
+     * ersp.e-osgo.uz PDF havolasi paydo bo'lsa — polis to'langan hisoblanadi.
+     */
+    public function actionUzbekinvest()
+    {
+        $this->telegram = Yii::$app->telegram;
+
+        $polices = Police::find()
+            ->where(['status' => 0, 'provider_id' => Police::PROVIDER_UZBEKINVEST])
+            ->andWhere(['>=', 'created_at', date('Y-m-d H:i:s', strtotime('-5 days'))])
+            ->all();
+
+        if (!$polices) {
+            return;
+        }
+
+        // Alohida cookie/session papkasi: navbat worker'ining sessiyasiga tegmaydi.
+        $service = \backend\uzbekinvest\UzbekInvestOsago::fromParams('check');
+
+        foreach ($polices as $police) {
+            echo $police->id . PHP_EOL;
+
+            try {
+                $check = $service->checkPayment((string)$police->anketa_id);
+            } catch (\Throwable $e) {
+                Yii::error("Uzbekinvest to'lov tekshiruvi xatosi (shartnoma {$police->anketa_id}): " . $e->getMessage(), 'uzbekinvest');
+                echo 'XATO: ' . $e->getMessage() . PHP_EOL;
+                continue;
+            }
+
+            if (!$check['paid']) {
+                continue;
+            }
+
+            $police->status = 1;
+            $police->payment_status = 1;
+            $police->policeId = $check['uuid'];
+            $police->pdfUrl = $check['pdf_url'];
+            $police->save(false);
+
+            (new MarketingAttributionService())->recordPurchase($police);
+
+            $user = Botuser::find()->where(['id' => $police->user_id])->one();
+            $this->chat_id = $user->chat_id;
+
+            if (self::grossDownload($police->policeId)) {
+                $filePath = new CURLFile(Yii::getAlias('policeFiles/' . $police->policeId . '.pdf'));
+                $docText = $this->getInsuranceReadyText($user);
+                $this->sendDocument($filePath, $docText);
+
+                $this->addBonuse($user, $police->amount);
+                $this->addReferralBonus($user, $police);
+
+                $this->sendDocument($filePath, $docText, BotController::ORDER_CHANNEL);
+            } else {
+                $this->sendMessage("Nimadir xato Operator bilan bog'laning");
+            }
+        }
+    }
+
     public static function grossDownload($id)
     {
         $pdfUrl = "https://ersp.e-osgo.uz/site/export-to-pdf?id={$id}";

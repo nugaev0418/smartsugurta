@@ -14,6 +14,7 @@ return [
         'log',
         'paynetQueue',
         'grossQueue',
+        'uzbekInvestQueue',
         'broadcastQueue',
         'erspQueue',
     ],
@@ -47,6 +48,12 @@ return [
             // Ish uzilib qolsa (ttr'da o'ldirilsa yoki worker to'xtasa)
             // adminga xabar beradi va qayta bajarilishini to'xtatadi.
             // ttr GrossOsagoJob::getTtr()dan keladi.
+            'as interruptionNotifier' => \backend\queue\QueueInterruptionNotifier::class,
+        ],
+        'uzbekInvestQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'uzbekinvest',
+            // grossQueue'dagi kabi: uzilgan ish haqida adminga xabar, qayta bajarilmaydi.
             'as interruptionNotifier' => \backend\queue\QueueInterruptionNotifier::class,
         ],
         'broadcastQueue' => [

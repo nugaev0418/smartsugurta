@@ -1,0 +1,42 @@
+# Uzbekinvest orqali polisa yaratish navbatini (uzbekInvestQueue,
+# console/config/main.php) doimiy tinglaydigan systemd xizmati.
+#
+# ⚠️ Faqat BITTA nusxa ishlashi shart: uzbekInvestQueue'ni bir vaqtda ikki
+# worker tinglasa, bitta ariza ikki marta bajarilib, Uzbekinvest'da dublikat
+# polisa yaratilishi mumkin (gross-queue.service bilan bir xil sabab).
+#
+# O'rnatish (production serverda, root sifatida):
+#   1. Kerak bo'lsa User=/Group=/WorkingDirectory=/ExecStart= yo'llarini real
+#      deploy yo'liga moslang (gross-queue.service bilan bir xil qiymatlar).
+#   2. cp deploy/systemd/uzbek-invest-queue.service /etc/systemd/system/
+#   3. systemctl daemon-reload
+#   4. systemctl enable --now uzbek-invest-queue
+#
+# Boshqarish:
+#   systemctl status uzbek-invest-queue
+#   systemctl restart uzbek-invest-queue    # kodni deploy qilgandan keyin
+#   journalctl -u uzbek-invest-queue -f
+#
+# Buyruq nomi `uzbek-invest-queue` (komponent id `uzbekInvestQueue`dan
+# Inflector::camel2id() orqali olinadi).
+
+[Unit]
+Description=Smart Sug'urta - Uzbekinvest polisa navbati (uzbekInvestQueue)
+After=network.target mysql.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/smart
+ExecStart=/usr/bin/php /var/www/smart/yii uzbek-invest-queue/listen --verbose
+
+# UzbekInvestOsagoJob uzoq ishlashi mumkin (getTtr() — 1 soat).
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

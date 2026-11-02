@@ -25,6 +25,12 @@ class OsagoSubmissionResult
         return new self('gross', null, null, $jobId);
     }
 
+    /** Uzbekinvest navbatiga qo'yildi — natija ham Gross kabi keyinroq, worker tugagach yuboriladi. */
+    public static function uzbekinvest(mixed $jobId): self
+    {
+        return new self('uzbekinvest', null, null, $jobId);
+    }
+
     public static function eai(Police $police, string $paymentLink): self
     {
         return new self('eai', $police, $paymentLink);

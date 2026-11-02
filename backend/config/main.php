@@ -33,6 +33,7 @@ return [
         'log',
         'paynetQueue',
         'grossQueue',
+        'uzbekInvestQueue',
     ],
     'modules' => [
         'sarmin' => [
@@ -60,6 +61,11 @@ return [
         'grossQueue' => [
             'class' => \yii\queue\db\Queue::class,
             'channel' => 'gross',
+            'mutexTimeout' => 60
+        ],
+        'uzbekInvestQueue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'channel' => 'uzbekinvest',
             'mutexTimeout' => 60
         ],
         'broadcastQueue' => [
@@ -117,6 +123,7 @@ return [
             'site/*',
             'police/check',
             'police/gross',
+            'police/uzbekinvest',
             'bot/start',
             'web-app/*'
             //'sarmin/*'

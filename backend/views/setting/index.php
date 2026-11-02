@@ -89,6 +89,17 @@ $this->params['breadcrumbs'][] = $this->title;
                     </div>
                 </div>
 
+                <h4 class="mb-3 text-secondary">Provayder</h4>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <?= $form->field($model, 'osago_provider')->dropDownList([
+                            \common\models\Police::PROVIDER_GROSS       => 'Gross Insurance',
+                            \common\models\Police::PROVIDER_UZBEKINVEST => 'Uzbekinvest',
+                        ], ['class' => 'form-select']) ?>
+                    </div>
+                </div>
+
                 <h4 class="mb-3 text-secondary">Foiz sozlamalari</h4>
 
                 <div class="row g-3">

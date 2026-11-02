@@ -596,7 +596,8 @@ class WebAppController extends Controller
             // but that's no longer wanted; now it matches the bot's own behavior.
             $result = Yii::createObject(OsagoSubmissionService::class)->submit($data, $botuser, false);
 
-            if ($result->mode === 'gross') {
+            // 'uzbekinvest' ham navbatga qo'yilgan holat: frontend uchun 'gross' bilan bir xil javob.
+            if (in_array($result->mode, ['gross', 'uzbekinvest'], true)) {
                 return [
                     'success' => true,
                     'mode' => 'gross',

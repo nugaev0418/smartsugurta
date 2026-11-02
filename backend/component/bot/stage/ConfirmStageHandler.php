@@ -150,6 +150,7 @@ class ConfirmStageHandler implements BotStageInterface
 
         switch ($result->mode) {
             case 'gross':
+            case 'uzbekinvest':
                 $ctx->sendMessageAdmin(json_encode($result->grossJobId, JSON_PRETTY_PRINT));
                 $this->mainMenu->show($ctx, ['text' => $ctx->getMText("Your application has been accepted and we will insure you within 3 minutes!")]);
                 break;

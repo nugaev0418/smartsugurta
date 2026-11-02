@@ -111,6 +111,63 @@ class OsagoRequestBuilder
     }
 
     /**
+     * SeasonalInsuranceCatalog'dagi (Gross) period_type kodi → Uzbekinvest
+     * P252_PERIOD kodi. Uzbekinvest: 1 = 6 oy, 2 = 12 oy, 3 = 20 kun.
+     */
+    private const UZBEKINVEST_PERIOD = [
+        7 => '2', // 1 yil
+        1 => '1', // 6 oy
+        8 => '3', // 20 kun
+    ];
+
+    /**
+     * UzbekInvestOsago::run()/createPolicy() kutgan kirish massivi.
+     * Sanalar DD.MM.YYYY, pasport seriya+raqam birga ("AB1234567").
+     */
+    public function buildUzbekinvestPayload(OsagoApplicationData $d): array
+    {
+        if (!isset(self::UZBEKINVEST_PERIOD[$d->periodType])) {
+            throw new \InvalidArgumentException("Uzbekinvest uchun noma'lum period_type: {$d->periodType}");
+        }
+
+        $phone = $d->grossPhoneDigits9; // 9 raqam: 911311767
+        $payload = [
+            'tech_sery' => $d->techSeria,
+            'tech_number' => $d->techNumber,
+            'gov_number' => $d->plateNumber,
+            'phone' => sprintf(
+                '+998 (%s) %s-%s-%s',
+                substr($phone, 0, 2), substr($phone, 2, 3), substr($phone, 5, 2), substr($phone, 7, 2)
+            ),
+            'start_date' => self::isoToDmy($d->startAtIso),
+            'period' => self::UZBEKINVEST_PERIOD[$d->periodType],
+            'policy_type' => $d->driverRestriction ? '2' : '1',
+            'drivers' => [],
+        ];
+
+        if (!$d->isOrganization) {
+            $payload['owner_passport'] = $d->ownerSeria . $d->ownerNumber;
+            $payload['owner_birthdate'] = self::isoToDmy($d->ownerBirthDateIso);
+        }
+
+        if ($d->driverRestriction) {
+            foreach ($d->drivers as $driver) {
+                $payload['drivers'][] = [
+                    'passport' => $driver['seria'] . $driver['number'],
+                    'birthdate' => self::isoToDmy($driver['birthDateIso']),
+                ];
+            }
+        }
+
+        return $payload;
+    }
+
+    private static function isoToDmy(string $iso): string
+    {
+        return \DateTime::createFromFormat('Y-m-d', substr($iso, 0, 10))->format('d.m.Y');
+    }
+
+    /**
      * Toshkent (01/10) davlat raqami — WebAppController::actionSubmit() bu
      * asosda EAI'ga to'g'ridan-to'g'ri yuboradi. Faqat plastinka prefiksini
      * tekshiradi; bu tekshiruvni haqiqatan qo'llash-qo'llamaslik
