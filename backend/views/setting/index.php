@@ -89,6 +89,25 @@ $this->params['breadcrumbs'][] = $this->title;
                     </div>
                 </div>
 
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <label class="form-label">Admin online</label>
+                        <div>
+                            <?= Html::activeCheckbox($model, 'admin_online', [
+                                'class'   => 'form-check-input',
+                                'value'   => 1,
+                                'uncheck' => 0,
+                                'label'   => false,
+                                'id'      => 'admin_online',
+                            ]) ?>
+                            <label class="form-check-label ms-2" for="admin_online">
+                                <?= $model->admin_online ? '<span class="text-success">Online</span>' : '<span class="text-danger">Offline</span>' ?>
+                            </label>
+                            <div class="form-text">Yoqilgan bo'lsa, polisa yaratish muvaffaqiyatsiz bo'lganda botda sizga "qayta urinish" tugmalari keladi (foydalanuvchi shu vaqt kutadi, 10 daqiqada javob bo'lmasa unga uzilish xabari yuboriladi). O'chiq bo'lsa foydalanuvchiga darhol xabar yuboriladi.</div>
+                        </div>
+                    </div>
+                </div>
+
                 <h4 class="mb-3 text-secondary">Provayder</h4>
 
                 <div class="row g-3 mb-4">

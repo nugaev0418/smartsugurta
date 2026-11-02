@@ -3,6 +3,7 @@
 namespace backend\queue;
 
 use backend\component\insurance\InsuranceRecordPersister;
+use backend\component\insurance\JobRetryService;
 use backend\controllers\BotController;
 use backend\models\EuroAsia;
 use backend\uzbekinvest\UzbekInvestOsago;
@@ -31,6 +32,7 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
     public int   $retryDelay      = 10;
     public int   $maxRounds       = 2;
     public int   $roundDelay      = 40;
+    private ?string $lastError    = null;
 
     public function __construct(array $data)
     {
@@ -75,10 +77,18 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
         Yii::error("UzbekInvestOsagoJob: {$this->maxRounds} to'liq tsikldan so'ng ham muvaffaqiyatsiz (chatId: {$this->chatId})", 'uzbekinvest');
         $this->sendMessageAdmin("🆘 UzbekInvestOsagoJob: {$this->maxRounds} to'liq tsikldan so'ng ham muvaffaqiyatsiz! Qo'lda tekshiruv talab qilinadi.");
 
-        $this->sendMessage(
+        // Admin online bo'lsa unga qayta urinish taklif qilinadi (foydalanuvchi kutadi);
+        // aks holda foydalanuvchiga darhol uzilish xabari yuboriladi.
+        $offered = (new JobRetryService())->offerRetry(
+            $this->applicationData,
             $this->chatId,
-            "Sug'urta kompaniyasi xizmatlarida uzilish bo'lmoqda, iltimos keyinroq qayta urinib ko'ring, noqulaylik uchun uzur so'raymiz!"
+            Police::PROVIDER_UZBEKINVEST,
+            (string)$this->lastError,
+            'uzbekInvestQueue'
         );
+        if (!$offered) {
+            $this->sendMessage($this->chatId, JobRetryService::userFailureMessage());
+        }
     }
 
     private function tryUzbekInvest(): bool
@@ -183,6 +193,7 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
             }
         }
 
+        $this->lastError = $lastException->getMessage();
         Yii::error("Uzbekinvest {$this->maxAttempts} urinishdan so'ng muvaffaqiyatsiz: " . $lastException->getMessage(), 'uzbekinvest');
         $this->sendMessageAdmin(
             "❌ Uzbekinvest {$this->maxAttempts} urinishdan so'ng muvaffaqiyatsiz:\n"

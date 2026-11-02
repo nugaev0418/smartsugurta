@@ -36,33 +36,44 @@ class OsagoSubmissionService
     ) {
     }
 
+    /**
+     * Arizani berilgan provayderning navbatiga qo'yadi (Gross yoki Uzbekinvest) va job id qaytaradi.
+     * submit() (tanlangan provayder) va JobRetryService (admin qayta urinishda provayderni o'zi
+     * tanlaydi) ikkalasi ham shu yerdan foydalanadi.
+     */
+    public function queueForProvider(OsagoApplicationData $data, Botuser $botuser, int $provider): mixed
+    {
+        $eaiPayload = $this->builder->buildEaiPayload($data);
+
+        if ($provider === Police::PROVIDER_UZBEKINVEST) {
+            return Yii::$app->uzbekInvestQueue->push(new UzbekInvestOsagoJob([
+                'policyData' => $this->builder->buildUzbekinvestPayload($data),
+                'policyDataEAI' => $eaiPayload,
+                'chat_id' => $botuser->chat_id,
+                'applicationData' => (array)$data,
+            ]));
+        }
+
+        return Yii::$app->grossQueue->push(new GrossOsagoJob([
+            'policyDataGross' => $this->builder->buildGrossPayload($data),
+            'policyDataEAI' => $eaiPayload,
+            'chat_id' => $botuser->chat_id,
+            'applicationData' => (array)$data,
+        ]));
+    }
+
     public function submit(OsagoApplicationData $data, Botuser $botuser, bool $allowDirectEaiForTashkent): OsagoSubmissionResult
     {
         $eaiPayload = $this->builder->buildEaiPayload($data);
 
         if (!$allowDirectEaiForTashkent || !$this->builder->isTashkentPlate($data->plateNumber)) {
             // Provayder admin paneldan tanlanadi (Setting::getOsagoProvider(), standart Gross).
-            if (Setting::getOsagoProvider() === Police::PROVIDER_UZBEKINVEST) {
-                $jobId = Yii::$app->uzbekInvestQueue->push(new UzbekInvestOsagoJob([
-                    'policyData' => $this->builder->buildUzbekinvestPayload($data),
-                    'policyDataEAI' => $eaiPayload,
-                    'chat_id' => $botuser->chat_id,
-                    'applicationData' => (array)$data,
-                ]));
+            $provider = Setting::getOsagoProvider();
+            $jobId = $this->queueForProvider($data, $botuser, $provider);
 
-                return OsagoSubmissionResult::uzbekinvest($jobId);
-            }
-
-            $grossPayload = $this->builder->buildGrossPayload($data);
-
-            $jobId = Yii::$app->grossQueue->push(new GrossOsagoJob([
-                'policyDataGross' => $grossPayload,
-                'policyDataEAI' => $eaiPayload,
-                'chat_id' => $botuser->chat_id,
-                'applicationData' => (array)$data,
-            ]));
-
-            return OsagoSubmissionResult::gross($jobId);
+            return $provider === Police::PROVIDER_UZBEKINVEST
+                ? OsagoSubmissionResult::uzbekinvest($jobId)
+                : OsagoSubmissionResult::gross($jobId);
         }
 
         $dto = $this->euroAsia->createOsagoDTO($eaiPayload);

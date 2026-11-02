@@ -4,6 +4,7 @@ namespace backend\queue;
 
 use backend\component\EuroAsiaService;
 use backend\component\insurance\InsuranceRecordPersister;
+use backend\component\insurance\JobRetryService;
 use backend\controllers\BotController;
 use backend\gross\GrossOsago;
 use backend\models\EuroAsia;
@@ -26,6 +27,7 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
     public int    $retryDelay      = 10;
     public int    $maxRounds       = 2;
     public int    $roundDelay      = 40;
+    private ?string $lastError     = null;
 
     public function __construct(array $data)
     {
@@ -87,10 +89,18 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
         Yii::error("GrossOsagoJob: {$this->maxRounds} to'liq tsikldan so'ng ham muvaffaqiyatsiz (chatId: {$this->chatId})", 'gross');
         $this->sendMessageAdmin("🆘 GrossOsagoJob: {$this->maxRounds} to'liq tsikldan so'ng ham muvaffaqiyatsiz! Qo'lda tekshiruv talab qilinadi.");
 
-        $this->sendMessage(
+        // Admin online bo'lsa unga qayta urinish taklif qilinadi (foydalanuvchi kutadi);
+        // aks holda foydalanuvchiga darhol uzilish xabari yuboriladi.
+        $offered = (new JobRetryService())->offerRetry(
+            $this->applicationData,
             $this->chatId,
-            "Sug'urta kompaniyasi xizmatlarida uzilish bo'lmoqda, iltimos keyinroq qayta urinib ko'ring, noqulaylik uchun uzur so'raymiz!"
+            Police::PROVIDER_GROSS,
+            (string)$this->lastError,
+            'grossQueue'
         );
+        if (!$offered) {
+            $this->sendMessage($this->chatId, JobRetryService::userFailureMessage());
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -184,6 +194,7 @@ class GrossOsagoJob extends BaseObject implements RetryableJobInterface
             }
         }
 
+        $this->lastError = $lastException->getMessage();
         Yii::error("Gross {$this->maxAttempts} urinishdan so'ng muvaffaqiyatsiz: " . $lastException->getMessage(), 'gross');
         $this->sendMessageAdmin(
             "❌ Gross {$this->maxAttempts} urinishdan so'ng muvaffaqiyatsiz:\n"

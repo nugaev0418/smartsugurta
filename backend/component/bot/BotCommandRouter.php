@@ -3,6 +3,7 @@
 namespace backend\component\bot;
 
 use backend\component\bot\stage\AdminStageHandler;
+use backend\component\insurance\JobRetryService;
 use backend\component\bot\stage\LangStageHandler;
 use backend\component\bot\stage\MainMenuStageHandler;
 use backend\component\bot\stage\MyVehiclesStageHandler;
@@ -28,7 +29,8 @@ class BotCommandRouter
         private PhoneStageHandler $phoneStage,
         private WalletStageHandler $walletStage,
         private AdminStageHandler $adminStage,
-        private MyVehiclesStageHandler $myVehiclesStage
+        private MyVehiclesStageHandler $myVehiclesStage,
+        private JobRetryService $jobRetry
     ) {
     }
 
@@ -36,6 +38,12 @@ class BotCommandRouter
     {
         if (!is_string($ctx->text) || $ctx->text === '') {
             return false;
+        }
+
+        // Admin tugmasi: muvaffaqiyatsiz polisa job'ini qayta urinishga yuborish ("jobretry:<id>:<provayder|0>")
+        if (str_starts_with($ctx->text, JobRetryService::CALLBACK_PREFIX)) {
+            $this->handleJobRetry($ctx);
+            return true;
         }
 
         switch ($ctx->text) {
@@ -95,6 +103,29 @@ class BotCommandRouter
             default:
                 return false;
         }
+    }
+
+    private function handleJobRetry(BotContext $ctx): void
+    {
+        if (!$ctx->isAdmin() || !preg_match('/^jobretry:(\d+):(\d+)$/', $ctx->text, $m)) {
+            return;
+        }
+
+        $result = $this->jobRetry->decide((int)$m[1], (int)$m[2]);
+
+        try {
+            $ctx->telegram->answerCallbackQuery(['callback_query_id' => $ctx->telegram->Callback_ID(), 'text' => mb_substr($result, 0, 150)]);
+            // Tugmalarni olib tashlaymiz: ikkinchi marta bosilmasin
+            $ctx->telegram->editMessageReplyMarkup([
+                'chat_id' => $ctx->chat_id,
+                'message_id' => $ctx->telegram->MessageID(),
+                'reply_markup' => $ctx->telegram->buildInlineKeyBoard([]),
+            ]);
+        } catch (\Throwable $e) {
+            \Yii::warning('jobretry callback javobi: ' . $e->getMessage(), 'uzbekinvest');
+        }
+
+        $ctx->sendMessage($result);
     }
 
     private function changeLang(BotContext $ctx): void

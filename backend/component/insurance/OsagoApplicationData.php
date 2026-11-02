@@ -52,6 +52,21 @@ class OsagoApplicationData
     public array $drivers = [];
 
     /**
+     * `(array)$data` ko'rinishida saqlangan arizani (job_retry.application_data) tiklaydi.
+     */
+    public static function fromArray(array $values): self
+    {
+        $d = new self();
+        foreach ($values as $name => $value) {
+            if (property_exists($d, $name)) {
+                $d->$name = $value;
+            }
+        }
+
+        return $d;
+    }
+
+    /**
      * Maps BotContext's FSM state (Botuser.data fields) into this shape.
      * Mirrors ConfirmStageHandler's original inline $eaiData/$grossPoliceData
      * construction field-for-field.
