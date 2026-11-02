@@ -46,12 +46,53 @@ class UzbekInvestClient
     // -------------------------------------------------------
     public function getSession(): string
     {
-        $existing = $this->checkExistingSession();
-        if ($existing) {
-            return $existing['session'];
+        return $this->withLoginLock(function (): string {
+            $existing = $this->checkExistingSession();
+            if ($existing) {
+                return $existing['session'];
+            }
+
+            return $this->login();
+        });
+    }
+
+    /**
+     * Ish o'rtasida sessiya bekor bo'lganda (sayt bir akkauntda FAQAT BITTA faol sessiyaga ruxsat
+     * beradi — har yangi login eskisini o'chiradi) chaqiriladi. Boshqa jarayon allaqachon qayta kirgan
+     * bo'lsa, uning sessiyasi olinadi (ikki jarayon bir-birining sessiyasini ketma-ket o'chirmasin),
+     * aks holda qayta login qilinadi.
+     */
+    public function refreshSession(string $failedSession): string
+    {
+        return $this->withLoginLock(function () use ($failedSession): string {
+            $saved = is_file($this->sessionFile) ? trim((string)file_get_contents($this->sessionFile)) : '';
+            if ($saved !== '' && $saved !== $failedSession) {
+                $existing = $this->checkExistingSession();
+                if ($existing) {
+                    return $existing['session'];
+                }
+            }
+
+            return $this->login();
+        });
+    }
+
+    /** Bir vaqtning o'zida faqat bitta jarayon login qilsin (jarayonlararo qulf). */
+    private function withLoginLock(callable $fn): string
+    {
+        $handle = @fopen(dirname($this->cookieFile) . '/login.lock', 'c');
+        if ($handle === false) {
+            return $fn();
         }
 
-        return $this->login();
+        try {
+            flock($handle, LOCK_EX);
+
+            return $fn();
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     // -------------------------------------------------------
@@ -554,7 +595,7 @@ class UzbekInvestClient
         try {
             return $this->doLogin();
         } catch (RuntimeException $e) {
-            if (mb_stripos($e->getMessage(), 'Сессия') === false) {
+            if (mb_stripos($e->getMessage(), 'Сессия') === false && stripos($e->getMessage(), 'session ID') === false) {
                 throw $e;
             }
             usleep(1500000);

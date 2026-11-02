@@ -25,7 +25,7 @@ class UzbekInvestController extends Controller
             return ExitCode::CONFIG;
         }
 
-        $dir = Yii::getAlias('@runtime/uzbekinvest') . '/' . $profile;
+        $dir = \backend\uzbekinvest\UzbekInvestOsago::sharedStorageDir();
         $this->stdout("Papka: {$dir}\n");
         $this->stdout('Foydalanuvchi: ' . (function_exists('posix_getpwuid') ? posix_getpwuid(posix_geteuid())['name'] : get_current_user()) . "\n");
         foreach (['cookies.txt', 'session.txt'] as $f) {

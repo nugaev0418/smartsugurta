@@ -51,6 +51,7 @@ class UzbekInvestOsago
     private ?string     $logDir = null;
     private int         $logSeq = 0;
     private string      $runId = '';
+    private string      $session = '';
     private array       $warnings = [];
 
     /**
@@ -88,8 +89,8 @@ class UzbekInvestOsago
     /**
      * Yii::$app->params['uzbekinvest'] dan konfiguratsiya yig'adi:
      *   login, password (majburiy); baseUrl, verifySsl, log (ixtiyoriy).
-     * $profile — cookie/session fayllari alohida papkada saqlanishi uchun
-     * ("queue" worker va "check" cron bir-birining sessiyasini buzmasin).
+     * $profile — faqat log uchun ("queue" yozadi, "check" yozmaydi). Cookie/session papkasi
+     * hamma jarayon uchun umumiy (sharedStorageDir()).
      * Xatoda UzbekOsagoException throw qilinadi.
      */
     public static function fromParams(string $profile = 'queue', int $chatId = 0): self
@@ -98,7 +99,7 @@ class UzbekInvestOsago
         $root = \Yii::getAlias('@runtime/uzbekinvest');
 
         $options = [
-            'storage_dir'    => $root . '/' . $profile,
+            'storage_dir'    => self::sharedStorageDir(),
             'log'            => (bool)($cfg['log'] ?? false),
             'log_root'       => $root . '/logs',
             'throw_on_error' => true,
@@ -167,6 +168,44 @@ class UzbekInvestOsago
         }
 
         return ['paid' => false, 'status' => null, 'uuid' => null, 'pdf_url' => null];
+    }
+
+    /**
+     * Barcha jarayonlar (navbat worker'i - console, to'lov cron'i - backend, login-test) UCHUN BITTA
+     * umumiy cookie/session papkasi: sayt bir akkauntda faqat bitta faol sessiyaga ruxsat beradi,
+     * shuning uchun har jarayon o'z sessiyasini ochsa, ular bir-birini o'chirib turadi.
+     * `@console/runtime` ishlatiladi, chunki u ikkala ilovadan (backend, console) bir xil yo'l.
+     */
+    public static function sharedStorageDir(): string
+    {
+        $cfg = \Yii::$app->params['uzbekinvest'] ?? [];
+
+        return $cfg['storageDir'] ?? (\Yii::getAlias('@console') . '/runtime/uzbekinvest/shared');
+    }
+
+    /**
+     * Client chaqiruvi; sessiya o'rtada bekor bo'lgan bo'lsa ("Сессия муддати тугади" yoki login
+     * sahifasi qaytsa) bir marta qayta kirib, o'sha chaqiruvni takrorlaydi.
+     */
+    private function api(string $method, mixed ...$args): mixed
+    {
+        $result = $this->client->$method($this->session, ...$args);
+        if (!$this->isSessionExpired($result)) {
+            return $result;
+        }
+
+        $this->session = $this->client->refreshSession($this->session);
+
+        return $this->client->$method($this->session, ...$args);
+    }
+
+    private function isSessionExpired(mixed $result): bool
+    {
+        if (is_array($result)) {
+            return isset($result['error']) && is_string($result['error']) && mb_stripos($result['error'], 'Сессия') !== false;
+        }
+
+        return is_string($result) && str_contains($result, 'P9999_USERNAME');
     }
 
     /** Oxirgi ish yozilgan log papkasi (log o'chirilgan bo'lsa null). */
@@ -238,13 +277,13 @@ class UzbekInvestOsago
 
         // --- 1. Session ---
         try {
-            $session = $this->client->getSession();
+            $this->session = $this->client->getSession();
         } catch (\RuntimeException $e) {
             return $this->fail('session', 'Tizimga kirish xatosi: ' . $e->getMessage());
         }
 
         // --- 2. Mashina ma'lumotlari ---
-        $vehicle = $this->client->getVehicleInfo($session, $in['tech_sery'], $in['tech_number'], $in['gov_number']);
+        $vehicle = $this->api('getVehicleInfo', $in['tech_sery'], $in['tech_number'], $in['gov_number']);
         $this->logStep('getVehicleInfo', $vehicle);
         if (!is_array($vehicle) || ($vehicle['status'] ?? '') !== 'success'
             || (int)($vehicle['error_code'] ?? -1) !== 0
@@ -274,7 +313,7 @@ class UzbekInvestOsago
             if ($inn === '') {
                 return $this->fail('owner', 'Tashkilot INN raqami topilmadi', $vehicle);
             }
-            $orgOwner = $this->client->getOrgByInn($session, $inn, (string)$vehicle['owner_type']);
+            $orgOwner = $this->api('getOrgByInn', $inn, (string)$vehicle['owner_type']);
             $this->logStep('getOrgByInn', $orgOwner);
             if (!is_array($orgOwner) || ($orgOwner['status'] ?? '') !== 'success'
                 || (int)($orgOwner['error_code'] ?? -1) !== 0
@@ -286,9 +325,9 @@ class UzbekInvestOsago
             }
 
             // Yuridik turga o'tkazuvchi DA — xato bo'lsa ham to'xtamaymiz
-            $pluginTokens = $this->client->extractPluginTokens($session);
+            $pluginTokens = $this->api('extractPluginTokens');
             if (!empty($pluginTokens)) {
-                $pluginResp = $this->client->pluginWithItems($session, $pluginTokens[0], [
+                $pluginResp = $this->api('pluginWithItems', $pluginTokens[0], [
                     'P252_APPLICANT_IS_ORGANIZATION' => '1',
                     'P252_IS_ORGANIZATION_HID'       => '',
                 ]);
@@ -306,7 +345,7 @@ class UzbekInvestOsago
             if ($in['owner_passport'] === '' || $in['owner_birthdate'] === '') {
                 return $this->fail('owner', 'Jismoniy egasi uchun owner_passport va owner_birthdate berilishi shart');
             }
-            $owner = $this->client->getPersonByBirth($session, $in['owner_birthdate'], $in['owner_passport']);
+            $owner = $this->api('getPersonByBirth', $in['owner_birthdate'], $in['owner_passport']);
             $this->logStep('getPersonByBirth', $owner);
             // Bu javobda error_code YO'Q — faqat status va pinfl tekshiriladi
             if (!is_array($owner) || ($owner['status'] ?? '') !== 'success' || empty($owner['pinfl'])) {
@@ -328,7 +367,7 @@ class UzbekInvestOsago
         foreach ($in['drivers'] as $i => $d) {
             $n = $i + 1;
 
-            $driver = $this->client->getDriverByBirth($session, $d['birthdate'], $d['passport']);
+            $driver = $this->api('getDriverByBirth', $d['birthdate'], $d['passport']);
             $this->logStep('getDriverByBirth_' . $n, $driver);
             if (!is_array($driver) || ($driver['status'] ?? '') !== 'success'
                 || (int)($driver['error_code'] ?? -1) !== 0
@@ -351,7 +390,7 @@ class UzbekInvestOsago
                 $coefItems['P252_DR_RESIDENT_' . $slot]    = '1';
                 $coefItems['P252_DR_COEFFICIENT_' . $slot] = $dr['coefficient']  ?? ($dr ? '1' : '');
             }
-            $coefResult = $this->client->calculateDriverCoef($session, $coefItems);
+            $coefResult = $this->api('calculateDriverCoef', $coefItems);
             $this->logStep('calculateDriverCoef_' . $n, $coefResult);
             if (!is_array($coefResult) || ($coefResult['success'] ?? false) !== true) {
                 return $this->fail('coefficient_' . $n, "Haydovchi #{$n} koeffitsientini hisoblab bo'lmadi", $coefResult);
@@ -359,14 +398,14 @@ class UzbekInvestOsago
         }
 
         // --- 5. Muddat tugash sanasi ---
-        $periodResult = $this->client->calculatePeriodEndDate($session, $in['start_date'], $in['period']);
+        $periodResult = $this->api('calculatePeriodEndDate', $in['start_date'], $in['period']);
         $this->logStep('calculatePeriodEndDate', $periodResult);
         if (!is_array($periodResult) || ($periodResult['success'] ?? false) !== true || empty($periodResult['endDate'])) {
             return $this->fail('period', 'Muddat tugash sanasini hisoblab bo\'lmadi', $periodResult);
         }
 
         // --- 6. Mukofot hisoblash ---
-        $premiumResult = $this->client->calculateOsagoPremium($session, [
+        $premiumResult = $this->api('calculateOsagoPremium', [
             'P252_VEHICLE_TYPE'            => $vehicle['vehicle_type'] ?? $in['vehicle_type'],
             'P252_VEHICLE_TYPE_HID'        => $vehicle['vehicle_type'] ?? $in['vehicle_type'],
             'P252_POLICY_TYPE'             => $in['policy_type'],
@@ -407,7 +446,7 @@ class UzbekInvestOsago
         if ($this->options['log']) {
             $this->client->debugDir = $this->logDir;
         }
-        $submitResp = $this->client->submitOsago($session, $fields);
+        $submitResp = $this->api('submitOsago', $fields);
         $this->logStep('submitOsago', $submitResp);
 
         if (empty($submitResp['redirectURL'])) {
@@ -427,7 +466,7 @@ class UzbekInvestOsago
         $contractId  = $this->parseContractId($redirectUrl);
         $payUrls     = ['click' => null, 'payme' => null, 'uzum' => null, 'paynet' => null];
 
-        $contractHtml = $this->client->fetchContractPage($session, $redirectUrl);
+        $contractHtml = $this->api('fetchContractPage', $redirectUrl);
         if (!$contractHtml) {
             $this->warnings[] = 'Shartnoma sahifasini yuklab bo\'lmadi — polis saqlangan, lekin to\'lov URLlari olinmadi';
         } else {
@@ -472,7 +511,7 @@ class UzbekInvestOsago
         $this->beginLog();
 
         try {
-            $session = $this->client->getSession();
+            $this->session = $this->client->getSession();
         } catch (\RuntimeException $e) {
             return $this->fail('policies', 'Tizimga kirish xatosi: ' . $e->getMessage());
         }
@@ -490,7 +529,7 @@ class UzbekInvestOsago
             'P100_PINFL'             => '',
         ], $filters);
 
-        $html = $this->client->searchPolicies($session, $params);
+        $html = $this->api('searchPolicies', $params);
         if (!$html) {
             return $this->fail('policies', 'Polislar ro\'yxatini yuklab bo\'lmadi');
         }
