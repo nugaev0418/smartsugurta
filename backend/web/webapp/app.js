@@ -651,6 +651,9 @@
       driverRestriction: state.insuranceType === 'limited',
       useTerritoryRegionId: state.vehicleData.useTerritoryRegionId,
       vehicleGroupId: state.vehicleData.vehicleGroupId,
+      plateNumber: state.plateNumber,
+      techSeria: state.techSeria,
+      techNumber: state.techNumber,
     }).then(function (res) {
       state.premium = res.success ? res.premium : null;
     }).catch(function () { state.premium = null; });
@@ -796,7 +799,14 @@
     if (step === 2) {
       if (state.vehicleData.ownerType === 'PERSON') {
         state.checking = true; render();
-        api('owner', { seria: state.physSeries, number: state.physNumber, pinfl: state.vehicleData.pinfl })
+        api('owner', {
+          seria: state.physSeries,
+          number: state.physNumber,
+          pinfl: state.vehicleData.pinfl,
+          plateNumber: state.plateNumber,
+          techSeria: state.techSeria,
+          techNumber: state.techNumber,
+        })
           .then(function (res) {
             state.checking = false;
             if (!res.success) { showToast(res.message || t('toastOwnerNotFound')); render(); return; }

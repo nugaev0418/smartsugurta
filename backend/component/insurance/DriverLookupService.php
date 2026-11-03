@@ -3,28 +3,34 @@
 namespace backend\component\insurance;
 
 use backend\component\EuroAsiaService;
+use backend\component\KafolatService;
 use backend\component\PersonByBirthdateDTO;
+use common\models\Setting;
 use Yii;
 
 /**
- * EuroAsiaService::getPersonByBirthdateDTO() plus the input normalization
- * BotController and WebAppController each did inline. Callers still check
- * $dto->success and $dto->driverLicense themselves (both controllers already
- * render those two cases with different messages, so no extra wrapper type
- * is introduced here).
+ * Tanlangan provayder (EAI yoki Kafolat) orqali haydovchini qidiradi, plus kirishni
+ * normalizatsiya qiladi — BotController va WebAppController har biri ilgari inline
+ * qilgan. Chaqiruvchilar $dto->success va $dto->driverLicense'ni o'zlari tekshiradi
+ * (ikkala controller ham bu ikki holatni turli xabarlar bilan ko'rsatadi, shuning
+ * uchun qo'shimcha wrapper tip kiritilmagan). Kafolat guvohnoma yo'qligini
+ * success=true, driverLicense=null bilan qaytaradi.
  *
- * Muvaffaqiyatli natija Yii::$app->cache'da CACHE_TTL davomida keshlanadi —
- * VehicleLookupService bilan bir xil naqsh, sabab uchun o'sha faylga qarang.
+ * Muvaffaqiyatli natija keshlanadi — VehicleLookupService bilan bir xil naqsh.
  */
 class DriverLookupService
 {
     private const CACHE_TTL = 86400; // 24 soat
 
-    private EuroAsiaService $euroAsia;
+    private ?EuroAsiaService $euroAsia;
+    private ?KafolatService $kafolat;
+    private ?int $provider;
 
-    public function __construct(?EuroAsiaService $euroAsia = null)
+    public function __construct(?EuroAsiaService $euroAsia = null, ?KafolatService $kafolat = null, ?int $provider = null)
     {
-        $this->euroAsia = $euroAsia ?? new EuroAsiaService();
+        $this->euroAsia = $euroAsia;
+        $this->kafolat = $kafolat;
+        $this->provider = $provider;
     }
 
     public function lookup(string $seria, string $number, string $birthdateIso): PersonByBirthdateDTO
@@ -32,13 +38,17 @@ class DriverLookupService
         $seria = strtoupper(trim($seria));
         $number = trim($number);
 
-        $cacheKey = 'eai_driver_birthdate_' . md5("{$seria}|{$number}|{$birthdateIso}");
+        $isKafolat = ($this->provider ?? Setting::getLookupProvider()) === Setting::LOOKUP_KAFOLAT;
+
+        $cacheKey = ($isKafolat ? 'kafolat_driver_' : 'eai_driver_birthdate_') . md5("{$seria}|{$number}|{$birthdateIso}");
         $cached = Yii::$app->cache->get($cacheKey);
         if ($cached !== false) {
             return new PersonByBirthdateDTO($cached);
         }
 
-        $dto = $this->euroAsia->getPersonByBirthdateDTO($seria, $number, $birthdateIso);
+        $dto = $isKafolat
+            ? ($this->kafolat ??= new KafolatService())->getPersonByBirthdateDTO($seria, $number, $birthdateIso)
+            : ($this->euroAsia ??= new EuroAsiaService())->getPersonByBirthdateDTO($seria, $number, $birthdateIso);
 
         if ($dto->success) {
             Yii::$app->cache->set($cacheKey, get_object_vars($dto), self::CACHE_TTL);

@@ -8,6 +8,12 @@ use backend\component\VehicleOwnerDTO;
 
 class VehicleLookupServiceTest extends \Codeception\Test\Unit
 {
+    // Servis natijani FileCache'da saqlaydi; testlar bir-biriga ta'sir qilmasligi uchun tozalaymiz.
+    protected function _before()
+    {
+        \Yii::$app->cache->flush();
+    }
+
     public function testNormalizesInputBeforeCallingEuroAsia()
     {
         $fake = new class extends EuroAsiaService {
@@ -20,7 +26,7 @@ class VehicleLookupServiceTest extends \Codeception\Test\Unit
             }
         };
 
-        (new VehicleLookupService($fake))->lookup(' aaf ', ' 2998242 ', '40011 vba');
+        (new VehicleLookupService($fake, null, \common\models\Setting::LOOKUP_EAI))->lookup(' aaf ', ' 2998242 ', '40011 vba');
 
         $this->assertSame(['AAF', '2998242', '40011VBA'], $fake->lastArgs);
     }
@@ -35,7 +41,7 @@ class VehicleLookupServiceTest extends \Codeception\Test\Unit
             }
         };
 
-        $dto = (new VehicleLookupService($fake))->lookup('AAF', '2998242', '40011VBA');
+        $dto = (new VehicleLookupService($fake, null, \common\models\Setting::LOOKUP_EAI))->lookup('AAF', '2998242', '40011VBA');
 
         $this->assertFalse($dto->success);
         $this->assertSame('PERSON', $dto->ownerType);

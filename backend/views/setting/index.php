@@ -137,6 +137,13 @@ $this->params['breadcrumbs'][] = $this->title;
                             \common\models\Police::PROVIDER_UZBEKINVEST => 'Uzbekinvest',
                         ], ['class' => 'form-select']) ?>
                     </div>
+                    <div class="col-md-6">
+                        <?= $form->field($model, 'lookup_provider')->dropDownList([
+                            \common\models\Setting::LOOKUP_EAI     => 'EuroAsia (EAI)',
+                            \common\models\Setting::LOOKUP_KAFOLAT => 'Kafolat',
+                        ], ['class' => 'form-select']) ?>
+                        <div class="form-text">Avtomobil, egasi, haydovchi tekshiruvi va narx hisoblash shu provayder orqali bajariladi. Polisa yaratish provayderiga (chapdagi) ta'sir qilmaydi.</div>
+                    </div>
                 </div>
 
                 <h4 class="mb-3 text-secondary">Foiz sozlamalari</h4>

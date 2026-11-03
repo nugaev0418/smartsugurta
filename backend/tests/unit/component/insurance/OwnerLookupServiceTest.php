@@ -8,6 +8,12 @@ use backend\component\PersonByPinflDTO;
 
 class OwnerLookupServiceTest extends \Codeception\Test\Unit
 {
+    // Servis natijani FileCache'da saqlaydi; testlar bir-biriga ta'sir qilmasligi uchun tozalaymiz.
+    protected function _before()
+    {
+        \Yii::$app->cache->flush();
+    }
+
     public function testNormalizesInputBeforeCallingEuroAsia()
     {
         $fake = new class extends EuroAsiaService {
@@ -20,7 +26,7 @@ class OwnerLookupServiceTest extends \Codeception\Test\Unit
             }
         };
 
-        (new OwnerLookupService($fake))->lookupByPinfl(' ad ', ' 6970989 ', ' 12345678901234 ');
+        (new OwnerLookupService($fake, null, \common\models\Setting::LOOKUP_EAI))->lookupByPinfl(' ad ', ' 6970989 ', ' 12345678901234 ');
 
         $this->assertSame(['AD', '6970989', '12345678901234'], $fake->lastArgs);
     }

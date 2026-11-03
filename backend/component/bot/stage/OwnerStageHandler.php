@@ -48,12 +48,19 @@ class OwnerStageHandler implements BotStageInterface
             $ctx->police_data = $police_data;
             $ctx->sendMessageAdmin(json_encode($police_data));
 
-            $pinfl = $ctx->vehicleData['pinfl'];
-            $dto = (new OwnerLookupService())->lookupByPinfl($seria, $number, $pinfl);
+            // Kafolat PINFL bermaydi (u egasini avtomobil + pasport bo'yicha qidiradi).
+            $pinfl = (string)($ctx->vehicleData['pinfl'] ?? '');
+            $vehicle = [
+                'govNumber' => (string)$ctx->lisenceNumber,
+                'techSeria' => (string)$ctx->texPassSeria,
+                'techNumber' => (string)$ctx->texPassNumber,
+            ];
+            $dto = (new OwnerLookupService())->lookupByPinfl($seria, $number, $pinfl, $vehicle);
             $ctx->logApiCall('OwnerLookupService::lookupByPinfl', [
                 'seria' => $seria,
                 'number' => $number,
                 'pinfl' => $pinfl,
+                'vehicle' => $vehicle,
             ], $dto);
 
             if (!$dto->success){

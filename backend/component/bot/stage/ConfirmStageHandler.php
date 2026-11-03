@@ -4,11 +4,11 @@ namespace backend\component\bot\stage;
 
 use backend\component\bot\BotContext;
 use backend\component\bot\BotStageInterface;
-use backend\component\EuroAsiaService;
 use backend\component\insurance\OrderChannelNotifier;
 use backend\component\insurance\OsagoApplicationData;
 use backend\component\insurance\OsagoRequestBuilder;
 use backend\component\insurance\OsagoSubmissionService;
+use backend\component\insurance\PremiumCalculationService;
 use backend\models\Pages;
 use common\models\Botuser;
 use Yii;
@@ -78,22 +78,30 @@ class ConfirmStageHandler implements BotStageInterface
                 }
             }
 
-            $service = new EuroAsiaService();
             $driverRestriction = $ctx->driverRestriction == 'Limited' ? true : false;
             $calcRequest = [
                 'seasonalInsuranceId' => $muddat['id'],
                 'driverRestriction' => $driverRestriction,
-                'useTerritoryRegionId' => $ctx->vehicleData['useTerritoryRegionId'],
-                'vehicleGroupId' => $ctx->vehicleData['vehicleGroupId'],
+                'useTerritoryRegionId' => $ctx->vehicleData['useTerritoryRegionId'] ?? null,
+                'vehicleGroupId' => $ctx->vehicleData['vehicleGroupId'] ?? null,
+                'govNumber' => $ctx->lisenceNumber,
+                'techSeria' => $ctx->texPassSeria,
+                'techNumber' => $ctx->texPassNumber,
             ];
-            $dto = $service->getCalculateOsagoDTO(
-                [],
+            $startDateYmd = $ctx->startAt ? date('Y-m-d', strtotime((string)$ctx->startAt)) : null;
+            $dto = (new PremiumCalculationService())->calculate(
                 $muddat['id'],
                 $driverRestriction,
-                $ctx->vehicleData['useTerritoryRegionId'],
-                $ctx->vehicleData['vehicleGroupId']
+                $calcRequest['useTerritoryRegionId'],
+                $calcRequest['vehicleGroupId'],
+                [
+                    'govNumber' => (string)$ctx->lisenceNumber,
+                    'techSeria' => (string)$ctx->texPassSeria,
+                    'techNumber' => (string)$ctx->texPassNumber,
+                ],
+                $startDateYmd ?: null
             );
-            $ctx->logApiCall('EuroAsiaService::getCalculateOsagoDTO', $calcRequest, $dto);
+            $ctx->logApiCall('PremiumCalculationService::calculate', $calcRequest, $dto);
 
             if ($dto->success){
                 $jami_summa = number_format((float)$dto->premium / 100, 0, '.', ' ');

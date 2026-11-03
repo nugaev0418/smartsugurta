@@ -13,10 +13,15 @@ namespace common\models;
  * @property int $tashkent_user_percent
  * @property int $referral_percent
  * @property int $osago_provider
+ * @property int $lookup_provider
  * @property string|null $uzbekinvest_pause_until
  */
 class Setting extends \yii\db\ActiveRecord
 {
+    /** Avtomobil/egasi/haydovchi tekshiruvi va narx hisoblash provayderlari. */
+    public const LOOKUP_EAI = 1;
+    public const LOOKUP_KAFOLAT = 2;
+
     private static ?self $_instance = null;
 
     /** Virtual (ustun emas): panelda tanlangan pauza muddati — daqiqa yoki 'end'. */
@@ -33,6 +38,7 @@ class Setting extends \yii\db\ActiveRecord
             [['bot_status', 'police_status', 'payment_status', 'my_vehicles_status', 'admin_online'], 'in', 'range' => [0, 1]],
             [['user_percent', 'tashkent_user_percent', 'referral_percent'], 'integer', 'min' => 0, 'max' => 100],
             ['osago_provider', 'in', 'range' => [Police::PROVIDER_GROSS, Police::PROVIDER_UZBEKINVEST]],
+            ['lookup_provider', 'in', 'range' => [self::LOOKUP_EAI, self::LOOKUP_KAFOLAT]],
             ['pause_minutes', 'in', 'range' => [15, 30, 60, 120, 'end']],
         ];
     }
@@ -48,6 +54,7 @@ class Setting extends \yii\db\ActiveRecord
             'tashkent_user_percent' => 'Toshkent foydalanuvchi foizi (%)',
             'referral_percent'      => 'Referal foizi (%)',
             'osago_provider'        => 'OSAGO provayderi',
+            'lookup_provider'       => 'Ma\'lumotlarni tekshirish va narx hisoblash provayderi',
             'admin_online'          => 'Admin online',
             'pause_minutes'         => 'Uzbekinvest pauza',
         ];
@@ -110,5 +117,21 @@ class Setting extends \yii\db\ActiveRecord
     {
         $v = (int)self::getInstance()->osago_provider;
         return $v === Police::PROVIDER_UZBEKINVEST ? $v : Police::PROVIDER_GROSS;
+    }
+
+    /**
+     * Avtomobil/egasi/haydovchi tekshiruvi va narx hisoblash provayderi
+     * (LOOKUP_EAI yoki LOOKUP_KAFOLAT). Ustun hali yo'q bo'lsa (migratsiya o'tmagan)
+     * yoki bazaga ulanib bo'lmasa EAI — avvalgi xatti-harakat saqlanadi.
+     */
+    public static function getLookupProvider(): int
+    {
+        try {
+            $v = (int)self::getInstance()->lookup_provider;
+        } catch (\Throwable $e) {
+            return self::LOOKUP_EAI;
+        }
+
+        return $v === self::LOOKUP_KAFOLAT ? $v : self::LOOKUP_EAI;
     }
 }

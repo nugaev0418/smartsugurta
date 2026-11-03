@@ -2,13 +2,13 @@
 
 namespace backend\controllers;
 
-use backend\component\EuroAsiaService;
 use backend\component\insurance\DriverLookupService;
 use backend\component\insurance\OrderChannelNotifier;
 use backend\component\insurance\OsagoApplicationData;
 use backend\component\insurance\OsagoSubmissionService;
 use backend\component\insurance\OwnerLookupService;
 use backend\component\insurance\PassportTextParser;
+use backend\component\insurance\PremiumCalculationService;
 use backend\component\insurance\SeasonalInsuranceCatalog;
 use backend\component\insurance\VehicleLookupService;
 use backend\ersp\ErspVehicleClient;
@@ -312,8 +312,15 @@ class WebAppController extends Controller
         $seria = strtoupper(trim((string)($input['seria'] ?? '')));
         $number = trim((string)($input['number'] ?? ''));
         $pinfl = trim((string)($input['pinfl'] ?? ''));
+        $vehicle = [
+            'govNumber' => (string)($input['plateNumber'] ?? ''),
+            'techSeria' => (string)($input['techSeria'] ?? ''),
+            'techNumber' => (string)($input['techNumber'] ?? ''),
+        ];
 
-        if ($seria === '' || $number === '' || $pinfl === '') {
+        // EAI egasini PINFL bo'yicha qidiradi; Kafolat PINFL bermaydi va avtomobil bo'yicha qidiradi.
+        $needsVehicle = Setting::getLookupProvider() === Setting::LOOKUP_KAFOLAT;
+        if ($seria === '' || $number === '' || ($needsVehicle ? in_array('', $vehicle, true) : $pinfl === '')) {
             return $this->fail($this->msg('fill_all_fields', $lang));
         }
         if (!(new PassportTextParser())->looksLikePersonPassport($seria, $number)) {
@@ -321,7 +328,7 @@ class WebAppController extends Controller
         }
 
         try {
-            $dto = (new OwnerLookupService())->lookupByPinfl($seria, $number, $pinfl);
+            $dto = (new OwnerLookupService())->lookupByPinfl($seria, $number, $pinfl, $vehicle);
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
             return $this->fail($this->msg('owner_fetch_error', $lang));
@@ -419,17 +426,28 @@ class WebAppController extends Controller
         $useTerritoryRegionId = (string)($input['useTerritoryRegionId'] ?? '');
         $vehicleGroupId = (string)($input['vehicleGroupId'] ?? '');
 
-        if ($useTerritoryRegionId === '' || $vehicleGroupId === '') {
+        $calculator = new PremiumCalculationService();
+        $vehicle = [
+            'govNumber' => (string)($input['plateNumber'] ?? ''),
+            'techSeria' => (string)($input['techSeria'] ?? ''),
+            'techNumber' => (string)($input['techNumber'] ?? ''),
+        ];
+
+        // EAI hisoblashi hudud/guruh ID'lariga, Kafolat esa avtomobil rekvizitlariga tayanadi.
+        $hasInput = $calculator->isKafolat()
+            ? !in_array('', $vehicle, true)
+            : ($useTerritoryRegionId !== '' && $vehicleGroupId !== '');
+        if (!$hasInput) {
             return $this->fail($this->msg('enter_vehicle_first', $lang));
         }
 
         try {
-            $dto = (new EuroAsiaService())->getCalculateOsagoDTO(
-                [],
+            $dto = $calculator->calculate(
                 $season['id'],
                 $driverRestriction,
                 $useTerritoryRegionId,
-                $vehicleGroupId
+                $vehicleGroupId,
+                $vehicle
             );
         } catch (\Throwable $e) {
             Yii::error($e->getMessage(), 'webapp');
@@ -710,12 +728,13 @@ class WebAppController extends Controller
 
         $premiumLabel = 'Aniqlanmadi!';
         try {
-            $calcDto = (new EuroAsiaService())->getCalculateOsagoDTO(
-                [],
+            $calcDto = (new PremiumCalculationService())->calculate(
                 $season['id'],
                 $driverRestriction,
                 (string)($vehicleData['useTerritoryRegionId'] ?? ''),
-                (string)($vehicleData['vehicleGroupId'] ?? '')
+                (string)($vehicleData['vehicleGroupId'] ?? ''),
+                ['govNumber' => $plateNumber, 'techSeria' => $techSeria, 'techNumber' => $techNumber],
+                date('Y-m-d', strtotime($startDate))
             );
             if ($calcDto->success) {
                 $premiumLabel = number_format((float)$calcDto->premium / 100, 0, '.', ' ');
