@@ -28,7 +28,8 @@ class OrderChannelNotifier
         string $endDateLabel,
         string $driversText,
         string $premiumLabel,
-        bool $viaWebApp = false
+        bool $viaWebApp = false,
+        ?array $bonus = null
     ): string {
         $row = Text::findOne(['keyword' => 'confirm texts']);
         $template = $row && isset($row->$lang) ? $row->$lang : '';
@@ -46,6 +47,10 @@ class OrderChannelNotifier
             $premiumLabel
         );
 
+        if ($bonus !== null && $bonus['percent'] > 0 && $bonus['amount'] > 0) {
+            $text = rtrim($text) . "\n" . $this->bonusLine($lang, $bonus['percent'], $bonus['amount']);
+        }
+
         $channelText = $viaWebApp ? "🌐 Web App orqali\n\n" . $text : $text;
 
         Yii::$app->telegram->sendMessage([
@@ -56,5 +61,15 @@ class OrderChannelNotifier
         ]);
 
         return $text;
+    }
+
+    private function bonusLine(string $lang, int $percent, int $amount): string
+    {
+        $row = Text::findOne(['keyword' => 'confirm_bonus_line']);
+        $template = $row && !empty($row->$lang)
+            ? $row->$lang
+            : ($lang === 'ru' ? "🎁 <b>Бонус (%s%%):</b> %s сум" : "🎁 <b>Bonus (%s%%):</b> %s so'm");
+
+        return sprintf($template, $percent, number_format($amount, 0, '.', ' '));
     }
 }

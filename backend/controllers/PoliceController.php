@@ -3,6 +3,7 @@
 namespace backend\controllers;
 
 use backend\component\EuroAsiaService;
+use backend\component\insurance\UserBonusCalculator;
 use backend\component\MarketingAttributionService;
 use backend\gross\GrossOsago;
 use backend\models\EuroAsia;
@@ -189,7 +190,7 @@ class PoliceController extends Controller
                         $docText = $this->getInsuranceReadyText($user);
                         $this->sendDocument($filePath, $docText);
 
-                        $this->addBonuse($user, $police->amount);
+                        $this->addBonuse($user, $police);
                         $this->addReferralBonus($user, $police);
 
                         //send to channel
@@ -240,7 +241,7 @@ class PoliceController extends Controller
                         $docText = $this->getInsuranceReadyText($user);
                         $this->sendDocument($filePath, $docText);
 
-                        $this->addBonuse($user, $police->amount);
+                        $this->addBonuse($user, $police);
                         $this->addReferralBonus($user, $police);
 
                         //send to channel
@@ -311,7 +312,7 @@ class PoliceController extends Controller
                 $docText = $this->getInsuranceReadyText($user);
                 $this->sendDocument($filePath, $docText);
 
-                $this->addBonuse($user, $police->amount);
+                $this->addBonuse($user, $police);
                 $this->addReferralBonus($user, $police);
 
                 $this->sendDocument($filePath, $docText, BotController::ORDER_CHANNEL);
@@ -419,11 +420,11 @@ class PoliceController extends Controller
             : "<b>✅ Sug'urtangiz tayyor bo'ldi!\n\n@smartsugurtabot</b>";
     }
 
-    public function addBonuse(Botuser $user, $amount): void
+    public function addBonuse(Botuser $user, Police $police): void
     {
-        $percent = Setting::getUserPercent() ?: 0;
-        $bonus   = (int)($amount * $percent / 100);
-        $lang    = $this->getUserLang($user);
+        $plate = (string)($police->vehicles[0]->licenseNumber ?? '');
+        $bonus = (new UserBonusCalculator())->calculate($police->amount, $plate)['amount'];
+        $lang  = $this->getUserLang($user);
 
         $user->balance += $bonus;
         $user->save(false);

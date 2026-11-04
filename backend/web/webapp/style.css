@@ -163,6 +163,7 @@ input.date-native {
 .price-box { background: #F1F8FF; border: 1px solid #D6EAFF; border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 4px; }
 .price-label { font-size: 13px; color: #707579; font-weight: 600; }
 .price-value { font-size: 28px; font-weight: 800; color: #3390EC; }
+.price-bonus { font-size: 14px; font-weight: 600; color: #2E9E5B; }
 
 /* Footer */
 .footer { display: flex; gap: 12px; padding: 14px 18px; border-top: 1px solid #ECECEE; background: #fff; }

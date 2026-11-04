@@ -71,6 +71,7 @@
     plateSummaryPrefix: { uz: "Davlat raqami:", ru: "Госномер:" },
     techSummaryPrefix: { uz: "Texpassport:", ru: "Техпаспорт:" },
     priceCurrency: { uz: "so'm", ru: "сум" },
+    labelBonus: { uz: "Bonus", ru: "Бонус" },
 
     toastVehicleNotFound: { uz: "Transport topilmadi", ru: "Транспорт не найден" },
     toastGenericError: { uz: "Xatolik yuz berdi", ru: "Произошла ошибка" },
@@ -167,6 +168,8 @@
     startDate: todayYmd(),
     duration: null,
     premium: null,
+    bonusPercent: null,
+    bonusAmount: null,
     gateway: 'CLICK',
     submitting: false,
 
@@ -656,7 +659,13 @@
       techNumber: state.techNumber,
     }).then(function (res) {
       state.premium = res.success ? res.premium : null;
-    }).catch(function () { state.premium = null; });
+      state.bonusPercent = res.success ? res.bonusPercent : null;
+      state.bonusAmount = res.success ? res.bonusAmount : null;
+    }).catch(function () {
+      state.premium = null;
+      state.bonusPercent = null;
+      state.bonusAmount = null;
+    });
   }
 
   // 6-qadamga (ma'lumotlarni ko'rib chiqish) o'tilganda "orders" kanaliga
@@ -717,6 +726,14 @@
     });
 
     $('priceDisplay').textContent = state.premium != null ? Math.round(state.premium).toLocaleString('ru-RU') + ' ' + t('priceCurrency') : '—';
+
+    var bonusEl = $('bonusDisplay');
+    if (state.bonusAmount > 0) {
+      bonusEl.textContent = '🎁 ' + t('labelBonus') + ' (' + state.bonusPercent + '%): ' + state.bonusAmount.toLocaleString('ru-RU') + ' ' + t('priceCurrency');
+      bonusEl.classList.remove('hidden');
+    } else {
+      bonusEl.classList.add('hidden');
+    }
   }
 
   // ---------------------------------------------------------------------

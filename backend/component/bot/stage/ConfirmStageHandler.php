@@ -9,6 +9,7 @@ use backend\component\insurance\OsagoApplicationData;
 use backend\component\insurance\OsagoRequestBuilder;
 use backend\component\insurance\OsagoSubmissionService;
 use backend\component\insurance\PremiumCalculationService;
+use backend\component\insurance\UserBonusCalculator;
 use backend\models\Pages;
 use common\models\Botuser;
 use Yii;
@@ -103,8 +104,10 @@ class ConfirmStageHandler implements BotStageInterface
             );
             $ctx->logApiCall('PremiumCalculationService::calculate', $calcRequest, $dto);
 
+            $bonus = null;
             if ($dto->success){
                 $jami_summa = number_format((float)$dto->premium / 100, 0, '.', ' ');
+                $bonus = (new UserBonusCalculator())->calculate((float)$dto->premium / 100, (string)$autoNumber);
             }else{
                 $jami_summa = 'Aniqlanmadi!';
             }
@@ -120,7 +123,8 @@ class ConfirmStageHandler implements BotStageInterface
                 $tugash_sanasi,
                 $haydovchilar,
                 $jami_summa,
-                false
+                false,
+                $bonus
             );
             $ctx->sendMessageWithKeyborad($text, $option);
 

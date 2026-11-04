@@ -10,6 +10,7 @@ use backend\component\insurance\OwnerLookupService;
 use backend\component\insurance\PassportTextParser;
 use backend\component\insurance\PremiumCalculationService;
 use backend\component\insurance\SeasonalInsuranceCatalog;
+use backend\component\insurance\UserBonusCalculator;
 use backend\component\insurance\VehicleLookupService;
 use backend\ersp\ErspVehicleClient;
 use backend\queue\ErspLookupJob;
@@ -458,9 +459,14 @@ class WebAppController extends Controller
             return $this->fail($this->msg('calculate_failed', $lang));
         }
 
+        $premium = (float)$dto->premium / 100;
+        $bonus = (new UserBonusCalculator())->calculate($premium, (string)($input['plateNumber'] ?? ''));
+
         return [
             'success' => true,
-            'premium' => (float)$dto->premium / 100,
+            'premium' => $premium,
+            'bonusPercent' => $bonus['percent'],
+            'bonusAmount' => $bonus['amount'],
         ];
     }
 
@@ -727,6 +733,7 @@ class WebAppController extends Controller
         }
 
         $premiumLabel = 'Aniqlanmadi!';
+        $bonus = null;
         try {
             $calcDto = (new PremiumCalculationService())->calculate(
                 $season['id'],
@@ -738,6 +745,7 @@ class WebAppController extends Controller
             );
             if ($calcDto->success) {
                 $premiumLabel = number_format((float)$calcDto->premium / 100, 0, '.', ' ');
+                $bonus = (new UserBonusCalculator())->calculate((float)$calcDto->premium / 100, $plateNumber);
             }
         } catch (\Throwable $e) {
             Yii::error('OrderChannelNotifier calculate: ' . $e->getMessage(), 'webapp');
@@ -757,7 +765,8 @@ class WebAppController extends Controller
             $endDateLabel,
             $driversText,
             $premiumLabel,
-            true
+            true,
+            $bonus
         );
     }
 
