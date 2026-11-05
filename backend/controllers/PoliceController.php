@@ -169,7 +169,12 @@ class PoliceController extends Controller
 
 
             if ($dto->success) {
-                $police->status = $dto->status == 'ACTIVE' ? 1 : 0;
+                $isActive = $dto->status == 'ACTIVE';
+                if ($isActive && !$police->claimActivation()) {
+                    continue;
+                }
+
+                $police->status = $isActive ? 1 : 0;
                 $police->pdfUrl = $dto->pdfUrl;
                 $police->paymentId = $dto->paymentId;
                 $police->payment_status = $dto->paymentStatus == 'COMPLETED' ? 1 : 0;
@@ -223,7 +228,7 @@ class PoliceController extends Controller
             $result = $this->grossCheckApi($police->anketa_id);
 
 
-            if ($result) {
+            if ($result && $police->claimActivation()) {
                 $police->status = 1;
                 $police->pdfUrl = "https://ersp.e-osgo.uz/site/export-to-pdf?id={$police->policeId}";
                 $police->payment_status = 1;
@@ -292,7 +297,7 @@ class PoliceController extends Controller
                 continue;
             }
 
-            if (!$check['paid']) {
+            if (!$check['paid'] || !$police->claimActivation()) {
                 continue;
             }
 
@@ -426,11 +431,8 @@ class PoliceController extends Controller
         $bonus = (new UserBonusCalculator())->calculate($police->amount, $plate)['amount'];
         $lang  = $this->getUserLang($user);
 
-        $user->balance += $bonus;
-        $user->save(false);
-
-        if ($bonus > 0) {
-            Income::add($user->id, $bonus, "Sug'urta bonusi (polis #{$police->id})", Income::TYPE_INSURANCE);
+        if (!Income::credit($user->id, $bonus, "Sug'urta bonusi (polis #{$police->id})", Income::TYPE_INSURANCE, $police->id)) {
+            return;
         }
 
         $bonusFormatted = $this->formatMoney($bonus);
@@ -460,18 +462,17 @@ class PoliceController extends Controller
 
         $percent = Setting::getReferralPercent() ?: 0;
         $bonus   = (int)($police->amount * $percent / 100);
-        if ($bonus <= 0) {
-            return;
-        }
 
-        $referrer->balance += $bonus;
-        $referrer->save(false);
-
-        Income::add(
+        $credited = Income::credit(
             $referrer->id,
             $bonus,
-            "Referal bonus — {$user->fname} {$user->lname} (polis #{$police->id})"
+            "Referal bonus — {$user->fname} {$user->lname} (polis #{$police->id})",
+            Income::TYPE_REFERRAL,
+            $police->id
         );
+        if (!$credited) {
+            return;
+        }
 
         $refLang        = $this->getUserLang($referrer);
         $bonusFormatted = $this->formatMoney($bonus);

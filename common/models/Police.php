@@ -144,6 +144,16 @@ class Police extends \yii\db\ActiveRecord
     }
 
     /**
+     * Polisni atomar ravishda faol holatga o'tkazadi. Cron'lar ustma-ust tushganda
+     * ikkalasi ham eski ro'yxatda status=0 ko'radi; faqat bittasi true oladi va
+     * polisni yuboradi, bonus beradi.
+     */
+    public function claimActivation(): bool
+    {
+        return self::updateAll(['status' => 1], ['id' => $this->id, 'status' => 0]) === 1;
+    }
+
+    /**
      * Gets query for [[Vehicles]].
      *
      * @return \yii\db\ActiveQuery
