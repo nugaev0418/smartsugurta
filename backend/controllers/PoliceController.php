@@ -429,6 +429,10 @@ class PoliceController extends Controller
         $user->balance += $bonus;
         $user->save(false);
 
+        if ($bonus > 0) {
+            Income::add($user->id, $bonus, "Sug'urta bonusi (polis #{$police->id})", Income::TYPE_INSURANCE);
+        }
+
         $bonusFormatted = $this->formatMoney($bonus);
 
         $record = Text::findOne(['keyword' => 'user_bonus_message']);

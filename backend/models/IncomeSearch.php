@@ -14,7 +14,7 @@ class IncomeSearch extends Income
     public function rules(): array
     {
         return [
-            [['id', 'user_id', 'amount'], 'integer'],
+            [['id', 'user_id', 'amount', 'type'], 'integer'],
             [['reason', 'created_at', 'created_at_from', 'created_at_to'], 'safe'],
         ];
     }
@@ -43,6 +43,7 @@ class IncomeSearch extends Income
             'id'      => $this->id,
             'user_id' => $this->user_id,
             'amount'  => $this->amount,
+            'type'    => $this->type,
         ]);
 
         $query->andFilterWhere(['like', 'reason', $this->reason])

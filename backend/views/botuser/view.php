@@ -18,7 +18,7 @@ $policeCount     = Police::find()->where(['user_id' => $model->id])->count();
 $paidPoliceCount = Police::find()->where(['user_id' => $model->id, 'payment_status' => 1])->count();
 $paymentCount    = Payment::find()->where(['user_id' => $model->id])->count();
 $totalWithdrawn  = (int)(Payment::find()->where(['user_id' => $model->id, 'status' => Payment::STATUS_SUCCESS])->sum('amount') ?? 0);
-$totalIncome     = (int)(Income::find()->where(['user_id' => $model->id])->sum('amount') ?? 0);
+$totalIncome     = Income::referralTotal($model->id);
 $referralCount   = Botuser::find()->where(['referred_by' => $model->id])->count();
 ?>
 <div class="botuser-view">
@@ -205,7 +205,7 @@ $referralCount   = Botuser::find()->where(['referred_by' => $model->id])->count(
                                     <?php if ($totalIncome > 0): ?>
                                         <?= Html::a(
                                             '<i class="ti ti-arrow-right ms-1"></i>Ko\'rish',
-                                            Url::to(['/income/index', 'IncomeSearch[user_id]' => $model->id]),
+                                            Url::to(['/income/index', 'IncomeSearch[user_id]' => $model->id, 'IncomeSearch[type]' => Income::TYPE_REFERRAL]),
                                             ['class' => 'btn btn-sm btn-outline-secondary ms-2']
                                         ) ?>
                                     <?php endif; ?>

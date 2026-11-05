@@ -76,9 +76,7 @@ class ReferralService
                 ->where(['user_id' => $referralIds, 'payment_status' => 1])
                 ->count();
 
-            $totalEarned = (int)(Income::find()
-                ->where(['user_id' => $user->id])
-                ->sum('amount') ?? 0);
+            $totalEarned = Income::referralTotal($user->id);
         }
 
         $bonusPercent    = Setting::getReferralPercent();
