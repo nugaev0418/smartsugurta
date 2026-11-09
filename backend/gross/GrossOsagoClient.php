@@ -471,18 +471,61 @@ class GrossOsagoClient
 ////////////////////////////////////////////////////////
 // CREATE CONTRACT
 ////////////////////////////////////////////////////////
+    /**
+     * Sayt shartnoma yaratish so'roviga imzo sarlavhalarini (X-Osago-Sign-Ts, X-Osago-Sign) talab qiladi.
+     * Ularni server /osago/index.php sahifasi HTML'iga `submit_headers: {...}` va `submit_url` sifatida
+     * tayyor holda yozib beradi (imzo serverda hisoblanadi, tanaga bog'liq emas) — shuning uchun sahifani
+     * sessiya bilan olib, qiymatlarni shu yerdan ajratib olamiz. Imzo vaqtga bog'liq: har safar yangidan olinadi.
+     *
+     * @return array{url: string, headers: string[]} headers — "Nom: qiymat" formatida
+     */
+    public function getSubmitConfig(): array
+    {
+        $html = $this->request(
+            $this->baseUrl . '/osago/index.php?ln=2',
+            'GET',
+            [
+                'Referer: https://osago.gross.uz/main.php?ln=2',
+                'User-Agent: Mozilla/5.0',
+            ]
+        );
+
+        if (!preg_match('/submit_headers\s*:\s*\{([^}]*)\}/', $html, $block)) {
+            throw new Exception("Gross sahifasida submit_headers topilmadi (sessiya tugagan yoki sahifa o'zgargan)");
+        }
+
+        $headers = [];
+        if (preg_match_all('/["\']([A-Za-z0-9-]+)["\']\s*:\s*["\']([^"\']*)["\']/', $block[1], $pairs, PREG_SET_ORDER)) {
+            foreach ($pairs as $p) {
+                $headers[] = $p[1] . ': ' . $p[2];
+            }
+        }
+        if (!$headers) {
+            throw new Exception("Gross submit_headers bo'sh");
+        }
+
+        $url = 'https://api.gross.uz/api/osgo/contract/create';
+        if (preg_match('/^\s*submit_url\s*:\s*["\']([^"\']+)["\']/m', $html, $u)) {
+            $url = $u[1];
+        }
+
+        return ['url' => $url, 'headers' => $headers];
+    }
+
     public function createContract(array $data): string
     {
+        $cfg = $this->getSubmitConfig();
+
         return $this->request(
-            'https://api.gross.uz/api/osgo/contract/create',
+            $cfg['url'],
             'POST',
-            [
+            array_merge([
                 'Accept: application/json',
                 'Content-Type: application/json',
                 'Origin: https://osago.gross.uz',
                 'Referer: https://osago.gross.uz/',
                 'User-Agent: Mozilla/5.0'
-            ],
+            ], $cfg['headers']),
             json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
         );
     }
