@@ -158,7 +158,15 @@ class ConfirmStageHandler implements BotStageInterface
             $ctx->sendMessageAdmin('Toshkent Avtomobili');
         }
 
-        $result = $this->submissionService->submit($data, $botuser, $allowDirectEai);
+        try {
+            $result = $this->submissionService->submit($data, $botuser, $allowDirectEai);
+        } catch (\Throwable $e) {
+            // Aks holda istisno jim yutilib ketadi: foydalanuvchi ham, log kanali ham hech narsa ko'rmaydi.
+            Yii::error('OsagoSubmissionService::submit xato: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            \backend\component\LogChannel::send("❌ Ariza yuborishda xato (chat {$ctx->chat_id}): " . get_class($e) . ': ' . $e->getMessage() . ' @ ' . basename($e->getFile()) . ':' . $e->getLine());
+            $ctx->sendMessage('Nimadir xato boldi');
+            return;
+        }
 
         switch ($result->mode) {
             case 'gross':
