@@ -94,6 +94,12 @@ class GrossOsagoClient
     ////////////////////////////////////////////////////////
     public function getCaptchaSrc(string $html): ?string
     {
+        // Yangi shakl: base64 data URI (<input id="code"> yonidagi rasm)
+        if (preg_match('/<img[^>]+src="(data:image\/[a-z0-9.+-]+;base64,[^"]+)"/i', $html, $match)) {
+            return $match[1];
+        }
+
+        // Eski shakl: im.php?t=... havolasi
         preg_match('/<img[^>]+src="([^"]*im\.php\?t=[^"]*)"/i', $html, $match);
 
         return $match[1] ?? null;
@@ -104,17 +110,21 @@ class GrossOsagoClient
     ////////////////////////////////////////////////////////
     public function loadCaptcha(string $src): string
     {
-        $url = $this->baseUrl . '/' . ltrim($src, '/');
+        if (str_starts_with($src, 'data:image/')) {
+            $img = base64_decode(substr($src, strpos($src, ',') + 1), true);
+        } else {
+            $url = $this->baseUrl . '/' . ltrim($src, '/');
 
-        $img = $this->request(
-            $url,
-            'GET',
-            [
-                'Accept: image/*',
-                'Referer: https://osago.gross.uz/',
-                'User-Agent: Mozilla/5.0'
-            ]
-        );
+            $img = $this->request(
+                $url,
+                'GET',
+                [
+                    'Accept: image/*',
+                    'Referer: https://osago.gross.uz/',
+                    'User-Agent: Mozilla/5.0'
+                ]
+            );
+        }
 
         if (!$img || strlen($img) < 100) {
             throw new Exception("Captcha rasm yuklanmadi");
@@ -394,7 +404,7 @@ class GrossOsagoClient
     public function solveCaptchaWithOpenAI(string $imagePath, string $openaiApiKey): string
     {
         $imageData = base64_encode(file_get_contents($imagePath));
-        $mimeType  = 'image/jpeg';
+        $mimeType  = (@getimagesize($imagePath)['mime'] ?? null) ?: 'image/jpeg'; // Gross endi PNG yuboradi
 
         $payload = [
             'model'      => 'gpt-4o',
