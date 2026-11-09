@@ -60,11 +60,26 @@ class GrossOsagoClient
             curl_setopt($curl, CURLOPT_POSTFIELDS, $postData);
         }
 
+        // Gross Cloudflare orqali production IP'sini bloklagan bo'lishi mumkin: params['gross']['proxy'] berilsa SOCKS5 orqali chiqamiz.
+        $proxy = \Yii::$app->params['gross']['proxy'] ?? null;
+        if (!empty($proxy['host'])) {
+            curl_setopt($curl, CURLOPT_PROXY, $proxy['host'] . ':' . ($proxy['port'] ?? 1080));
+            curl_setopt($curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+            if (!empty($proxy['user'])) {
+                curl_setopt($curl, CURLOPT_PROXYUSERPWD, $proxy['user'] . ':' . ($proxy['pass'] ?? ''));
+            }
+        }
+
         $response = curl_exec($curl);
         $this->lastHttpCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         if (curl_errno($curl)) {
             throw new Exception(curl_error($curl));
+        }
+
+        // Cloudflare bo'sh 403 = IP bloklangan. Bo'sh javobni "muvaffaqiyat" deb o'tkazib yubormaslik uchun aniq xato.
+        if ($this->lastHttpCode === 403 && trim((string)$response) === '') {
+            throw new Exception("Gross (Cloudflare) 403: so'rov bloklandi — IP bloklangan bo'lishi mumkin ({$url})");
         }
 
         curl_close($curl);
