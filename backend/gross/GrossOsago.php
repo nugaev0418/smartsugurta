@@ -18,6 +18,10 @@ class GrossOsago
     private int    $chatId;
     private ?string $lastCheckResponse = null;
 
+    /** Bitta run() davomida avtorizatsiya xatosi tufayli qayta login qilishlar soni. */
+    private int $reloginCount = 0;
+    private const MAX_RELOGIN = 2;
+
     public function __construct(array $config)
     {
         $this->http         = new GrossOsagoClient($config['cookie_file'] ?? null);
@@ -229,6 +233,14 @@ class GrossOsago
         throw new RuntimeException("Login muvaffaqiyatsiz ({$maxAttempts} ta urinishdan so'ng)");
     }
 
+    /** Javob "sessiya yo'q" ma'nosini bildiradimi (sayt turli shaklda qaytaradi). */
+    private function isAuthFailure(string $body): bool
+    {
+        return stripos($body, 'Ошибка авторизации') !== false
+            || stripos($body, '"Unauthorized"') !== false
+            || stripos($body, 'name="UserName"') !== false;
+    }
+
     private function isSessionAlive(): bool
     {
         try {
@@ -285,7 +297,36 @@ class GrossOsago
 
         for ($i = 1; $i <= $tries; $i++) {
             if ($i > 1) sleep(random_int(2, 8));
-            $json = $fn();
+
+            try {
+                $json = $fn();
+            } catch (GrossAuthException $e) {
+                // Sessiya yo'q (masalan, sahifa o'rniga login formasi keldi) — qayta login qilib shu urinishni takrorlaymiz.
+                if ($this->reloginCount < self::MAX_RELOGIN) {
+                    $this->reloginCount++;
+                    Yii::warning("Gross sessiya yo'q ({$label}): qayta login ({$this->reloginCount}/" . self::MAX_RELOGIN . ")", 'gross');
+                    $this->clearSessionCookie();
+                    $this->ensureLoggedIn();
+                    $i--;
+                    continue;
+                }
+                throw $e;
+            }
+
+            if ($this->isAuthFailure($json) && $this->reloginCount < self::MAX_RELOGIN) {
+                // Cookie fayli bor-u, lekin sayt sessiyani qabul qilmayapti: yangidan login qilib, shu qadamni qaytaramiz.
+                $this->reloginCount++;
+                Yii::warning("Gross avtorizatsiya xatosi ({$label}): qayta login ({$this->reloginCount}/" . self::MAX_RELOGIN . ")", 'gross');
+                $this->clearSessionCookie();
+                $this->ensureLoggedIn();
+                $i--;
+                continue;
+            }
+
+            if (trim($json) === '') {
+                // Bo'sh javob: sababini (HTTP status) logda ko'rish uchun.
+                $json = json_encode(['error' => -1, 'http_status' => $this->http->getLastHttpCode(), 'note' => "bo'sh javob"]);
+            }
             $this->save($label, $json, $i, $sessionDir);
             $data = json_decode($json, true);
             $this->logApiCall($label, $i, $this->http->getLastRequestBody(), $json, (array) $data, $sessionDir);

@@ -7,6 +7,7 @@ use Exception;
 class GrossOsagoClient
 {
     private string $baseUrl = 'https://osago.gross.uz';
+    private int $lastHttpCode = 0;
     private string $cookieFile;
     private ?string $lastRequestBody = null;
 
@@ -60,6 +61,7 @@ class GrossOsagoClient
         }
 
         $response = curl_exec($curl);
+        $this->lastHttpCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         if (curl_errno($curl)) {
             throw new Exception(curl_error($curl));
@@ -68,6 +70,11 @@ class GrossOsagoClient
         curl_close($curl);
 
         return $response;
+    }
+
+    public function getLastHttpCode(): int
+    {
+        return $this->lastHttpCode;
     }
 
     public function getLastRequestBody(): ?string
@@ -285,6 +292,17 @@ class GrossOsagoClient
         );
     }
 
+    /** Sayt 9 xonali raqamni " 97 910 05 53" ko'rinishida yuboradi. */
+    private static function formatPhoneLikeSite(string $phone): string
+    {
+        $d = substr(preg_replace('/\D+/', '', $phone), -9);
+        if (strlen($d) !== 9) {
+            return $phone;
+        }
+
+        return sprintf(' %s %s %s %s', substr($d, 0, 2), substr($d, 2, 3), substr($d, 5, 2), substr($d, 7, 2));
+    }
+
     public function phoneNumberChecker(
         string $phone_number,
         string $type,
@@ -300,7 +318,7 @@ class GrossOsagoClient
                 'User-Agent: Mozilla/5.0'
             ],
             json_encode([
-                'phone_number' => $phone_number,
+                'phone_number' => self::formatPhoneLikeSite($phone_number),
                 'type'         => $type,
             ], JSON_UNESCAPED_UNICODE)
         );
@@ -489,6 +507,10 @@ class GrossOsagoClient
                 'User-Agent: Mozilla/5.0',
             ]
         );
+
+        if (stripos($html, 'name="UserName"') !== false) {
+            throw new GrossAuthException("Gross sessiyasi yo'q: osago sahifasi o'rniga login formasi keldi");
+        }
 
         if (!preg_match('/submit_headers\s*:\s*\{([^}]*)\}/', $html, $block)) {
             throw new Exception("Gross sahifasida submit_headers topilmadi (sessiya tugagan yoki sahifa o'zgargan)");
