@@ -130,7 +130,8 @@ class GrossOsago
         $phone = $policyData['phone'];
         $this->call('phone-checker',
             fn() => $this->http->phoneNumberChecker($phone, 'osago'),
-            $sessionDir
+            $sessionDir,
+            2 // natijasi ishlatilmaydi: ko'p urinish faqat vaqt yo'qotadi
         );
 
         $kbm = $isOrg ? 1.0 : $this->resolveKbm($ownerPinfl, $sessionDir);
