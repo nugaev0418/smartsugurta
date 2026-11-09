@@ -513,7 +513,11 @@ class GrossOsagoClient
         }
 
         if (!preg_match('/submit_headers\s*:\s*\{([^}]*)\}/', $html, $block)) {
-            throw new Exception("Gross sahifasida submit_headers topilmadi (sessiya tugagan yoki sahifa o'zgargan)");
+            $snippet = mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags((string)preg_replace('#<(script|style)\b.*?</\1>#si', '', (string)$html)))), 0, 200);
+            throw new Exception(
+                "Gross sahifasida submit_headers topilmadi (HTTP {$this->lastHttpCode}, "
+                . strlen((string)$html) . " bayt, javob: \"{$snippet}\")"
+            );
         }
 
         $headers = [];
