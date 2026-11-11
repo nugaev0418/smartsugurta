@@ -89,6 +89,7 @@
     errInsuranceType: { uz: "Sug'urta turini tanlang", ru: "Выберите тип страхования" },
     errPhoneIncomplete: { uz: "Telefon raqamini to'liq kiriting", ru: "Введите номер телефона полностью" },
     errStartDate: { uz: "Boshlanish sanasini tanlang", ru: "Выберите дату начала" },
+    errStartDatePast: { uz: "Boshlanish sanasi bugundan oldin bo'lishi mumkin emas", ru: "Дата начала не может быть раньше сегодняшней" },
     errDuration: { uz: "Muddatni tanlang", ru: "Выберите срок" },
     errAtLeastOneDriver: { uz: "Kamida bitta haydovchi qo'shing", ru: "Добавьте хотя бы одного водителя" },
     errDriversIncomplete: {
@@ -782,6 +783,7 @@
     if (step === 5) {
       var ok5 = true;
       if (!state.startDate) { setErr('startDate', t('errStartDate')); ok5 = false; }
+      else if (state.startDate < todayYmd()) { setErr('startDate', t('errStartDatePast')); ok5 = false; }
       else setErr('startDate', '');
       if (!state.duration) { setErr('duration', t('errDuration')); ok5 = false; }
       else setErr('duration', '');
