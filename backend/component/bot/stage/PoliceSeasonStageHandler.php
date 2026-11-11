@@ -126,6 +126,9 @@ class PoliceSeasonStageHandler implements BotStageInterface
         $startDate = $this->extractValidDate($ctx->text);
 
         if (!isset($startDate['success']) || !$startDate['success']) {
+            if (($startDate['error'] ?? '') === 'Date is in the past') {
+                $ctx->sendMessage($ctx->getMText('start at past date'));
+            }
             $this->showStartAt($ctx);
             return;
         }
