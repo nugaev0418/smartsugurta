@@ -170,6 +170,14 @@ komponent sifatida e'lon qilingan va `bootstrap`da ishga tushiriladi:
   bot (`MyVehiclesStageHandler::triggerCheck()`) va Web App (`WebAppController::actionMyVehicleCheck()`)
   ikkalasida ham serverda tekshiriladi (faqat "✅ Tekshirish" tugmasini yashirish yetarli emas).
 
+`erspQueue` tekshiruvi `SavedVehicle::enqueueCheck($chatId, $delay)` orqali yuboriladi (cooldown ichida
+hurmat qilinadi). U avtomobil qo'shilganda (bot va Web App), "✅ Tekshirish" bosilganda va kunlik
+`php yii reminder/check-uninsured` (`deploy/systemd/osago-check.timer`, 05:00, jim — `chatId=null`)
+buyrug'ida ishlatiladi: amaldagi polisasi yo'q avtomobillar har kuni qayta tekshiriladi.
+`reminder/expiry-check` (09:00) esa 7/3/1 kunlik eslatmadan tashqari, amaldagi polisasi yo'q (oxirgi
+~36 soatda muvaffaqiyatli tekshirilgan) avtomobillarga `osago_no_policy_reminder` matnini har 7 kunda
+bir marta yuboradi (dedup: `osago_expiry_reminder` jadvalida `milestone_days = 0`).
+
 Navbat workerlari alohida process sifatida ishga tushiriladi (`php yii <kanal>/listen`), veb-so'rov ichida
 emas — shuning uchun to'lov/polisa natijasi bot foydalanuvchisiga **keyinroq**, worker ishini tugatgach
 yuboriladi (odatda `Yii::$app->telegram->sendMessage()` to'g'ridan-to'g'ri yoki `BotMessenger` orqali).

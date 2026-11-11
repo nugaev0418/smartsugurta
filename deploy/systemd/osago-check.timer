@@ -1,0 +1,15 @@
+# osago-check.service'ni har kuni ertalab soat 05:00 (server mahalliy vaqti)
+# ishga tushiradi — sug'urtasi yo'q avtomobillar ERSP'da qayta tekshiriladi,
+# natija esa 09:00 dagi osago-reminder.timer eslatmalariga tayyor bo'ladi.
+#
+# O'rnatish: systemctl enable --now osago-check.timer
+
+[Unit]
+Description=Smart Sug'urta - sug'urtasiz avtomobillarni kuniga bir marta tekshirish
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

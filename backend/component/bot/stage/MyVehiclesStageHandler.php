@@ -10,6 +10,7 @@ use backend\models\Pages;
 use backend\queue\ErspLookupJob;
 use common\models\Botuser;
 use common\models\SavedVehicle;
+use common\models\Setting;
 use Yii;
 
 /**
@@ -209,6 +210,13 @@ class MyVehiclesStageHandler implements BotStageInterface
         $vehicle->save(false);
 
         $ctx->sendMessage(sprintf($ctx->getMText('my vehicles saved'), $govNumber));
+
+        // Qo'shilishi bilan sug'urtasini tekshirish (natija xabari job'dan keladi);
+        // cooldown enqueueCheck() ichida hurmat qilinadi.
+        if (Setting::getMyVehiclesStatus() && $vehicle->enqueueCheck((string) $ctx->chat_id)) {
+            $ctx->sendMessage($ctx->getMText('my vehicles checking'));
+        }
+
         $this->showList($ctx);
     }
 
@@ -365,19 +373,10 @@ class MyVehiclesStageHandler implements BotStageInterface
         // "my vehicles check button" cooldown paytida showDetail()da
         // ko'rsatilmaydi — bu shunchaki qo'shimcha himoya (masalan eski
         // klaviatura orqali qayta bosilsa).
-        if (!$vehicle->canCheckNow()) {
+        if (!$vehicle->enqueueCheck((string) $ctx->chat_id)) {
             $this->showDetail($ctx);
             return;
         }
-
-        $vehicle->ersp_check_status = SavedVehicle::ERSP_STATUS_CHECKING;
-        $vehicle->ersp_checked_at   = date('Y-m-d H:i:s');
-        $vehicle->save(false);
-
-        Yii::$app->erspQueue->push(new ErspLookupJob([
-            'savedVehicleId' => $vehicle->id,
-            'chatId'         => (string) $ctx->chat_id,
-        ]));
 
         $ctx->sendMessage($ctx->getMText('my vehicles checking'));
         $this->showDetail($ctx);

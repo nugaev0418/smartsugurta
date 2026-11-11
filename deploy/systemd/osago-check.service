@@ -1,0 +1,20 @@
+# Sug'urtasi yo'q (yoki hali tekshirilmagan) "Mening avtolarim"dagi
+# avtomobillarni erspQueue'ga jim (xabarsiz) tekshiruv sifatida qo'yadi.
+# BIR MARTA ishlaydi — osago-check.timer kuniga bir marta chaqiradi.
+# Natijani ersp-queue.service worker'i qayta ishlaydi.
+#
+# O'rnatish (root): cp osago-check.service osago-check.timer /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now osago-check.timer
+# Qo'lda: systemctl start osago-check.service
+
+[Unit]
+Description=Smart Sug'urta - sug'urtasiz avtomobillarni tekshiruvga yuborish
+After=network.target mysql.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/smart
+ExecStart=/usr/bin/php /var/www/smart/yii reminder/check-uninsured
+TimeoutStartSec=300

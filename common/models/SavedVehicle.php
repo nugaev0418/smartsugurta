@@ -155,4 +155,34 @@ class SavedVehicle extends \yii\db\ActiveRecord
 
         return max(0, self::CHECK_COOLDOWN_SECONDS - $elapsed);
     }
+
+    /**
+     * ERSP tekshiruvini navbatga qo'yadi (cooldown hurmat qilinadi). $chatId
+     * berilsa natija foydalanuvchiga xabar qilinadi, aks holda jim (faqat kesh).
+     * $delay — navbatga qo'yishni soniyalarda kechiktirish (ommaviy yuborishda
+     * ersp.e-osgo.uz'ni bosmaslik uchun).
+     *
+     * @return bool navbatga qo'yilgan bo'lsa true
+     */
+    public function enqueueCheck(?string $chatId = null, int $delay = 0): bool
+    {
+        if (!$this->canCheckNow()) {
+            return false;
+        }
+
+        $this->ersp_check_status = self::ERSP_STATUS_CHECKING;
+        $this->ersp_checked_at = date('Y-m-d H:i:s');
+        $this->save(false);
+
+        $queue = Yii::$app->erspQueue;
+        if ($delay > 0) {
+            $queue = $queue->delay($delay);
+        }
+        $queue->push(new \backend\queue\ErspLookupJob([
+            'savedVehicleId' => $this->id,
+            'chatId' => $chatId,
+        ]));
+
+        return true;
+    }
 }

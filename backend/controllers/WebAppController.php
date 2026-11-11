@@ -858,8 +858,12 @@ class WebAppController extends Controller
         $vehicle->vehicle_type_name = $dto->vehicleTypeName;
         $vehicle->save(false);
 
+        // Qo'shilishi bilan sug'urtasini tekshirish (natija Telegram xabari orqali keladi).
+        $checking = $vehicle->enqueueCheck((string) $telegramUser['id']);
+
         return [
             'success' => true,
+            'checking' => $checking,
             'vehicle' => $this->vehicleSummary($vehicle),
         ];
     }
@@ -932,14 +936,7 @@ class WebAppController extends Controller
             return $this->fail(sprintf($this->msg('check_cooldown', $lang), max(1, $minutes)));
         }
 
-        $vehicle->ersp_check_status = SavedVehicle::ERSP_STATUS_CHECKING;
-        $vehicle->ersp_checked_at = date('Y-m-d H:i:s');
-        $vehicle->save(false);
-
-        Yii::$app->erspQueue->push(new ErspLookupJob([
-            'savedVehicleId' => $vehicle->id,
-            'chatId' => (string) $telegramUser['id'],
-        ]));
+        $vehicle->enqueueCheck((string) $telegramUser['id']);
 
         return ['success' => true, 'checking' => true];
     }
