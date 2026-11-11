@@ -89,6 +89,7 @@
     errInsuranceType: { uz: "Sug'urta turini tanlang", ru: "Выберите тип страхования" },
     errPhoneIncomplete: { uz: "Telefon raqamini to'liq kiriting", ru: "Введите номер телефона полностью" },
     errStartDate: { uz: "Boshlanish sanasini tanlang", ru: "Выберите дату начала" },
+    errStartDateFar: { uz: "Boshlanish sanasi bugundan ko'pi bilan 1 yil keyingi muddat bo'lishi mumkin", ru: "Дата начала может быть не позднее чем через 1 год от сегодняшнего дня" },
     errStartDatePast: { uz: "Boshlanish sanasi bugundan oldin bo'lishi mumkin emas", ru: "Дата начала не может быть раньше сегодняшней" },
     errDuration: { uz: "Muddatni tanlang", ru: "Выберите срок" },
     errAtLeastOneDriver: { uz: "Kamida bitta haydovchi qo'shing", ru: "Добавьте хотя бы одного водителя" },
@@ -228,6 +229,13 @@
   // Date ends up representing local midnight — exactly the "1 kun kam" bug.
   function todayYmd() {
     var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  // Boshlanish sanasi uchun yuqori chegara: bugundan 1 yil keyin.
+  function maxStartYmd() {
+    var d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
     return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
   }
 
@@ -633,6 +641,7 @@
   function renderStep5() {
     $('startDateInput').value = state.startDate;
     $('startDateInput').min = todayYmd();
+    $('startDateInput').max = maxStartYmd();
     $('startDateText').value = fmtDate(state.startDate);
     var chips = $('durationChips');
     chips.innerHTML = '';
@@ -784,6 +793,7 @@
       var ok5 = true;
       if (!state.startDate) { setErr('startDate', t('errStartDate')); ok5 = false; }
       else if (state.startDate < todayYmd()) { setErr('startDate', t('errStartDatePast')); ok5 = false; }
+      else if (state.startDate > maxStartYmd()) { setErr('startDate', t('errStartDateFar')); ok5 = false; }
       else setErr('startDate', '');
       if (!state.duration) { setErr('duration', t('errDuration')); ok5 = false; }
       else setErr('duration', '');

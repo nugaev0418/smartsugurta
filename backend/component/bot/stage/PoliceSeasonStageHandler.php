@@ -128,6 +128,8 @@ class PoliceSeasonStageHandler implements BotStageInterface
         if (!isset($startDate['success']) || !$startDate['success']) {
             if (($startDate['error'] ?? '') === 'Date is in the past') {
                 $ctx->sendMessage($ctx->getMText('start at past date'));
+            } elseif (($startDate['error'] ?? '') === 'Date is too far') {
+                $ctx->sendMessage($ctx->getMText('start at far date'));
             }
             $this->showStartAt($ctx);
             return;
@@ -207,6 +209,11 @@ class PoliceSeasonStageHandler implements BotStageInterface
 
         if ($date < $today) {
             return ['success' => false, 'error' => 'Date is in the past'];
+        }
+
+        // 5️⃣ Ko'pi bilan 1 yil keyingi sana
+        if ($date > (clone $today)->modify('+1 year')) {
+            return ['success' => false, 'error' => 'Date is too far'];
         }
 
         return [

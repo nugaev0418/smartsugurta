@@ -149,6 +149,10 @@ class WebAppController extends Controller
             'uz' => "Boshlanish sanasi bugundan oldin bo'lishi mumkin emas",
             'ru' => "Дата начала не может быть раньше сегодняшней",
         ],
+        'start_date_far' => [
+            'uz' => "Boshlanish sanasi bugundan ko'pi bilan 1 yil keyingi muddat bo'lishi mumkin",
+            'ru' => "Дата начала может быть не позднее чем через 1 год от сегодняшнего дня",
+        ],
         'add_at_least_one_driver' => [
             'uz' => "Kamida bitta haydovchi qo'shing",
             'ru' => "Добавьте хотя бы одного водителя",
@@ -545,6 +549,9 @@ class WebAppController extends Controller
         // Eski sana qabul qilinmaydi (app timeZone = Asia/Tashkent, 'Y-m-d' satr taqqoslash to'g'ri).
         if ($startDate < date('Y-m-d')) {
             return $this->fail($this->msg('start_date_past', $lang));
+        }
+        if ($startDate > date('Y-m-d', strtotime('+1 year'))) {
+            return $this->fail($this->msg('start_date_far', $lang));
         }
 
         $driverRestriction = $insuranceType === 'limited';
