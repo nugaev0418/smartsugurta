@@ -1,0 +1,27 @@
+# To'lov kutilayotgan polislarni BIR MARTA tekshiradi (shablon unit, %i —
+# provayder: eai | gross | uzbekinvest). police-check@<provayder>.timer har
+# daqiqada chaqiradi; Type=oneshot bo'lgani uchun oldingi tekshiruv tugamaguncha
+# yangisi boshlanmaydi (ilgarigi cron+curl kabi PHP-FPM'ni band qilmaydi).
+#
+# O'rnatish (root):
+#   cp deploy/systemd/police-check@.service deploy/systemd/police-check@.timer /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now police-check@eai.timer police-check@gross.timer police-check@uzbekinvest.timer
+#   # va crontab'dagi eski `curl .../police/...` qatorlarini o'chiring (crontab -e)
+#
+# Boshqarish:
+#   systemctl list-timers 'police-check@*'
+#   systemctl start police-check@gross.service     # qo'lda bir marta
+#   journalctl -u police-check@gross -f            # loglar
+
+[Unit]
+Description=Smart Sug'urta - %i polislari to'lovini tekshirish
+After=network.target mysql.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/smart
+ExecStart=/usr/bin/php /var/www/smart/yii police-check/%i
+TimeoutStartSec=900

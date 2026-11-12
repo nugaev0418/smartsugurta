@@ -10,6 +10,9 @@ $params = array_merge(
 return [
     'id' => 'app-console',
     'basePath' => dirname(__DIR__),
+    // backend bilan bir xil — aks holda konsol (cron, navbat worker'lari) php.ini
+    // standarti (UTC) bilan ishlab, veb yozgan vaqtlardan 5 soat farq qiladi.
+    'timeZone' => 'Asia/Tashkent',
     'bootstrap' => [
         'log',
         'paynetQueue',

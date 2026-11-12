@@ -1,0 +1,13 @@
+# police-check@%i.service'ni har daqiqada ishga tushiradi. Oldingi ishga
+# tushirish hali tugamagan bo'lsa, systemd yangisini boshlamaydi.
+# O'rnatish buyruqlari police-check@.service ichidagi izohlarda.
+
+[Unit]
+Description=Smart Sug'urta - %i polislarini har daqiqada tekshirish
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

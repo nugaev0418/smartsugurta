@@ -7,7 +7,7 @@ use common\models\Setting;
 /**
  * Foydalanuvchi bonusining yagona formulasi: to'lovdan oldin ko'rsatiladigan
  * (bot, Web App, buyurtmalar kanali) va polisa tayyor bo'lgach haqiqatan
- * yoziladigan (PoliceController::addBonuse) bonus bir xil bo'lishi uchun.
+ * yoziladigan (PolicePaymentChecker::addUserBonus) bonus bir xil bo'lishi uchun.
  *
  * Toshkent (01/10) raqamlariga Setting::getTashkentUserPercent(), qolganlariga
  * Setting::getUserPercent() qo'llanadi. Summa pastga kesiladi.

@@ -121,9 +121,6 @@ return [
         'allowActions' => [
 //            '*',
             'site/*',
-            'police/check',
-            'police/gross',
-            'police/uzbekinvest',
             'bot/start',
             'web-app/*'
             //'sarmin/*'

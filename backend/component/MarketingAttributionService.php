@@ -140,7 +140,7 @@ class MarketingAttributionService
 
     /**
      * Police.payment_status 0->1 ga o'tgan nuqtada chaqiriladi
-     * (PoliceController::actionCheck()/actionGross()). Takroriy chaqiruv
+     * (PolicePaymentChecker::checkEai()/checkGross()). Takroriy chaqiruv
      * (ikkinchi cron yurishi) marketing_touch.police_id'dagi UNIQUE
      * indeks tufayli xavfsiz no-op bo'ladi.
      */

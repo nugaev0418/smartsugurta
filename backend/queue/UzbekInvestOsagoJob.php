@@ -174,7 +174,7 @@ class UzbekInvestOsagoJob extends BaseObject implements RetryableJobInterface
 
                 $police                    = new Police();
                 // ersp.e-osgo.uz UUID'i polis to'langanidan keyingina ma'lum bo'ladi —
-                // PoliceController::actionUzbekinvest() uni shu yerga yozadi.
+                // PolicePaymentChecker::checkUzbekinvest() uni shu yerga yozadi.
                 $police->policeId          = 'UZB-' . $result['contract_id'];
                 $police->user_id           = $botuser->id;
                 $police->startAt           = date('Y-m-d', strtotime($this->policyDataEAI['startAt']));

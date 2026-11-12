@@ -37,6 +37,9 @@ php yii broadcast-queue/listen         # bot orqali ommaviy xabar yuborish navba
 php yii ersp-queue/listen              # "Mening avtolarim" ERSP sug'urta tekshiruvi navbati
 
 php yii reminder/expiry-check          # sug'urta muddati tugashi haqida eslatma (systemd timer chaqiradi)
+php yii reminder/check-uninsured       # sug'urtasiz avtolarni ERSP tekshiruviga yuborish (osago-check.timer)
+php yii police-check/eai               # to'lov kutilayotgan polislarni tekshirish — eai | gross | uzbekinvest
+                                      # (police-check@<provayder>.timer har daqiqada; veb URL/curl EMAS)
 ```
 
 ### Testlar (Codeception + PHPUnit)
@@ -153,7 +156,7 @@ komponent sifatida e'lon qilingan va `bootstrap`da ishga tushiriladi:
   captcha'siz login/cookie, `backend/uzbekinvest/UzbekInvestClient.php` + `UzbekInvestOsago.php`) orqali
   polisa yaratadi. Provayder admin paneldan tanlanadi (`Setting::getOsagoProvider()`, standart Gross),
   `OsagoSubmissionService::submit()` shunga qarab `grossQueue` yoki `uzbekInvestQueue`ga yuboradi.
-  `Police.anketa_id` = Uzbekinvest shartnoma raqami; to'lov `police/uzbekinvest` (cron) orqali portfeldan
+  `Police.anketa_id` = Uzbekinvest shartnoma raqami; to'lov `php yii police-check/uzbekinvest` orqali portfeldan
   tekshiriladi. Login/parol `params-local.php` → `'uzbekinvest'`. Buyruq: `php yii uzbek-invest-queue/listen`,
   faqat BITTA worker (`deploy/systemd/uzbek-invest-queue.service`). Uzbekinvest bir akkauntda FAQAT BITTA
   faol sessiyaga ruxsat beradi, shuning uchun worker, cron va login-test bitta umumiy sessiyadan foydalanadi
