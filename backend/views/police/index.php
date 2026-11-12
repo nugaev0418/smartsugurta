@@ -47,9 +47,17 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value'     => fn($model) => Police::getProviderList()[$model->provider_id] ?? 'Unknown',
                 'filter'    => Police::getProviderList(),
             ],
+            [
+                'attribute' => 'licenseNumber',
+                'label'     => 'Davlat raqami',
+                'value'     => fn($model) => $model->vehicles[0]->licenseNumber ?? '—',
+            ],
             'policeId',
             'anketa_id',
-            'startAt',
+            [
+                'attribute' => 'startAt',
+                'filter'    => Html::activeInput('date', $searchModel, 'startAt', ['class' => 'form-control form-control-sm']),
+            ],
 
             // Payment status — To'langan / To'lanmagan
             [
@@ -79,7 +87,15 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
 
-            'gateway',
+            [
+                'attribute' => 'gateway',
+                'filter'    => ArrayHelper::map(
+                    Police::find()->select('gateway')->where(['not', ['gateway' => null]])->andWhere(['<>', 'gateway', ''])->distinct()->orderBy('gateway')->asArray()->all(),
+                    'gateway',
+                    'gateway'
+                ),
+                'filterInputOptions' => ['class' => 'form-control', 'prompt' => 'Hammasi'],
+            ],
             [
                 'attribute'     => 'amount',
                 'label'         => 'Summa',
